@@ -3,7 +3,7 @@
 ## Reviewers
 
 ### Sid (sid-game-dev)
-- **Signals:** Game dev, Unreal Engine, DroneSim, gameplay mechanics, UE5 systems, Blueprint, C++ game code, character movement, replication, GAS
+- **Signals:** Game dev, Unreal Engine, gameplay mechanics, UE5 systems, Blueprint, C++ game code, character movement, replication, GAS
 - **Model:** opus
 - **Effort:** Medium (escalates to High for major features / new game modes)
 - **Backstop:** Patrik (coordinator plugin — universal reviewer)
@@ -17,5 +17,5 @@
 - **Agent files:** `agents/ue-blueprint-inspector.md` (coordinator), `agents/ue-blueprint-worker.md` (worker)
 
 ## Project-Local Pairings
-- DroneSim: Sid primary, Patrik backstop (default)
+- my-ue-game: Sid primary, Patrik backstop (default)
 - my-ue-project: Sid + Camelia (if data-science plugin enabled) + Patrik

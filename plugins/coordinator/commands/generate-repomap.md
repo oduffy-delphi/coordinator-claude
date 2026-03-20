@@ -41,8 +41,8 @@ For generating maps focused on specific task areas:
 ```bash
 python3 ~/.claude/.github/scripts/generate-repomap.py \
   --project-root /path/to/project \
-  --task "Implement the camera follow system for the drone actor" \
-  --focus-files "Source/DroneSim/Camera/CameraFollowComponent.cpp,Source/DroneSim/Drone/DroneActor.h"
+  --task "Implement the camera follow system for the player character" \
+  --focus-files "Source/MyGame/Camera/CameraFollowComponent.cpp,Source/MyGame/Player/PlayerCharacter.h"
 ```
 
 - `--task`: Natural language description of the current task. Path-like tokens in the description are matched against project files.

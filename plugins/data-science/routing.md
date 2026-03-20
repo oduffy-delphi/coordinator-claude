@@ -11,4 +11,4 @@
 
 ## Project-Local Pairings
 - my-ue-project: Camelia + Patrik default pairing (ML/AI heavy)
-- fifa-stats: Camelia when data analysis needed, pairs with Palí (web-dev plugin)
+- my-data-app: Camelia when data analysis needed, pairs with Palí (web-dev plugin)
