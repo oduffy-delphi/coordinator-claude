@@ -37,7 +37,7 @@ The filter criterion is `severity != "nitpick"` — not prose-based filtering.
 
 1. Read the artifact (file, directory of stubs, or diff)
 2. Determine the nature of the work by looking for signals:
-   - Game dev / Unreal / UE game references → Sid route
+   - Game dev / Unreal / DroneSim references → Sid route
    - Architectural changes, new subsystems, new abstractions → Patrik route
    - Front-end, CSS, UI components, tokens, design system → Palí route
    - ML/AI pipeline, model serving, RAG, data science → Camelia route
@@ -60,14 +60,14 @@ Reference composite table (assembled at dispatch time from discovery):
 
 | Signal | Reviewer 1 (Domain) | Reviewer 2 (Generalist) | Effort |
 |--------|---------------------|------------------------|--------|
-| Game dev / Unreal / UE game | Sid | Patrik | Medium → Medium |
+| Game dev / Unreal / DroneSim | Sid | Patrik | Medium → Medium |
 | Architectural change, new subsystem | Patrik | (backstop: Zolí) | High |
 | Front-end, CSS, UI components | Palí | (backstop: Fru) | Medium |
 | Front-end + architecture | Palí | Patrik | Medium → High |
 | ML/AI pipeline, model serving, RAG | Camelia | Patrik | High → High |
 | UX flow, user-facing feature | Fru | (backstop: Patrik) | Low → Medium |
 | Cross-cutting (many files, new pattern) | Patrik | (backstop: Zolí) | High |
-| Major UE game feature / new game mode | Sid | Patrik | High → High |
+| Major DroneSim feature / new game mode | Sid | Patrik | High → High |
 | Other / unmatched | Patrik | (none) | Medium |
 
 ### Phase 2.5: Write-Ahead Status Update

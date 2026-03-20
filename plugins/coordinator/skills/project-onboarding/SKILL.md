@@ -55,7 +55,7 @@ Present all three questions together to minimize back-and-forth:
 
 > I need three things to set up this project:
 >
-> **1. Project name** — short name for headers and references (e.g., "My Web App", "My UE Game")
+> **1. Project name** — short name for headers and references (e.g., "Geneva MVP", "DroneSim")
 >
 > **2. Project type** — controls which domain agents and conventions are included:
 >    - `game-dev` — Unreal Engine, Blueprint/C++, Sid reviewer

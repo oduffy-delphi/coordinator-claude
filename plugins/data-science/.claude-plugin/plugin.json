@@ -1,23 +1,9 @@
 {
   "name": "data-science",
   "version": "1.0.0",
-  "description": "Data science domain plugin for coordinator-claude. Adds Camelia, a specialized Claude Code reviewer for machine learning pipelines, statistical analysis, data modeling, feature engineering, LLM fine-tuning, and experiment design. Routes ML-heavy work through domain-expert review before generalist architecture review.",
+  "description": "ML and data science review for Claude Code — Camelia reviews model architecture, statistical analysis, feature engineering, and LLM workflows with the rigor of a senior data scientist.",
   "author": {
     "name": "Dónal O'Duffy & Claude"
   },
-  "license": "Apache-2.0",
-  "repository": "https://github.com/oduffy-delphi/coordinator-claude",
-  "homepage": "https://github.com/oduffy-delphi/coordinator-claude",
-  "keywords": [
-    "claude-code",
-    "claude-code-plugin",
-    "data-science",
-    "machine-learning",
-    "statistics",
-    "code-review",
-    "ml-pipeline",
-    "llm",
-    "ai",
-    "deep-learning"
-  ]
+  "keywords": ["ml", "ai", "llm", "claude-code", "data-science", "machine-learning", "statistics", "code-review"]
 }

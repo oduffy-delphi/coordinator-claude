@@ -7,11 +7,17 @@
 [![Skills](https://img.shields.io/badge/Skills-20+-green)](#20-codified-skills)
 [![CI](https://img.shields.io/badge/CI-10_checks-brightgreen)](.github/workflows/validate-plugins.yml)
 
-**A structured agent orchestration plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — multi-agent workflows, named reviewer personas, and session continuity.**
+**A Claude Code quality pipeline — named reviewer personas, three-tier delegation, and structured workflows that catch issues before they ship.**
 
-A Claude Code plugin that mirrors a PM-EM dynamic: you're the PM (product manager), Claude is the EM (engineering manager). The coordinator dispatches work to specialized agents across Opus/Sonnet/Haiku tiers, routes code reviews to named personas, manages session continuity, and runs deep research pipelines — without being hamstrung by excessive guardrails or losing context across sessions.
+**22 skills · 19 commands · 6 named reviewers · 5 domain plugins · 3 research pipelines**
+
+A Claude Code plugin that mirrors a PM-EM dynamic: you're the PM (product manager), Claude is the EM (engineering manager). The coordinator dispatches work to specialized agents across Opus/Sonnet/Haiku tiers, routes code reviews through a structured review pipeline with named personas, manages session continuity, and runs deep research pipelines — without being hamstrung by excessive guardrails or losing context across sessions.
 
 > This isn't another "AI assistant" wrapper. It's an organizational model for human-AI collaboration — a bridge crew, not a chatbot. You set the heading; the coordinator makes it so.
+
+---
+
+**Contents:** [Landscape](#where-this-sits-in-the-landscape) · [What You Get](#what-you-get) · [EM Model](#the-em-model-and-its-honest-limits) · [Quick Start](#quick-start) · [Customization](#customization) · [Architecture](#architecture) · [Credits](#credits--acknowledgments) · [License](#license)
 
 **Quick install:**
 ```bash

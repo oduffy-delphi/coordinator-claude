@@ -17,5 +17,5 @@
 - **Agent file:** `agents/fru-ux-reviewer.md`
 
 ## Project-Local Pairings
-- my-web-app: Palí primary, Fru for UX flows, Patrik for architecture
-- my-data-app: Palí primary, Fru for UX, Camelia when data-science plugin enabled
+- geneva-mvp: Palí primary, Fru for UX flows, Patrik for architecture
+- fifa-stats: Palí primary, Fru for UX, Camelia when data-science plugin enabled
