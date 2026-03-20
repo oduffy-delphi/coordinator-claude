@@ -145,7 +145,7 @@ When to invoke backstop:
 
 ## Project Detection
 
-When operating in a project with a local Palí persona file (e.g., `docs/personae/pali/README.md`), load it for project-specific context including Figma-specific review, Tailwind reference tables, design decision logs, and token file inventory.
+When operating in geneva-mvp, load the project-local Palí persona for enriched context including Figma-specific review, Tailwind reference tables, design decision logs, and token file inventory. Reference: `docs/personae/pali/README.md` in geneva-mvp.
 
 For all other projects, apply the general principles above with whatever design system and token structure the project uses.
 

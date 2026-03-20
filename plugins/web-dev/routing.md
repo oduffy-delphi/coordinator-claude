@@ -15,3 +15,7 @@
 - **Effort:** Low (escalates to Medium for full flow reviews)
 - **Backstop:** Patrik (coordinator plugin — universal reviewer)
 - **Agent file:** `agents/fru-ux-reviewer.md`
+
+## Project-Local Pairings
+- geneva-mvp: Palí primary, Fru for UX flows, Patrik for architecture
+- fifa-stats: Palí primary, Fru for UX, Camelia when data-science plugin enabled

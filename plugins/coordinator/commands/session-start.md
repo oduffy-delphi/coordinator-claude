@@ -97,14 +97,16 @@ Note: Project `CLAUDE.md` and global `~/.claude/CLAUDE.md` are already in system
 
 ### Handoffs
 
-**IMPORTANT:** Handoffs are NEVER auto-loaded. Selection triggers loading only — handoffs are NOT archived on read.
-
 Check `.claude/handoffs/` for `.md` files (active handoffs). If handoffs exist:
 
-1. List each file in chronological order (filenames include timestamp: `YYYY-MM-DD_HHMMSS_sessionid.md`) with its date/time and first heading
-2. Ask the user which handoff(s) to load — or "None" to start fresh
-3. For each **selected** handoff: **Read the full file** into context. Do NOT archive it.
-4. **All handoffs remain in `.claude/handoffs/`** — selected or not. A handoff describes work that may span multiple sessions. Archiving on read caused incomplete work to lose its handoff context in subsequent sessions.
+1. **Read only filenames** (do NOT read file contents). Extract dates and session IDs from the filename pattern `YYYY-MM-DD_HHMMSS_sessionid.md`.
+2. List each file with its date/time. To get the heading, read only line 1 of each file.
+3. **Report what's available and stop:**
+   _"Found {N} active handoff(s): {list with dates and headings}."_
+4. **Do NOT load, summarize, or act on any handoff.** This applies even if there is only one handoff. One handoff is not implicit selection — the PM may not want to pick it up this session, or may have other priorities first.
+5. **Do NOT set `HANDOFF_LOADED`.** That flag is set ONLY when the PM explicitly directs you to a handoff.
+
+**When the PM indicates they want a handoff picked up** — by dropping a link, naming it, or saying "pick up that handoff" — read the full file into context. This — and only this — sets `HANDOFF_LOADED=true` for the Engage section.
 
 **Archiving is handled by `/update-docs` only** (48-hour threshold). This ensures handoffs persist until the work they describe has had time to complete.
 
@@ -167,7 +169,7 @@ Choose work and load task-specific context.
 
 ### Work selection
 
-**CRITICAL — Handoff loaded?** Check whether a handoff was loaded in the Context Load section (or provided by the user at any point). Track this as a mental flag: `HANDOFF_LOADED=true`. If YES:
+**CRITICAL — Handoff loaded?** Check whether the PM has directed you to pick up a handoff (by dropping a link, naming it, or saying to pick it up). Track this as a mental flag: `HANDOFF_LOADED=true`. If YES:
 
 > **The handoff IS the work order.** Do NOT present a menu. Do NOT ask "what should this agent work on?" Do NOT list the handoff's action items and wait for the user to pick one. Do NOT ask "want me to proceed?"
 >
@@ -175,7 +177,7 @@ Choose work and load task-specific context.
 >
 > If the handoff lists multiple next steps, execute them in order unless the PM redirects.
 
-**If NO handoff was loaded** (user chose "None" or no handoffs exist), present options appropriate to the project:
+**If NO handoff was loaded** (PM hasn't directed you to one yet, or no handoffs exist), present options appropriate to the project:
 
 **What should this agent work on?**
 

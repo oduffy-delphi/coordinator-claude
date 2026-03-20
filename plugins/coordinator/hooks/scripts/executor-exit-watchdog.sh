@@ -2,8 +2,9 @@
 # Executor Exit Watchdog — SubagentStop hook
 # Detects thrashing executors at exit boundary and forces structured post-mortem.
 #
-# Two-tier detection:
+# Three-tier detection:
 #   Tier 1 (tag-based): Checks for <exit-status> tag in last assistant output
+#   Tier 1.5 (AC-N check): On DONE, verifies AC-N acceptance criteria lines exist (soft warning if missing)
 #   Tier 2 (heuristic): Counts Edit/Write calls per file — flags 8+ edits to same file
 #
 # Re-entry guard: Blocks once per transcript, then always approves (bark once, let go)
@@ -80,7 +81,20 @@ fi
 if [[ -n "$EXIT_TAG" ]]; then
   # Tag found — Tier 1 handles it, skip Tier 2 entirely
   case "$EXIT_TAG" in
-    DONE|BLOCKED|ABORTED)
+    DONE)
+      # Tier 1.5: Check for AC-N structured criteria in DONE reports
+      if ! echo "$LAST_OUTPUT" | grep -qP '^AC-[0-9]+: (PASS|FAIL)'; then
+        # No AC-N lines found — soft warning (approve with system message)
+        jq -n '{
+          "decision": "approve",
+          "systemMessage": "⚠️ Watchdog Tier 1.5: Executor DONE report has no AC-N acceptance criteria lines. The stub may lack an Acceptance Criteria section, or the executor omitted the structured checklist. Coordinator should verify spec compliance."
+        }'
+        exit 0
+      fi
+      # AC-N lines present — clean approve
+      exit 0
+      ;;
+    BLOCKED|ABORTED)
       # Clean exit — approve
       exit 0
       ;;

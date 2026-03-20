@@ -1,6 +1,6 @@
 # coordinator
 
-Core orchestration plugin. Always enabled on every project.
+Core orchestration plugin for the Dónal + Claude agent hierarchy. Always enabled on every project.
 
 ## What It Does
 
@@ -8,7 +8,7 @@ The coordinator plugin is the backbone of the system. It provides:
 
 1. **The orchestration role** — the main session agent operates as EM (engineering manager), delegating work to specialized subagents rather than implementing directly
 2. **Universal reviewers** — Patrik (code quality, architecture) and Zoli (ambition backstop) are available on every project regardless of domain
-3. **Workflow skills** — 21 codified processes (SKILL.md) covering the full development lifecycle, plus 7 pipeline definitions (PIPELINE.md) backing commands
+3. **Workflow skills** — 22 codified processes (SKILL.md) covering the full development lifecycle, plus 8 pipeline definitions (PIPELINE.md) backing commands
 4. **Session commands** — slash commands for pipeline operations (dispatch executors, route reviews, manage handoffs)
 
 ## Components
@@ -19,7 +19,7 @@ The coordinator plugin is the backbone of the system. It provides:
 |-------|-------|------|
 | **enricher** | Sonnet | Research agent — surveys codebases, traces deps, fills in stub details |
 | **executor** | Sonnet | Implementation agent — follows specs precisely, reports DONE/DONE_WITH_CONCERNS/BLOCKED |
-| **review-integrator** | Sonnet | Applies reviewer findings to artifacts with annotations, escalates disagreements |
+| **review-integrator** | Opus | Applies reviewer findings to artifacts with annotations, escalates disagreements |
 | **patrik-code-review** | Opus | Senior engineer reviewer — exacting standards, documentation completeness, architecture |
 | **zoli-ambition-advocate** | Opus | Backstop reviewer — challenges conservative recommendations, never a primary reviewer |
 | **structured-research-orchestrator** | Opus | Pipeline C orchestrator — owns full research lifecycle per subject, dispatches Haiku/Sonnet sub-agents |
@@ -33,7 +33,7 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/handoff` | Save session state for next session handoff |
 | `/workday-start` | Morning orientation — triage handoffs, surface staleness, align priorities |
 | `/workday-complete` | End-of-day — update docs, consolidate branches, run health survey |
-| `/update-docs` | Repo-wide documentation maintenance and sync |
+| `/update-docs` | Repo-wide documentation maintenance and sync (auto-chains `/distill` when thresholds met) |
 | `/delegate-execution` | Dispatch enriched stubs to executor agents |
 | `/execute-plan` | Execute a PM-approved implementation plan in the coordinator session |
 | `/enrich-and-review` | Run enrichment pipeline on chunk directories |
@@ -46,14 +46,17 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/architecture-rotation` | Run the weekly architecture audit rotation — score, audit, apply, update ledger |
 | `/code-health` | Night-shift code health review — scan commits, dispatch reviewer, apply findings |
 | `/bug-sweep` | Systematic codebase bug hunt — fix AI-fixable bugs, defer blocked ones to backlog |
-| `/notebooklm-research` | Research via Google NotebookLM — YouTube, podcasts, audio. Requires notebooklm plugin |
+| `/distill` | Distill accumulated artifacts into wiki guides + decision records, then delete source material |
 
-### Skills (21)
+<!-- Review: patrik — corrected count: 20 SKILL.md-backed skills, 7 PIPELINE.md definitions listed separately under Commands -->
+### Skills (22)
 
 **Workflow & Planning:**
 - `brainstorming` — Collaborative dialogue to refine ideas into designs. Scope assessment, design-for-isolation, existing-codebase awareness.
 - `writing-plans` — Decompose designs into executable tasks. Scope checking, file structure mapping, TDD-oriented granularity.
+- `executing-plans` — Execute plans task-by-task with review checkpoints. Prefers `/delegate-execution` in coordinator sessions.
 - `verification-before-completion` — Prove it works before claiming it's done.
+- `deep-research` — Multi-source investigation of repos or topics.
 
 **Development Process:**
 - `test-driven-development` — RED-GREEN-REFACTOR cycle, strictly enforced.
@@ -76,29 +79,22 @@ The coordinator plugin is the backbone of the system. It provides:
 - `validate` — Run all CI validation checks locally.
 
 **Health & Maintenance:**
+- `daily-code-health` — Review recent commits for issues, dispatch reviewer, update health tracking.
+- `weekly-architecture-audit` — Systematic rotation through project systems. Weighted scoring for audit target selection.
+- `deep-architecture-audit` — Deep-dive architecture audit of a specific system or subsystem.
 - `debt-triage` — Review and prioritize the technical debt backlog. EM-PM conversation, not dispatched agent.
+- `mise-en-place` — Autonomous backlog execution in a single run.
+- `bug-sweep` — Systematic codebase sweep for bug patterns — fix AI-fixable, defer rest to backlog.
 - `tracker-maintenance` — Maintain the project tracker — archive completed work, update dependencies, sweep for untracked commits.
 - `lessons-trim` — Trim stale entries from lessons files, merge duplicates, clean up feature-scoped files.
 - `handoff-archival` — Archive consumed handoffs older than 48 hours, migrate legacy locations.
 - `atlas-integrity-check` — Check changed files against the architecture atlas for unmapped entries.
+- `artifact-consolidation` — Bulk prune accumulated artifacts without knowledge extraction. For distill-then-delete, use `/distill` instead.
 - `project-onboarding` — Bootstrap project tracking infrastructure — tracker, tasks, archive, handoffs.
-
-### Pipelines (7)
-
-- `bug-sweep` — Systematic codebase bug hunt pipeline
-- `daily-code-health` — Commit review + dispatch + apply findings
-- `deep-architecture-audit` — Deep-dive audit of a specific system
-- `deep-research` — Codebase (Pipeline A) and internet (Pipeline B) research
-- `executing-plans` — Task-by-task plan execution with checkpoints
-- `mise-en-place` — Autonomous backlog execution
-- `weekly-architecture-audit` — Rotation-based audit with scoring
 
 ### Hooks
 
 - **SessionStart** — Coordinator discipline reminder (sets EM role, loads pipeline awareness)
-- **PreToolUse** (WebSearch/WebFetch) — Delegation nudge: suggests Sonnet subagent for multi-query research
-- **PostToolUse** (ExitPlanMode) — Plan persistence check: ensures plan content is saved to disk
-- **SubagentStop** — Executor exit watchdog: detects thrashing, forces post-mortem
 
 ## Routing Extension Protocol
 
@@ -109,7 +105,7 @@ The coordinator defines the routing framework that domain plugins extend:
 3. At dispatch time, `/review-dispatch` merges all fragments into a composite routing table
 4. Signals from changed code determine which reviewer handles the review
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full conceptual model.
+See the parent [ARCHITECTURE.md](../ARCHITECTURE.md) for the full conceptual model.
 
 ## Per-Project Config
 
@@ -117,36 +113,56 @@ Create `.claude/coordinator.local.md` in your project:
 
 ```yaml
 ---
-project_type: web    # web | game | data-science | pure-docs
+project_type: unreal    # unreal | game-docs | web | pure-docs
 ---
 ```
 
-Default (no config): core-only (Patrik + Zolí).
+Default (no config): core-only (Patrik + Zoli).
 
-## Version History
+## Recent Changes
+
+### v1.3.1 (March 2026) — Artifact Distillation
+
+- **`/distill` command:** New 6-phase pipeline that extracts knowledge from accumulated session artifacts (plans, handoffs, completed work) into evergreen wiki documents (`docs/guides/`, `docs/decisions/`), then deletes the source material. Haiku scans → Haiku QG → Sonnet synthesis → Opus assembly → PM approval → apply+delete.
+- **`/update-docs` chaining:** Phase 12 added — auto-fires `/distill` when artifact count ≥50 or last distillation >14 days ago. PM gate in `/distill` Phase 4 provides the approval checkpoint. `--no-distill` flag to skip.
+- **Mise-en-place guard:** Hibernate mode passes `--no-distill` to avoid blocking on PM approval overnight.
+- **`artifact-consolidation` relationship:** Consolidation remains for bulk pruning without extraction. `/distill` supersedes it for the distill-then-delete workflow.
 
 ### v1.3.0 (March 2026) — Squad Expansion
 
-- **Review-integrator:** New Sonnet agent that applies reviewer findings to artifacts. Replaces manual EM feedback application in review-dispatch, enrich-and-review, and delegate-execution. The EM now verifies rather than types.
-- **Reviewer self-checks:** All 6 reviewers get built-in self-moderation prompts.
+Transforms the coordinator from a delivery-only pipeline into a full engineering squad with maintenance cadences, codebase health tracking, and structural "EM does not type code" enforcement.
+
+- **Review-integrator:** New Opus agent that applies reviewer findings to artifacts. Replaces manual EM feedback application in review-dispatch (Phase 3.7), enrich-and-review (Phase 5), and delegate-execution (Phase 3). The EM now verifies rather than types.
+- **Reviewer self-checks:** All 6 reviewers (Patrik, Zolí, Sid, Palí, Fru, Camelia) get built-in self-moderation prompts. Experimental — validate after 2 weeks.
 - **Routing intelligence:** Effort calibration table, skip conditions, and EM override guidance added to routing.md.
-- **Health infrastructure:** New skills (debt-triage, tracker-maintenance, lessons-trim) with templates.
-- **Session-start health surface:** New Step 0g reads health ledger and surfaces findings (non-blocking).
+- **Health infrastructure:** Three new skills (daily-code-health, weekly-architecture-audit, debt-triage) with health ledger and debt backlog templates per project.
+- **Session-start health surface:** New Step 0g reads health ledger and surfaces findings (non-blocking). New maintenance menu option.
 - **Workday-complete redesign:** Branch consolidation + health survey. No longer merges to main — merging is a deliberate, supervised act via /merge-to-main.
-- **Merge-to-main hardening:** New Step 0 test suite gate with --force escape hatch.
+- **Merge-to-main hardening:** New Step 0 test suite gate with --force escape hatch. First Officer Doctrine: EM can refuse to merge.
 
 ### v1.2.0 (March 2026) — Write-Ahead Status Protocol
 
-All pipeline phases now mark documents *before* starting work, not just on completion.
+All pipeline phases now mark documents *before* starting work, not just on completion. This eliminates ambiguous "not started" state after crashes — a recurring source of expensive triage.
 
-- Enricher: marks stub as "Enrichment in progress" before research
-- Executor: marks stub as "Execution in progress" before implementation
-- All commands updated with write-ahead phases
+- **Enricher:** New write-ahead protocol — marks stub as "Enrichment in progress" before research, "Enriched — pending review" on completion. Includes crash recovery guidance.
+- **Executor:** New write-ahead protocol — marks stub as "Execution in progress" before implementation. This is the one exception to "does not update stub documents" — status markers are infrastructure, not spec changes.
+- **Enrich-and-review:** New Phase 2.5 (pre-enrichment status) and Phase 4.5 (pre-review status) — coordinator updates tracker and commits before dispatching agents.
+- **Delegate-execution:** New Phase 1.5 — coordinator marks tracker as "Execution in progress" and commits before dispatching executors.
+- **Review-dispatch:** New Phase 2.5 — marks artifact with reviewer name before dispatching.
+- **Executing-plans:** Plan document updated on disk (not just TodoWrite) before and after each task.
+- **Writing-plans:** Plan header template now includes `Status:` field.
+
+See [ARCHITECTURE.md](../ARCHITECTURE.md) § "The Write-Ahead Status Protocol" for the conceptual model and state machine.
 
 ### v1.1.0 (March 2026) — Superpowers v5.0.0 Absorption
 
-- Brainstorming: scope assessment, design-for-isolation principles
-- Writing-plans: scope check, file structure mapping
-- Executor: DONE/DONE_WITH_CONCERNS/BLOCKED/NEEDS_CONTEXT protocol
-- Delegate-execution: spec compliance verification
-- Skill-discovery: SUBAGENT-STOP gate, instruction priority hierarchy
+- **Brainstorming:** Scope assessment before detailed questions; design-for-isolation principles; existing-codebase awareness
+- **Writing-plans:** Scope check (decompose multi-system specs); file structure mapping before task decomposition
+- **Executor:** New status protocol (DONE/DONE_WITH_CONCERNS replacing COMPLETED; NEEDS_CONTEXT split from NEEDS_COORDINATOR); expanded self-review with judgment checks; code organization awareness; expanded escalation encouragement
+- **Delegate-execution:** Spec compliance check — coordinator verifies executor fidelity before routing to Patrik
+- **Skill-discovery:** SUBAGENT-STOP gate; instruction priority hierarchy
+- **Executing-plans:** Delegate-execution preference note for coordinator sessions
+
+## Authors
+
+Dónal O'Duffy & Claude

@@ -1,5 +1,5 @@
 ---
-description: "Research topics using Google NotebookLM — for YouTube videos, podcasts, audio, and other media Claude cannot access directly. Dispatches an Opus orchestrator that designs research strategy and crafts questions, which in turn dispatches a Sonnet worker for MCP execution. Supports targeted mode (specific URLs) and exploratory mode (let NotebookLM find content)."
+description: "Research topics using Google NotebookLM — for YouTube videos, podcasts, audio, and other media Claude cannot access directly. Three-phase relay: (1) Opus orchestrator designs research plan, (2) command dispatches Sonnet worker for MCP execution, (3) Opus orchestrator synthesizes findings into polished research doc. Supports targeted mode (specific URLs) and exploratory mode (let NotebookLM find content)."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "Agent", "ToolSearch", "AskUserQuestion"]
 argument-hint: "<topic> [--sources url1 url2 ...] [--questions q1 q2 ...]"
 ---
@@ -54,7 +54,7 @@ ToolSearch("mcp__plugin_notebooklm_notebooklm__notebook_create")
 
 If no results: the plugin is disabled. Alert the PM:
 
-> The notebooklm plugin is not enabled. Enable it in `settings.json` (`"notebooklm@oduffy-custom": true`) and run `/reload-plugins`.
+> The notebooklm plugin is not enabled. Enable it in `settings.json` (`"notebooklm@coordinator-claude": true`) and run `/reload-plugins`.
 
 **Do not proceed** until MCP tools are confirmed available.
 
@@ -74,11 +74,13 @@ mkdir -p ~/.claude/scratch/notebooklm-research/{run-id}/
 
 Use a short run ID: `{topic-slug}-{YYYYMMDD}` (e.g., `transformer-arch-20260320`).
 
-### Step 4 — Dispatch Orchestrator
+### Step 4 — Dispatch Orchestrator (Phase A — Plan)
 
-Dispatch the `notebooklm-research-orchestrator` agent (Opus) with:
+Dispatch the `notebooklm-research-orchestrator` agent (Opus) to design the research plan:
 
 ```
+Phase: A
+
 Topic: {topic}
 
 Mode: {targeted / exploratory / hybrid}
@@ -108,24 +110,61 @@ Output path: ~/.claude/docs/research/YYYY-MM-DD-{topic-slug}.md
 Artifact requests: {reports / mind maps / slides / audio summary}
 ```
 
-### Step 5 — Evaluate Orchestrator Output
+The orchestrator writes a research plan to `{scratch-dir}/research-plan.md` and returns.
 
-The orchestrator writes a polished research document to the output path. Read it and verify:
+### Step 5 — Read Plan and Dispatch Worker
 
+Read `{scratch-dir}/research-plan.md`. Verify it contains questions and source/research instructions.
+
+Dispatch the `notebooklm-research-worker` agent (Sonnet) with the plan contents:
+
+```
+Research topic: {topic from plan}
+
+Notebook name: {notebook name from plan}
+
+{Copy source URLs, research query, custom instructions, and questions from the plan verbatim}
+
+Output path: {scratch-dir}/findings.md
+
+{If artifact requests in plan:}
+Artifact requests: {from plan}
+```
+
+The worker writes raw findings to `{scratch-dir}/findings.md` and returns.
+
+### Step 6 — Dispatch Orchestrator (Phase B — Synthesize)
+
+Read `{scratch-dir}/findings.md`. Verify it has substantive content (not empty or error-only).
+
+Dispatch the `notebooklm-research-orchestrator` agent (Opus) for synthesis:
+
+```
+Phase: B
+
+Topic: {topic}
+Findings path: {scratch-dir}/findings.md
+Output path: ~/.claude/docs/research/YYYY-MM-DD-{topic-slug}.md
+Notebook ID: {from findings metadata}
+```
+
+The orchestrator reads the raw findings, synthesizes them, and writes the final research document.
+
+### Step 7 — Evaluate and Cleanup
+
+Read the final research document. Verify:
 - Is it substantive? (Not just reformatted NotebookLM responses)
 - Does it include source assessment and gap analysis?
 - Are citations preserved?
-
-### Step 6 — Cleanup Decision
 
 Ask the PM: "Want me to keep the NotebookLM notebook for follow-up queries, or delete it?"
 
 - If keep: note the notebook ID in the research doc metadata
 - If delete: dispatch the worker to call `notebook_delete` with the notebook ID from the research doc metadata
 
-Clean up scratch files regardless.
+Clean up scratch directory.
 
-### Step 7 — Report
+### Step 8 — Report
 
 Summarize to the PM:
 - What was researched (topic + mode)

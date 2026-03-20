@@ -135,11 +135,11 @@ For each item in sequence:
 After all items are executed and verified, mark all item tasks as `completed` in TodoWrite, then execute the tail action based on mode:
 
 **Standard (default):**
-1. Invoke `/update-docs` — sync documentation, commit, push to branch
+1. Invoke `/update-docs` — sync documentation, commit, push to branch (includes artifact distillation if thresholds are met)
 2. Done. The PM can invoke `/workday-complete` separately when they're ready to merge.
 
 **Hibernate:**
-1. Invoke `/update-docs` — sync documentation, commit, push to branch
+1. Invoke `/update-docs --no-distill` — sync documentation, commit, push to branch. Skip distillation in overnight mode — it requires PM approval at Phase 4 and nobody's home.
 2. Verify push succeeded (work must be on remote before hibernating)
 3. Hibernate:
 

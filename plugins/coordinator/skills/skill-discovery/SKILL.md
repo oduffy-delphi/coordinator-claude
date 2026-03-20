@@ -136,7 +136,7 @@ Commands are dispatch workflows — multi-phase agent pipelines invoked with one
 | `/deep-research repo <path>` | Study a repository — Haiku scouts, Sonnet analysts, Opus synthesis |
 | `/deep-research web <topic>` | Investigate a topic across internet sources — multi-agent verification |
 | `/structured-research <spec> [subject]` | **Batch research with schema-conforming output** — Pipeline C. Use for N entities with repeating structure (teams, companies, tools). Creates or runs a research spec. |
-| `/notebooklm-research <topic>` | **Media research via Google NotebookLM** — Pipeline D. YouTube videos, podcasts, audio. Requires notebooklm plugin (enabled/disabled automatically by the command). |
+| `/notebooklm-research <topic> [--sources ...] [--questions ...]` | **Media-rich research via NotebookLM** — Pipeline D. For YouTube videos, podcasts, audio, and other sources Claude can't access directly. Lives in the notebooklm plugin (enable plugin to access command). |
 
 ### Code Quality & Architecture
 | Command | When to Use |
@@ -150,9 +150,10 @@ Commands are dispatch workflows — multi-phase agent pipelines invoked with one
 ### Documentation & Maintenance
 | Command | When to Use |
 |---------|-------------|
-| `/update-docs` | Sync documentation, commit, push to branch |
+| `/update-docs [--no-distill]` | Sync documentation, commit, push to branch. Auto-chains `/distill` when artifact thresholds are met (skip with `--no-distill`) |
 | `/generate-repomap` | Generate ranked repository map for LLM context |
 | `/enrich-and-review` | Run enrichment pipeline on chunk directories |
+| `/distill [--dry-run] [--no-delete] [path]` | Extract knowledge from accumulated artifacts into wiki docs, then delete source material |
 
 ## Available Skills (invoke via Skill tool as `coordinator:skill-name`)
 
@@ -191,13 +192,15 @@ These directories contain pipeline definitions (`PIPELINE.md`) that the correspo
 | `/architecture-rotation` | `pipelines/weekly-architecture-audit/PIPELINE.md` |
 | `/code-health` | `pipelines/daily-code-health/PIPELINE.md` |
 | `/deep-research`, `/structured-research` | `pipelines/deep-research/PIPELINE.md` |
+| `/distill` | `pipelines/artifact-distillation/PIPELINE.md` |
 
 ### Maintenance
 - **coordinator:debt-triage** — EM-PM conversation about the debt backlog — not a dispatch pipeline
 - **coordinator:validate** — Run all CI validation checks locally
 - **coordinator:tracker-maintenance** — Maintain the project tracker — archive completed work, update dependencies, sweep for untracked commits
 - **coordinator:lessons-trim** — Trim stale entries from lessons files, merge duplicates, clean up feature-scoped files
-- **coordinator:handoff-archival** — Archive consumed handoffs older than 48 hours, migrate legacy locations
+- **coordinator:handoff-archival** — Archive consumed handoffs — chain-aware supersession pass + 48-hour time-based sweep
+- **coordinator:artifact-consolidation** — Bulk prune accumulated plans, archived handoffs, and stale task dirs. Dry-run first, PM approves before deletion.
 - **coordinator:atlas-integrity-check** — Check changed files against the architecture atlas for unmapped entries
 - **coordinator:project-onboarding** — Bootstrap a new project's tracking infrastructure — tracker, tasks, archive, handoffs. Use when starting a new project or when /update-docs reports missing tracker.
 

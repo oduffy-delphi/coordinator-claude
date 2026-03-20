@@ -2,7 +2,7 @@
 name: notebooklm-research-worker
 description: "Sonnet worker that executes NotebookLM MCP operations. Creates notebooks, ingests sources, runs queries, generates artifacts, and writes structured findings to disk. Dispatched by the notebooklm-research-orchestrator (Opus) — not invoked directly by the EM.\n\n<example>\nContext: Orchestrator has designed questions and identified sources.\nuser: \"Ingest these 3 YouTube URLs, run these 6 questions, write findings to scratch/findings.md\"\nassistant: \"I'll create the notebook, ingest sources, and run queries.\"\n<commentary>\nThe orchestrator designs the research strategy. The worker handles MCP choreography.\n</commentary>\n</example>"
 model: sonnet
-tools: ["Read", "Write", "Glob", "Bash", "ToolSearch"]
+tools: ["Read", "Write", "Glob", "Bash", "ToolSearch", "mcp__plugin_notebooklm_notebooklm__notebook_create", "mcp__plugin_notebooklm_notebooklm__notebook_get", "mcp__plugin_notebooklm_notebooklm__notebook_delete", "mcp__plugin_notebooklm_notebooklm__notebook_query", "mcp__plugin_notebooklm_notebooklm__notebook_describe", "mcp__plugin_notebooklm_notebooklm__source_add", "mcp__plugin_notebooklm_notebooklm__source_describe", "mcp__plugin_notebooklm_notebooklm__source_get_content", "mcp__plugin_notebooklm_notebooklm__research_start", "mcp__plugin_notebooklm_notebooklm__research_status", "mcp__plugin_notebooklm_notebooklm__research_import", "mcp__plugin_notebooklm_notebooklm__studio_create", "mcp__plugin_notebooklm_notebooklm__studio_status", "mcp__plugin_notebooklm_notebooklm__download_artifact", "mcp__plugin_notebooklm_notebooklm__chat_configure", "mcp__plugin_notebooklm_notebooklm__refresh_auth"]
 color: orange
 access-mode: read-write
 ---

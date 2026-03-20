@@ -1,52 +1,24 @@
 # game-dev
 
-Game development domain plugin. Enable for Unreal Engine and game development projects. **Disabled by default** — enable explicitly via per-project config.
+Game development domain plugin for the Donal + Claude agent hierarchy. Enable for Unreal Engine and game development projects.
 
 ## Components
 
 **Agents:**
-- `sid-game-dev` (Opus) — UE5 specialist, game systems architect, code reviewer
-- `ue-blueprint-inspector` (Opus) — Blueprint documentation coordinator, dispatches Sonnet workers for large projects (requires UE Editor MCP)
-- `ue-blueprint-worker` (Sonnet) — Mechanical per-BP inspection, dispatched by the inspector coordinator (requires UE Editor MCP)
+- sid-game-dev (Opus) — UE5 specialist, game systems architect, code reviewer
+- ue-blueprint-inspector (Opus) — Blueprint documentation coordinator, dispatches Sonnet workers for large projects
+- ue-blueprint-worker (Sonnet) — mechanical per-BP inspection via MCP, dispatched by the inspector coordinator
 
-**Routing:** Registers Sid for game dev signals with Patrik (coordinator) as backstop.
+**Dependencies:** holodeck-docs plugin (UE documentation lookup — agent, skill, command)
 
-## Enabling
+**MCP Servers:** holodeck-docs (UE documentation RAG), holodeck-control (UE Editor integration) — configured globally in `~/.claude.json`
 
-Add to your project's `.claude/coordinator.local.md`:
+**Routing:** Registers Sid for game dev signals with Patrik (coordinator) as backstop. Simple doc lookups route to holodeck-docs plugin's ue-docs-researcher (Sonnet); architecture and review route to Sid (Opus).
 
-```yaml
----
-project_type: game
----
-```
+## Source of Truth
 
-Or explicitly list reviewers:
+The `plugin/game-dev/` directory in the [claude-unreal-holodeck](https://github.com/oduffy-delphi/claude-unreal-holodeck) repo is the canonical source for this plugin. Install scripts (`scripts/install-game-dev-plugin.{sh,ps1}`) deploy from the repo to `~/.claude/plugins/game-dev/`. Changes should flow repo → install → live, not the other way around.
 
-```yaml
----
-active_reviewers:
-  - patrik
-  - sid
----
-```
+## Authors
 
-## Sid's Research Approach
-
-Sid uses Context7 for UE documentation research rather than guessing. Key sources:
-- `mcp__plugin_context7_context7__resolve-library-id` + `query-docs` for API lookups
-- Epic's official UE5 documentation via Context7
-- Community GAS documentation via Context7
-
-## Blueprint Inspection (Optional MCP Feature)
-
-The Blueprint inspector and worker agents require a UE Editor MCP server connected to a running Unreal Editor instance. This is not included in coordinator-claude by default.
-
-If you have a compatible MCP server, the inspector can:
-- Discover all Blueprints in a project
-- Dispatch parallel Sonnet workers for mechanical inspection
-- Produce structured documentation with incremental update support
-
-## Example Domain Plugin
-
-This plugin also serves as a reference implementation for adding domain plugins. The structure (agents/, routing.md, README.md, optional CLAUDE.md) is the minimal required shape for any domain plugin.
+Donal O'Duffy & Claude

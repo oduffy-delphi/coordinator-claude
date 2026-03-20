@@ -178,24 +178,6 @@ Present what was done:
 3. **Run `/session-start`** — verifies everything is wired up correctly
 ```
 
-### Phase 5: PERSONALIZE (Optional)
-
-Offer persona customization:
-
-> The coordinator comes with named reviewers: **Patrik** (code quality), **Zolí** (ambition advocate), **Sid** (game dev), **Palí** (frontend), **Fru** (UX), and **Camelia** (data science).
->
-> These names are cosmetic — behavior comes from the agent descriptions and system prompts, not the names. Want to rename any of them to something that fits your team better?
->
-> You can also do this later by running `setup/rename-personas.sh`.
-
-If the user wants to rename:
-1. Collect old → new pairs
-2. Determine plugin root: look for `setup/rename-personas.sh` relative to where the coordinator plugin is installed. Check `$CLAUDE_PLUGIN_ROOT/../../setup/rename-personas.sh` (since plugins are under `plugins/{name}/` and setup is at repo root).
-3. Run: `bash "$RENAME_SCRIPT" OLD1 NEW1 [OLD2 NEW2 ...]`
-4. Report results
-
-If the user declines: continue to report. Note in the report that `setup/rename-personas.sh` is available for later use.
-
 ## Notes
 
 - This skill creates the **skeleton**. The tracker-maintenance skill (invoked by `/update-docs`) handles ongoing maintenance.

@@ -106,13 +106,14 @@ For each item in the sequenced order:
 1. **Write-ahead:** Mark item `in_progress` in TodoWrite. Update the plan document status if applicable.
 2. **Execute:** Follow the spec. Use `/execute-plan` patterns for plan-based items, or direct implementation for simpler items.
 3. **Verify:** Run the verification method identified in Phase 1. Apply `coordinator:verification-before-completion` — evidence before claims.
-4. **Commit:** Commit at completion of each item. Stage everything, brief message. The post-commit hook handles push.
-5. **Mark complete:** Update TodoWrite. Update the plan document if applicable.
-6. **Brief status update:** One line — "[Item X] complete, moving to [Item Y]." Output-only. These are progress breadcrumbs, not check-ins. Never output:
+4. **Spec-check:** If the item has an enriched stub or plan document with `## Acceptance Criteria`, read the criteria and confirm each was implemented. For items without formal acceptance criteria (simple backlog items, one-liners), skip — the verification in step 3 suffices.
+5. **Commit:** Commit at completion of each item. Stage everything, brief message. The post-commit hook handles push.
+6. **Mark complete:** Update TodoWrite. Update the plan document if applicable.
+7. **Brief status update:** One line — "[Item X] complete, moving to [Item Y]." Output-only. These are progress breadcrumbs, not check-ins. Never output:
    - "Want me to fire those now?" — Just fire them.
    - "Ready for the next batch?" — Just start it.
    - "Should I proceed with X or Y first?" — This was decided in Phase 2.
-7. **Proceed immediately** to the next item.
+8. **Proceed immediately** to the next item.
 
 **Dispatch threshold:** Boilerplate-heavy independent items get dispatched to Sonnet executor agents — the enrichment pipeline was designed so execution is cheap. Items benefiting from accumulated context (coherence decisions, cross-file awareness) stay in-coordinator. See `/delegate-execution` Phase 2 for the full model selection rubric.
 

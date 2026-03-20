@@ -1,6 +1,7 @@
 ---
 description: Repo-wide documentation maintenance and sync
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "Agent"]
+argument-hint: "[--no-distill]"
 ---
 
 # Update Documentation — Repo-Wide Maintenance
@@ -11,7 +12,10 @@ Ensure all documentation reflects the current state of the codebase.
 
 When invoked, systematically update all documentation artifacts to match reality. This is a **repo-wide maintenance operation**, not scoped to any single session or agent. It syncs docs with the codebase as it currently exists, regardless of which agent(s) made the changes. This prevents documentation drift — the #1 cause of wasted context in LLM-driven development.
 
-**Execution model:** Phases 1–11 are mechanical maintenance work. Dispatch them to a **Sonnet agent** via the Agent tool (`model: "sonnet"`). The coordinator (you) handles Phase 0 (branch guard), Phase 12 (report), and any escalations. When the Sonnet agent encounters a skill invocation stub (Phases 5, 6, 8, 11), it executes that skill's content directly — it does not bounce back to the coordinator.
+**Arguments:**
+- `--no-distill` — Skip the artifact distillation check (Phase 12). Use when calling from overnight/unattended workflows (mise-en-place hibernate mode) or when you just want a fast doc sync.
+
+**Execution model:** Phases 1–11 are mechanical maintenance work. Dispatch them to a **Sonnet agent** via the Agent tool (`model: "sonnet"`). The coordinator (you) handles Phase 0 (branch guard), Phase 12 (distillation check), Phase 13 (report), and any escalations. When the Sonnet agent encounters a skill invocation stub (Phases 5, 6, 8, 11), it executes that skill's content directly — it does not bounce back to the coordinator.
 
 ### What This Does
 
@@ -26,6 +30,7 @@ When invoked, systematically update all documentation artifacts to match reality
 9. **Commits** all doc changes and verifies remote sync
 10. **Refreshes** orientation cache if present
 11. **Checks** changed files against architecture atlas (`atlas-integrity-check` skill)
+12. **Distills** accumulated artifacts into wiki guides if thresholds are met (`/distill` pipeline, conditional)
 
 ### Execution Workflow
 
@@ -176,7 +181,33 @@ If no cache exists: skip. Project hasn't run `/workday-start` yet.
 
 Execute the `atlas-integrity-check` skill. Read the skill at `coordinator/skills/atlas-integrity-check/SKILL.md` and follow all steps exactly.
 
-#### Phase 12: Report
+#### Phase 12: Artifact Distillation (Conditional)
+
+**Skip this phase if `--no-distill` was passed.**
+
+Check whether accumulated artifacts warrant distillation into wiki documents:
+
+1. **Count artifacts:**
+   ```bash
+   # Count across distillation source directories
+   PLANS=$(find plans/ -name "*.md" 2>/dev/null | wc -l)
+   HANDOFFS=$(find archive/handoffs/ -name "*.md" 2>/dev/null | wc -l)
+   COMPLETED=$(find docs/completed-work/ -name "*.md" 2>/dev/null | wc -l)
+   TASKS=$(find tasks/ -mindepth 2 -name "*.md" -not -path "tasks/architecture-atlas/*" -not -name "lessons.md" -not -name "health-ledger.md" -not -name "bug-backlog.md" -not -name "debt-backlog.md" 2>/dev/null | wc -l)
+   TOTAL=$((PLANS + HANDOFFS + COMPLETED + TASKS))
+   ```
+
+2. **Check recency:** Read `docs/guides/.distill-log.md` if it exists. Extract the most recent run date. Calculate days since last distillation.
+
+3. **Threshold check — fire if EITHER condition is met:**
+   - Total artifact count ≥ 50
+   - Last distillation was >14 days ago (or no distillation log exists and artifact count ≥ 20)
+
+4. **If threshold met:** Announce to the PM: *"Artifact count is [N] (threshold: 50) / last distillation was [N] days ago. Chaining into `/distill` to extract knowledge before pruning."* Then invoke `/distill` via the Skill tool. The PM gate in `/distill` Phase 4 provides the approval checkpoint.
+
+5. **If threshold not met:** Note in the report: "Distillation: not needed (N artifacts, last run M days ago)."
+
+#### Phase 13: Report
 
 Present a concise summary:
 
@@ -212,6 +243,9 @@ Present a concise summary:
 
 ### Architecture Atlas
 - [All changed files mapped / N unmapped files — potential new system detected: [directories] / Skipped — file-index.md not found]
+
+### Distillation
+- [Ran /distill — N guides created/updated, M artifacts deleted / Not needed (N artifacts, last run M days ago) / Skipped (--no-distill)]
 
 ### Pushed to Remote
 - [yes — branch name / no — reason]

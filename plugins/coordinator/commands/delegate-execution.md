@@ -86,7 +86,10 @@ Before the coordinator reads files manually, dispatch a **Haiku agent** to do th
 
 1. **Confirms files changed** — `git diff --name-only` against the pre-execution state. Do the modified files match what the stub specified?
 2. **Runs project validation** — compile, typecheck, lint, test suite (the command identified in the stub or project config)
-3. **Checks acceptance criteria** — for each file:line in the stub's spec, reads the current file and confirms the change exists
+3. **Checks acceptance criteria** — reads the stub's `## Acceptance Criteria` section and for each `AC-N:` item:
+   - Verifies the criterion against the git diff and current file state
+   - Returns a structured checklist: `AC-N | criterion text | ✓ checked / ✗ unchecked | evidence or gap description`
+   - **Graceful degradation:** If the stub has no `## Acceptance Criteria` section, the Haiku agent reports this absence in its structured output. The coordinator treats a missing section as a signal to investigate the enrichment — not as a verification failure.
 4. **Returns a structured report:** files changed (expected vs actual), validation pass/fail with output, acceptance criteria checklist (checked/unchecked)
 
 The coordinator then performs the semantic spec compliance check (step 2 below) using the Haiku's structured data — not by reading every file from scratch.

@@ -17,3 +17,4 @@ Pipelines that dispatch sub-agents use scratch directories for intermediate outp
 
 - `weekly-architecture-audit` — Haiku inventory + Sonnet analysis scratch
 - `bug-sweep` — Sonnet semantic analysis + test runner scratch
+- `artifact-distillation` — Haiku scanner + QG scratch, Sonnet synthesis scratch, Opus assembly scratch

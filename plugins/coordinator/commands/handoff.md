@@ -76,11 +76,21 @@ _Continuing from [previous handoff filename]: [what the prior session had comple
 2. [Second thing]
 3. [Third thing]
 
+## Carried Forward
+<!-- Items from the predecessor handoff that this session did NOT resolve. These cascade
+     down the chain until completed or explicitly dismissed by the PM. If none, omit this section. -->
+- [ ] [Unresolved item from predecessor] _(carried from [predecessor filename])_
+- [ ] [Another unresolved item] _(carried from [predecessor filename])_
+
 ## Files Modified This Session
 - [file path] — [one-line description of change]
 ```
 
 **Anti-amnesia chain:** The `_Continuing from..._` preamble in `## What Was Accomplished` creates a chain — any single handoff is a self-contained orientation point, not just an incremental update. To populate it: read the most recent file in `.claude/handoffs/` by filename timestamp. If one exists, open with a 2-3 sentence synthesis of that prior state. If no prior handoff exists, omit the preamble. This takes seconds and prevents every future session from re-deriving context.
+
+**Cascading unresolved items:** When reading the predecessor, check its `## Recommended Next Steps` and `## Carried Forward` sections for items this session did NOT complete. Any unresolved items **must** be carried forward into the new handoff's `## Carried Forward` section — they don't disappear just because a session ended. Each carried item retains its origin annotation (e.g., `_(carried from 2026-03-20_100000_abc123.md)_`) so the full lineage is visible. Items leave the cascade only when: (1) completed by a session (moved to `## What Was Accomplished`), or (2) explicitly dismissed by the PM. A session cannot silently drop a carried item.
+
+**Chain archival:** Because the cascade ensures all unresolved obligations flow into the new handoff, the predecessor can always be safely archived after a continuation. Move the predecessor to `archive/handoffs/` (create the directory if needed). The new handoff is now the single source of truth — it contains both the context synthesis (preamble) and the obligation chain (carried forward items).
 
 #### Step 2: Capture Lessons
 
@@ -133,6 +143,6 @@ Remind the user:
 - Keep it concise — aim for under 50 lines. The next session will also have MEMORY.md and project context.
 - Focus on state that MEMORY.md doesn't capture: in-progress work, blockers, uncommitted changes
 - If the user provides arguments (e.g., `/handoff focus on auth refactor`), incorporate that context
-- **Cleanup:** Handoff archiving is handled by `/update-docs`, not here. Do NOT delete or archive old handoffs during `/handoff`.
+- **Cleanup:** During `/handoff`, archive the predecessor after carrying forward its unresolved items. General handoff archiving (48-hour sweep) is handled by `/update-docs` — no broader sweep here.
 - **Active vs archived:** Active handoffs live in `.claude/handoffs/` (available for pickup). Archived handoffs live in `archive/handoffs/` (paper trail). Both are git-tracked.
 - **User context:** If `$ARGUMENTS` is provided (e.g., `/handoff focus on auth refactor`), incorporate that context into the handoff's "In-Progress Work" and "Recommended Next Steps" sections.
