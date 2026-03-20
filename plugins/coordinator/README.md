@@ -24,7 +24,7 @@ The coordinator plugin is the backbone of the system. It provides:
 | **zoli-ambition-advocate** | Opus | Backstop reviewer — challenges conservative recommendations, never a primary reviewer |
 | **structured-research-orchestrator** | Opus | Pipeline C orchestrator — owns full research lifecycle per subject, dispatches Haiku/Sonnet sub-agents |
 
-### Commands (18, all user-invocable via `/`)
+### Commands (19, all user-invocable via `/`)
 
 | Command | Purpose |
 |---------|---------|
@@ -46,6 +46,7 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/architecture-rotation` | Run the weekly architecture audit rotation — score, audit, apply, update ledger |
 | `/code-health` | Night-shift code health review — scan commits, dispatch reviewer, apply findings |
 | `/bug-sweep` | Systematic codebase bug hunt — fix AI-fixable bugs, defer blocked ones to backlog |
+| `/notebooklm-research` | Research via Google NotebookLM — YouTube, podcasts, audio. Requires notebooklm plugin |
 
 ### Skills (21)
 
