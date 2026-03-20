@@ -4,7 +4,7 @@ This plugin provides access to Google NotebookLM via the [notebooklm-mcp-cli](ht
 
 ## Plugin Lifecycle — Disabled by Default
 
-This plugin is kept **disabled** in `settings.json` to avoid loading 35 MCP tools into the coordinator's context on every session. The `/notebooklm-research` command handles enabling the plugin at the start of a research run and disabling it when done. **The coordinator should never call NotebookLM MCP tools directly** — all research flows through the `notebooklm-research-worker` agent dispatched by the command.
+This plugin is kept **disabled** in `settings.json` to avoid loading 35 MCP tools into the EM's context on every session. The `/notebooklm-research` command handles enabling the plugin at the start of a research run and disabling it when done. **The EM/coordinator should never call NotebookLM MCP tools directly** — all research flows through the `notebooklm-research-worker` agent dispatched by the command.
 
 ## Authentication
 
@@ -22,11 +22,6 @@ This plugin is kept **disabled** in `settings.json` to avoid loading 35 MCP tool
 - Uses undocumented Google APIs — may break without notice
 - NotebookLM is a Google product with its own terms of service
 - AI-generated transcriptions and analysis may contain errors — cross-reference critical findings
-
-## Platform Notes
-
-- **macOS/Linux:** The `.mcp.json` command (`notebooklm-mcp`) works directly.
-- **Windows:** You may need to wrap the command with `cmd /c`: change `"command": "notebooklm-mcp"` to `"command": "cmd"` and `"args": ["/c", "notebooklm-mcp"]`.
 
 ## Notebook Housekeeping
 

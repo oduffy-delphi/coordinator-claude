@@ -5,7 +5,11 @@ Google NotebookLM integration plugin. Enables research on YouTube videos, podcas
 ## Components
 
 **Agents:**
-- `notebooklm-research-worker` (Sonnet) — Mechanical research execution via MCP. Creates notebooks, ingests sources, runs queries, writes structured findings. Dispatched by the coordinator's `/notebooklm-research` command.
+- `notebooklm-research-orchestrator` (Opus) — Research strategist. Designs the research plan, crafts targeted questions using baked-in anti-hallucination techniques, and dispatches the Sonnet worker for MCP execution. Synthesizes raw findings into a polished research document.
+- `notebooklm-research-worker` (Sonnet) — Mechanical execution via MCP. Creates notebooks, ingests sources, runs queries, generates artifacts, and writes structured findings to disk. Dispatched by the orchestrator — not invoked directly.
+
+**Commands:**
+- `/notebooklm-research` — Research a topic using NotebookLM. Supports targeted mode (PM provides specific URLs) and exploratory mode (let NotebookLM discover the best content via Google's search).
 
 **MCP Server:** `notebooklm-mcp` via [notebooklm-mcp-cli](https://github.com/jacob-bd/notebooklm-mcp-cli) (MIT license). Exposes ~35 tools for notebook management, source ingestion, querying, and artifact generation.
 
@@ -18,14 +22,31 @@ Google NotebookLM integration plugin. Enables research on YouTube videos, podcas
 
 The plugin lifecycle is managed by the `/notebooklm-research` command:
 
-1. Command enables the plugin in `settings.json`
-2. Reloads plugins to load MCP tools
-3. Dispatches the research worker agent
-4. Worker creates notebook, ingests sources, runs queries
-5. Coordinator synthesizes raw findings into a polished research document
-6. Command disables the plugin to remove MCP tools from future sessions
+1. Command verifies the notebooklm plugin is enabled (MCP tools available)
+2. Dispatches the Opus orchestrator with topic, sources (if any), and mode
+3. Orchestrator designs research questions using query engineering best practices
+4. Orchestrator dispatches the Sonnet worker to handle MCP choreography
+5. Worker creates notebook, ingests sources or runs exploratory research, queries with each question
+6. Orchestrator reads raw findings and synthesizes a polished research document with citations, gaps, and source assessment
+7. Command asks whether to retain or delete the NotebookLM notebook
 
-This enable/disable pattern keeps 35 MCP tools out of the coordinator's context during normal sessions.
+This two-tier design (Opus orchestrator + Sonnet worker) keeps expensive judgment work separate from mechanical MCP operations. The orchestrator's baked-in query engineering — citation requirements, specificity rules, structured synthesis templates — addresses NotebookLM's documented hallucination rate on broad queries.
+
+## Research Modes
+
+**Targeted:** PM provides specific YouTube links, podcast URLs, or web articles. The orchestrator crafts questions tailored to the known sources.
+
+```
+/notebooklm-research transformer architectures --sources https://youtube.com/... https://youtube.com/...
+```
+
+**Exploratory:** PM provides a topic (no specific sources). The orchestrator uses NotebookLM's research feature to discover the best content via Google's search, then queries it.
+
+```
+/notebooklm-research "AI agent architectures — what are experts saying"
+```
+
+**Hybrid:** PM provides some seed URLs plus a topic — orchestrator starts with known sources, identifies gaps, then expands via discovery.
 
 ## Platform Notes
 

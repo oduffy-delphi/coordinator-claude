@@ -1,0 +1,9 @@
+{
+  "name": "notebooklm",
+  "version": "1.0.0",
+  "description": "NotebookLM integration via MCP. Enables research on YouTube videos, podcasts, and other media Claude cannot access directly. Plugin-scoped — disable when not in use to avoid MCP context overhead.",
+  "author": {
+    "name": "Dónal O'Duffy & Claude"
+  },
+  "keywords": ["notebooklm", "youtube", "media-research", "mcp", "google"]
+}
