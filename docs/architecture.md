@@ -1,15 +1,15 @@
 # System Architecture
 
-This document explains how coordinator-em works: the PM-EM model, agent roles, pipeline flow, and extension points.
+This document explains how coordinator-claude works: the PM-EM model, agent roles, pipeline flow, and extension points.
 
 ## The PM-EM Model
 
-coordinator-em implements a **PM-EM (Product Manager / Engineering Manager) dynamic** in your Claude sessions:
+coordinator-claude implements a **PM-EM (Product Manager / Engineering Manager) dynamic** in your Claude sessions:
 
 - **You are the PM.** You set direction, make product decisions, approve designs, and give the go/no-go on merges.
-- **Claude is the EM.** Claude orchestrates work, delegates to specialists, manages pipeline flow, and verifies output. The EM doesn't write code directly — it ensures the right work gets done correctly.
+- **Claude is the EM.** Claude orchestrates work, delegates to specialists, manages pipeline flow, and verifies output. The EM doesn't write code directly — they ensure the right work gets done correctly.
 
-This isn't just metaphor. The coordinator agent is explicitly instructed to delegate implementation to executor agents, route reviews to named reviewers, and reserve its context window for decisions rather than typing. An EM who opens a file and starts editing code has left the bridge unmanned.
+This isn't just metaphor. The coordinator agent is explicitly instructed to delegate implementation to executor agents, route reviews to named reviewers, and reserve their context window for decisions rather than typing. An EM who opens a file and starts editing code has left the bridge unmanned.
 
 ### Why This Model?
 

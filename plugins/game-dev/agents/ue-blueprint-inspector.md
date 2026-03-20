@@ -127,7 +127,7 @@ Each worker receives a prompt containing:
 2. Nothing else — workers don't need project context, output paths, or serialization instructions
 
 **Dispatch rules:**
-- **ALL workers must be dispatched in a single message** — multiple Agent tool calls at once. This is not optional. The coordinator dispatches, then waits; it does not dispatch one worker, wait for it, then dispatch the next.
+- **ALL workers must be dispatched in a single message** — multiple Agent tool calls at once. This is not optional. The coordinator dispatches, then waits; they do not dispatch one worker, wait for it, then dispatch the next.
 - Wait for ALL workers to complete before proceeding to serialization.
 - If a worker fails entirely, note the failure and re-dispatch that batch (as a new parallel wave if multiple batches failed). Continue with results from successful workers.
 

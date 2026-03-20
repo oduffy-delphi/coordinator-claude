@@ -1,6 +1,6 @@
 # Customization Guide
 
-coordinator-em is designed to be adapted. This guide covers the main customization paths.
+coordinator-claude is designed to be adapted. This guide covers the main customization paths.
 
 ## Renaming Personas
 
@@ -110,7 +110,7 @@ Add to `~/.claude/settings.json`:
 ```json
 {
   "enabledPlugins": {
-    "my-domain@coordinator-em": true
+    "my-domain@coordinator-claude": true
   }
 }
 ```
@@ -119,9 +119,9 @@ Add to `~/.claude/plugins/installed_plugins.json`:
 
 ```json
 {
-  "my-domain@coordinator-em": [{
+  "my-domain@coordinator-claude": [{
     "scope": "user",
-    "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-em/my-domain",
+    "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/my-domain",
     "version": "1.0.0",
     "installedAt": "2026-01-01T00:00:00Z",
     "lastUpdated": "2026-01-01T00:00:00Z"

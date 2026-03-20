@@ -1,6 +1,6 @@
 # CI/CD Pipeline
 
-Automated validation for coordinator-em. All checks are Python scripts with no external dependencies beyond PyYAML, runnable both locally and in GitHub Actions.
+Automated validation for coordinator-claude. All checks are Python scripts with no external dependencies beyond PyYAML, runnable both locally and in GitHub Actions.
 
 ## Design Principles
 

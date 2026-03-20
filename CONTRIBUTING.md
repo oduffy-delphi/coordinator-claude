@@ -1,4 +1,4 @@
-# Contributing to coordinator-em
+# Contributing to coordinator-claude
 
 Thanks for your interest in contributing! This project is community-first and we welcome improvements.
 

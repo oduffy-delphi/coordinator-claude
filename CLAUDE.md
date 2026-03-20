@@ -1,4 +1,4 @@
-# Project Principles — coordinator-em
+# Project Principles — coordinator-claude
 
 > This is a template. Customize it for your project.
 
@@ -8,7 +8,7 @@
 
 ## Plugin Configuration
 
-The coordinator-em plugin system lives in `~/.claude/plugins/`:
+The coordinator-claude plugin system lives in `~/.claude/plugins/`:
 - **coordinator** — Core pipeline, universal reviewers (Patrik, Zolí), all workflow skills. Always enabled.
 - **web-dev** — Palí (front-end reviewer) + Fru (UX reviewer). Enable for web projects.
 - **data-science** — Camelia (data science / ML reviewer). Enable for ML projects.

@@ -84,7 +84,7 @@ def iter_lines_outside_code_blocks(text: str):
 def check_memory_links(errors: list):
     """Check that markdown links in MEMORY.md files resolve.
 
-    coordinator-em is a distribution package — no live memory files to check.
+    coordinator-claude is a distribution package — no live memory files to check.
     This function is a no-op stub; extend it if you add a projects/ directory.
     """
     pass

@@ -93,7 +93,7 @@ def main():
             for path in sorted(plugin_dir.glob(pattern)):
                 validate_file(path, required, errors)
 
-    # Memory file validation omitted — coordinator-em is a distribution package,
+    # Memory file validation omitted — coordinator-claude is a distribution package,
     # not a repo with live memory files. Projects using this repo may add their
     # own memory validation by extending this script.
 

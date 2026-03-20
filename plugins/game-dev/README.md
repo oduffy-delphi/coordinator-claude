@@ -40,7 +40,7 @@ Sid uses Context7 for UE documentation research rather than guessing. Key source
 
 ## Blueprint Inspection (Optional MCP Feature)
 
-The Blueprint inspector and worker agents require a UE Editor MCP server connected to a running Unreal Editor instance. This is not included in coordinator-em by default.
+The Blueprint inspector and worker agents require a UE Editor MCP server connected to a running Unreal Editor instance. This is not included in coordinator-claude by default.
 
 If you have a compatible MCP server, the inspector can:
 - Discover all Blueprints in a project

@@ -1,6 +1,6 @@
-# Getting Started with coordinator-em
+# Getting Started with coordinator-claude
 
-This guide walks you through installing the coordinator-em plugins and running your first session.
+This guide walks you through installing the coordinator-claude plugins and running your first session.
 
 ## Prerequisites
 
@@ -12,20 +12,20 @@ This guide walks you through installing the coordinator-em plugins and running y
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/oduffy-delphi/coordinator-em.git
-cd coordinator-em
+git clone https://github.com/oduffy-delphi/coordinator-claude.git
+cd coordinator-claude
 ```
 
 ### Step 2: Create the plugins directory
 
 ```bash
-mkdir -p ~/.claude/plugins/coordinator-em
+mkdir -p ~/.claude/plugins/coordinator-claude
 ```
 
 ### Step 3: Copy plugins
 
 ```bash
-cp -r plugins/* ~/.claude/plugins/coordinator-em/
+cp -r plugins/* ~/.claude/plugins/coordinator-claude/
 ```
 
 ### Step 4: Register the marketplace
@@ -36,8 +36,8 @@ Tell Claude Code where to find the plugins by adding an entry to `~/.claude/plug
 {
   "marketplaces": [
     {
-      "name": "coordinator-em",
-      "path": "/home/{USERNAME}/.claude/plugins/coordinator-em"
+      "name": "coordinator-claude",
+      "path": "/home/{USERNAME}/.claude/plugins/coordinator-claude"
     }
   ]
 }
@@ -52,30 +52,30 @@ Create or edit `~/.claude/plugins/installed_plugins.json`:
 ```json
 {
   "plugins": {
-    "coordinator@coordinator-em": [{
+    "coordinator@coordinator-claude": [{
       "scope": "user",
-      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-em/coordinator",
+      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/coordinator",
       "version": "1.3.0",
       "installedAt": "2026-03-20T00:00:00Z",
       "lastUpdated": "2026-03-20T00:00:00Z"
     }],
-    "web-dev@coordinator-em": [{
+    "web-dev@coordinator-claude": [{
       "scope": "user",
-      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-em/web-dev",
+      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/web-dev",
       "version": "1.3.0",
       "installedAt": "2026-03-20T00:00:00Z",
       "lastUpdated": "2026-03-20T00:00:00Z"
     }],
-    "data-science@coordinator-em": [{
+    "data-science@coordinator-claude": [{
       "scope": "user",
-      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-em/data-science",
+      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/data-science",
       "version": "1.3.0",
       "installedAt": "2026-03-20T00:00:00Z",
       "lastUpdated": "2026-03-20T00:00:00Z"
     }],
-    "game-dev@coordinator-em": [{
+    "game-dev@coordinator-claude": [{
       "scope": "user",
-      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-em/game-dev",
+      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/game-dev",
       "version": "1.3.0",
       "installedAt": "2026-03-20T00:00:00Z",
       "lastUpdated": "2026-03-20T00:00:00Z"
@@ -93,18 +93,18 @@ Create or edit `~/.claude/settings.json` to enable the plugins:
 ```json
 {
   "enabledPlugins": {
-    "coordinator@coordinator-em": true,
-    "web-dev@coordinator-em": true,
-    "data-science@coordinator-em": true,
-    "game-dev@coordinator-em": false
+    "coordinator@coordinator-claude": true,
+    "web-dev@coordinator-claude": true,
+    "data-science@coordinator-claude": true,
+    "game-dev@coordinator-claude": false
   },
   "extraKnownMarketplaces": [
-    "/home/{USERNAME}/.claude/plugins/coordinator-em"
+    "/home/{USERNAME}/.claude/plugins/coordinator-claude"
   ]
 }
 ```
 
-Enable `game-dev@coordinator-em` only if you're working on game development projects.
+Enable `game-dev@coordinator-claude` only if you're working on game development projects.
 
 ### Step 7: Restart Claude Code
 

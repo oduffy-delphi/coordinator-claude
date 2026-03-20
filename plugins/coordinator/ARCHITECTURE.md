@@ -1,6 +1,6 @@
 # Architecture — How the Agent Hierarchy Works
 
-This document explains the conceptual model behind coordinator-em: why it exists, how the pieces fit together, and the design philosophy that shapes it.
+This document explains the conceptual model behind coordinator-claude: why it exists, how the pieces fit together, and the design philosophy that shapes it.
 
 ## The Problem
 
@@ -18,10 +18,10 @@ The plugin system addresses this by splitting Claude into **named roles** with d
 ### The Roles
 
 **Coordinator (EM / First Officer)**
-The main session agent. Operates as engineering manager to the human's product manager. Orchestrates work, makes delegation decisions, verifies output, and manages the pipeline. Does not write implementation code directly — delegates to executors. Reserves its context window for decisions, not typing.
+The main session agent. Operates as engineering manager to the human's product manager. Orchestrates work, makes delegation decisions, verifies output, and manages the pipeline. Does not write implementation code directly — delegates to executors. Reserves their context window for decisions, not typing.
 
 **Executor**
-A fresh Sonnet-class subagent dispatched for each implementation task. Receives a well-specified stub (the enriched plan for one piece of work), implements it faithfully, runs validation, and reports back. Explicitly told: "you are the typist, not the architect." If the spec is ambiguous, it stops and escalates rather than guessing.
+A fresh Sonnet-class subagent dispatched for each implementation task. Receives a well-specified stub (the enriched plan for one piece of work), implements it faithfully, runs validation, and reports back. Explicitly told: "you are the typist, not the architect." If the spec is ambiguous, they stop and escalate rather than guessing.
 
 **Enricher**
 A research subagent that surveys codebases, traces dependencies, and fills in the concrete details (file paths, function signatures, integration points) that a plan stub needs before an executor can implement it. Does not make architectural decisions — flags them for the coordinator.
@@ -113,7 +113,7 @@ This means the human always has the final word, but the coordinator's codified p
 
 ### Context Window as Scarce Resource
 
-The coordinator's context window is its most precious resource. Every file read, every subagent report, every decision eats into it. The dispatch threshold reflects this: delegate based on **context cost**, not task size. Even trivial tasks go to executors when the coordinator has concurrent work competing for context.
+The coordinator's context window is their most precious resource. Every file read, every subagent report, every decision eats into it. The dispatch threshold reflects this: delegate based on **context cost**, not task size. Even trivial tasks go to executors when the coordinator has concurrent work competing for context.
 
 This is why the executor is Sonnet (fast, cheap, good at following specs) while reviewers are Opus (slower, more expensive, better at judgment). Match the model to the cognitive demands of the role.
 

@@ -1,7 +1,7 @@
 #!/bin/bash
-# coordinator-em installation helper
+# coordinator-claude installation helper
 #
-# This script installs coordinator-em plugins to your Claude Code plugins directory.
+# This script installs coordinator-claude plugins to your Claude Code plugins directory.
 # It handles the copy step only — you still need to register plugins in JSON config files.
 # See docs/getting-started.md for the full installation guide.
 
@@ -10,9 +10,9 @@ set -e
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGINS_SOURCE="$REPO_ROOT/plugins"
 CLAUDE_DIR="${HOME}/.claude"
-PLUGINS_TARGET="$CLAUDE_DIR/plugins/coordinator-em"
+PLUGINS_TARGET="$CLAUDE_DIR/plugins/coordinator-claude"
 
-echo "coordinator-em installer"
+echo "coordinator-claude installer"
 echo "========================"
 echo ""
 
@@ -54,10 +54,10 @@ echo "   See docs/getting-started.md for the exact JSON to add."
 echo ""
 echo "2. Enable plugins in ~/.claude/settings.json:"
 echo "   Add to enabledPlugins:"
-echo '   "coordinator@coordinator-em": true'
-echo '   "web-dev@coordinator-em": true'
-echo '   "data-science@coordinator-em": true'
-echo '   "game-dev@coordinator-em": false  # enable only for game dev projects'
+echo '   "coordinator@coordinator-claude": true'
+echo '   "web-dev@coordinator-claude": true'
+echo '   "data-science@coordinator-claude": true'
+echo '   "game-dev@coordinator-claude": false  # enable only for game dev projects'
 echo ""
 echo "3. Restart Claude Code"
 echo ""
