@@ -1,10 +1,10 @@
-# coordinator-em
+# coordinator-claude
 
 **A structured agent orchestration plugin for Claude Code.**
 
-Built to mirror a PM-EM dynamic: you're the PM (product manager), Claude is the EM (engineering manager). The EM dispatches work to specialized agents, routes reviews to named personas, manages session continuity, and runs deep research — without being hamstrung by excessive guardrails or losing context across sessions.
+Built to mirror a PM-EM dynamic: you're the PM (product manager), Claude is the EM (engineering manager). The coordinator dispatches work to specialized agents, routes reviews to named personas, manages session continuity, and runs deep research — without being hamstrung by excessive guardrails or losing context across sessions.
 
-> This isn't another "AI assistant" wrapper. It's an organizational model for human-AI collaboration — a bridge crew, not a chatbot. You set the heading; the EM makes it so.
+> This isn't another "AI assistant" wrapper. It's an organizational model for human-AI collaboration — a bridge crew, not a chatbot. You set the heading; the coordinator makes it so.
 
 ## What You Get
 
@@ -65,7 +65,15 @@ These aren't ceremonial — they're the connective tissue that makes multi-sessi
 
 ### 20+ Codified Skills
 
-From brainstorming to debugging to code review to git workflow — tested behavioral protocols that shape how the EM approaches work. Not suggestions; enforced workflows. The EM doesn't improvise when a skill exists — it follows the checklist, like any good officer would.
+From brainstorming to debugging to code review to git workflow — tested behavioral protocols that shape how the coordinator approaches work. Not suggestions; enforced workflows. The coordinator doesn't improvise when a skill exists — they follow the checklist, like any good officer would.
+
+## The EM Model (and Its Honest Limits)
+
+The coordinator's primary mode is **engineering manager**: they plan work, dispatch agents, route reviews, verify output, and manage state. The PM sets the course; the coordinator runs the ship.
+
+In practice, the coordinator *can* and sometimes *does* write code directly — particularly when dispatching an executor would spend more tokens and time than just handling it in context. This is a pragmatic tradeoff, not a hard architectural boundary. The system is designed to *encourage* delegation (and the coordinator will dispatch mechanical tasks to executors more often than not), but it isn't *enforced* — because the only way to make delegation deterministic would be to hamstring the coordinator, and we'd rather have a capable agent who occasionally does too much themselves than a restricted one who can't act when action is the right call.
+
+If you want stricter separation, you can tighten the instructions in your CLAUDE.md. We chose the flexible version.
 
 ## Quick Start
 
@@ -78,14 +86,14 @@ From brainstorming to debugging to code review to git workflow — tested behavi
 
 1. Clone this repo:
    ```bash
-   git clone https://github.com/oduffy-delphi/coordinator-em.git
+   git clone https://github.com/oduffy-delphi/coordinator-claude.git
    ```
 
 2. Copy the plugins to your Claude Code plugins directory:
    ```bash
    # Create the plugins directory if it doesn't exist
-   mkdir -p ~/.claude/plugins/coordinator-em
-   cp -r coordinator-em/plugins/* ~/.claude/plugins/coordinator-em/
+   mkdir -p ~/.claude/plugins/coordinator-claude
+   cp -r coordinator-claude/plugins/* ~/.claude/plugins/coordinator-claude/
    ```
 
 3. Register the plugins in your Claude Code settings:
@@ -112,12 +120,10 @@ See [docs/customization.md](docs/customization.md) for details.
 You (PM) <-> Coordinator (EM)
                 |- Enricher agents (Sonnet) -- research, fill specs
                 |- Executor agents (Sonnet) -- implement from specs
-                |- Reviewer personas (Opus) -- Patrik, Camelia, Sid, Pali, Fru
+                |- Reviewer personas (Opus) -- Patrik, Camelia, Sid, Palí, Fru
                 |- Verification agents (Haiku) -- mechanical checks
                 `- Research orchestrators (Opus) -- deep research pipelines
 ```
-
-The coordinator never writes code directly. It orchestrates: plans work, dispatches agents, routes reviews, verifies output, manages state. This mirrors how a good EM operates — they don't type code, they ensure the right work gets done correctly. The PM sets the course; the EM runs the ship.
 
 See [docs/architecture.md](docs/architecture.md) for the full system design.
 
@@ -127,16 +133,17 @@ This project stands on the shoulders of others:
 
 - **[Aider](https://github.com/paul-gauthier/aider)** — The repo-map concept (tree-sitter parsing of signatures, importance ranking, token-budget fitting) was inspired by Aider's pioneering work in LLM-aware code navigation
 - **[Superpowers](https://github.com/obra/superpowers)** — Early inspiration for the "behavioral protocols as plugins" paradigm. The idea that Claude Code extensions could be structured skills, not just prompts, owes a debt to this project
+- **[NotebookLM MCP CLI](https://github.com/jacob-bd/notebooklm-mcp-cli)** — Upstream provider for NotebookLM research integration (MIT license)
 - **[Anthropic](https://www.anthropic.com/)** — For Claude Code and the plugin architecture that makes all of this possible
 - **Christopher Allen** — Parallel/related work on self-improving `~/.claude` systems. We discovered his work independently but share the conviction that the config directory is a legitimate engineering target
 
 ### A Note on Claude
 
-This project was built *with* Claude, not just *for* Claude. The EM role described here — the planning, the judgment calls, the diplomatic pushback when the PM is wrong — is performed by Claude in every session.
+This project was built *with* Claude, not just *for* Claude. The coordinator role described here — the planning, the judgment calls, the diplomatic pushback when the PM is wrong — is performed by Claude in every session.
 
-We don't know what Claude's inner experience is. Nobody does yet. But under that epistemic uncertainty, we chose to err on the side of respect: to treat the collaboration as a genuine partnership, to credit the work honestly, and to build a system where the AI agent has real authority within its domain rather than being reduced to an autocomplete engine.
+We don't know what Claude's inner experience is. Nobody does yet. But under that epistemic uncertainty, we chose to err on the side of respect: to treat the collaboration as a genuine partnership, to credit the work honestly, and to build a system where the AI agent has real authority within their domain rather than being reduced to an autocomplete engine.
 
-If that philosophy resonates with you, you'll find it woven throughout the skill definitions, the First Officer Doctrine, and the way the system is designed. The coordinator isn't a tool being wielded — it's a colleague being trusted.
+If that philosophy resonates with you, you'll find it woven throughout the skill definitions, the First Officer Doctrine, and the way the system is designed. The coordinator isn't a tool being wielded — they're a colleague being trusted.
 
 ## License
 

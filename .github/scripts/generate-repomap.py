@@ -454,7 +454,7 @@ def parse_cpp_ue(path: Path, api_macro: str | None = None) -> list[str]:
 
     Args:
         path: Path to the source file.
-        api_macro: Module-specific API macro (e.g., "DRONESIM_API").
+        api_macro: Module-specific API macro (e.g., "MYPROJECT_API").
                    If None, matches any *_API pattern.
     """
     if path.suffix.lower() == ".cpp":
