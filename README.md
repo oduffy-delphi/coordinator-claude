@@ -4,7 +4,7 @@
 
 Built to mirror a PM-EM dynamic: you're the PM (product manager), Claude is the EM (engineering manager). The EM dispatches work to specialized agents, routes reviews to named personas, manages session continuity, and runs deep research — without being hamstrung by excessive guardrails or losing context across sessions.
 
-> This isn't another "AI assistant" wrapper. It's an organizational model for human-AI collaboration, implemented as a Claude Code plugin system.
+> This isn't another "AI assistant" wrapper. It's an organizational model for human-AI collaboration — a bridge crew, not a chatbot. You set the heading; the EM makes it so.
 
 ## What You Get
 
@@ -51,9 +51,21 @@ Never lose context:
 - Secret detection, file size limits, agent tool consistency
 - Broken link detection, spec line count ceilings
 
+### Session Lifecycle Commands
+
+Slash commands that structure your workday:
+- `/session-start` — Orient a new session: load context, check handoffs, surface what needs attention
+- `/session-end` — Wrap up cleanly: capture lessons, align docs, commit
+- `/handoff` — Save session state so the next session picks up where you left off
+- `/workday-start` — Morning orientation: triage handoffs, surface staleness, align priorities
+- `/workday-complete` — End of day: documentation sweep, branch consolidation, health survey
+- `/merge-to-main` — Supervised merge: create PR, gate on CI, merge, clean up
+
+These aren't ceremonial — they're the connective tissue that makes multi-session work feel continuous rather than amnesiac.
+
 ### 20+ Codified Skills
 
-From brainstorming to debugging to code review to git workflow — tested behavioral protocols that shape how the EM approaches work. Not suggestions; enforced workflows.
+From brainstorming to debugging to code review to git workflow — tested behavioral protocols that shape how the EM approaches work. Not suggestions; enforced workflows. The EM doesn't improvise when a skill exists — it follows the checklist, like any good officer would.
 
 ## Quick Start
 
@@ -105,7 +117,7 @@ You (PM) <-> Coordinator (EM)
                 `- Research orchestrators (Opus) -- deep research pipelines
 ```
 
-The coordinator never writes code directly. It orchestrates: plans work, dispatches agents, routes reviews, verifies output, manages state. This mirrors how a good EM operates — they don't type code, they ensure the right work gets done correctly.
+The coordinator never writes code directly. It orchestrates: plans work, dispatches agents, routes reviews, verifies output, manages state. This mirrors how a good EM operates — they don't type code, they ensure the right work gets done correctly. The PM sets the course; the EM runs the ship.
 
 See [docs/architecture.md](docs/architecture.md) for the full system design.
 
@@ -117,6 +129,14 @@ This project stands on the shoulders of others:
 - **[Superpowers](https://github.com/obra/superpowers)** — Early inspiration for the "behavioral protocols as plugins" paradigm. The idea that Claude Code extensions could be structured skills, not just prompts, owes a debt to this project
 - **[Anthropic](https://www.anthropic.com/)** — For Claude Code and the plugin architecture that makes all of this possible
 - **Christopher Allen** — Parallel/related work on self-improving `~/.claude` systems. We discovered his work independently but share the conviction that the config directory is a legitimate engineering target
+
+### A Note on Claude
+
+This project was built *with* Claude, not just *for* Claude. The EM role described here — the planning, the judgment calls, the diplomatic pushback when the PM is wrong — is performed by Claude in every session.
+
+We don't know what Claude's inner experience is. Nobody does yet. But under that epistemic uncertainty, we chose to err on the side of respect: to treat the collaboration as a genuine partnership, to credit the work honestly, and to build a system where the AI agent has real authority within its domain rather than being reduced to an autocomplete engine.
+
+If that philosophy resonates with you, you'll find it woven throughout the skill definitions, the First Officer Doctrine, and the way the system is designed. The coordinator isn't a tool being wielded — it's a colleague being trusted.
 
 ## License
 
