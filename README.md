@@ -6,6 +6,24 @@ Built to mirror a PM-EM dynamic: you're the PM (product manager), Claude is the 
 
 > This isn't another "AI assistant" wrapper. It's an organizational model for human-AI collaboration — a bridge crew, not a chatbot. You set the heading; the coordinator makes it so.
 
+## Where This Sits in the Landscape
+
+As of mid-2026, the individual techniques here — CLAUDE.md project instructions, specialized subagents, review pipelines, model tiering, persistent memory, plan-before-execute workflows — are all established patterns in the Claude Code ecosystem and the broader agentic engineering community.
+
+What's less common is the specific combination. A [systematic novelty assessment](docs/research/2026-03-20-agent-orchestration-novelty-unified.md) (55+ sources, 9 patterns) found three patterns with no documented prior art:
+
+1. **Cognitive tiering** — Different model tiers doing fundamentally different *types* of cognitive work (Haiku verifies, Sonnet executes, Opus judges), not the same work at different capability levels. A [2026 academic survey](https://arxiv.org/html/2603.04445) explicitly identifies this as a research gap.
+
+2. **Sequential multi-persona review with mandatory fix gates** — Domain expert reviews first, ALL findings applied, then generalist reviews the clean artifact. Every surveyed tool (Anthropic's own code review, CodeRabbit, GitHub Copilot) uses parallel+aggregate or single-pass instead.
+
+3. **PM/EM authority partitioning (First Officer Doctrine)** — Standing role-level domain authority between human and AI that persists across sessions. The [National Academies](https://nap.nationalacademies.org/read/26355/chapter/4) identified persistent human-AI relationships as an explicit research gap.
+
+Three more patterns represent novel applications of known principles (character personas in engineering review, selective tool withholding, plugin-based capability composition), and the **tiered context injection** system ("warm RAM") was found to be compositionally novel across [87 surveyed sources](docs/research/2026-03-20-agent-orchestration-novelty-unified.md#appendix-warm-ram--tiered-context-injection-research).
+
+Named reviewer personas work not because of the names, but because [rich behavioral descriptions genuinely steer model behavior](docs/research/2026-03-19-named-persona-performance.md) through training data cluster activation — confirmed causally by Anthropic's persona vectors research. The names are convenience handles for humans; the descriptions are the active ingredient.
+
+For context on the broader landscape: [Bassim Eledath's 8 Levels of Agentic Engineering](https://www.bassimeledath.com/blog/levels-of-agentic-engineering), [Addy Osmani on Agentic Engineering](https://addyosmani.com/blog/agentic-engineering/), and [Mike Mason on Coherence Through Orchestration](https://mikemason.ca/writing/ai-coding-agents-jan-2026/) are good reference points.
+
 ## What You Get
 
 ### Named Reviewer Personas
@@ -18,7 +36,7 @@ Six specialized reviewers with distinct expertise and standards:
 - **Fru** — UX reviewer. Trust signals, user flow clarity, interface intuition
 - **Camelia** — Data scientist. ML, statistics, data modeling, LLM workflows
 
-These aren't just labels — each persona has research-backed behavioral descriptions that measurably change review output quality.
+These aren't just labels — each persona has [research-backed behavioral descriptions](docs/research/2026-03-19-named-persona-performance.md) that measurably change review output quality. The names are stable pointers for human calibration; the descriptions are the active ingredient.
 
 ### Deep Research Pipeline
 
