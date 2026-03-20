@@ -16,17 +16,6 @@ Orient this agent by verifying the environment, loading project context, and cho
 
 Safety and environment checks. Order matters — each depends on the one before it.
 
-### Model check
-
-Check whether you are running on **Opus**. Your model ID is stated in the system prompt (e.g., "You are powered by the model named Opus 4.6").
-
-- **If on Opus:** Continue silently.
-- **If NOT on Opus:** Alert the user:
-
-  _"Heads up — this session is running on {model name}, not Opus. `/session-start` signals complex work that benefits from Opus-level reasoning. Run `/model opus` to switch, or say 'continue' if this is intentional."_
-
-  **Wait for the user's response** before continuing.
-
 ### Safety commit
 
 Secure any uncommitted work before touching branches:
@@ -91,9 +80,7 @@ Read `tasks/lessons.md` (if it exists) — learned patterns from past correction
 
 Note: Project `CLAUDE.md` and global `~/.claude/CLAUDE.md` are already in system context — don't re-read them.
 
-**After reading, acknowledge what you loaded:**
-- Number of lessons (if any)
-- Confirm fix-forward and verification-before-done discipline is active
+**After reading:** Note the count. No need to recite principles — they're in CLAUDE.md.
 
 ### Handoffs
 
@@ -149,17 +136,9 @@ This gives the EM visibility into what the project is working on before choosing
 
 ### Orientation check
 
-Check whether `/workday-start` ran today:
+The SessionStart hook already injected orientation context at boot (cache if fresh, pointers if stale). Do NOT re-read those files here — they're already in context.
 
-1. Read `tasks/.workday-start-marker` — if it contains today's date, workday-start already ran.
-2. **If workday-start ran today:** Skip health surface and doc gap check entirely. The morning briefing covered it.
-   - If `.claude/orientation_cache.md` exists: **Read it.** Report: _"Using orientation cache from today's workday-start."_ Use its health snapshot data for health context and its repo structure summary for orientation — do not re-read individual health files.
-   - If `.claude/orientation_cache.md` does not exist: Note that workday-start ran but left no cache (unusual — may have been interrupted).
-3. **If workday-start did NOT run today (or marker missing):**
-   - Read `tasks/health-summary.md` (if it exists) — latest daily code health findings from `/code-health`
-   - Read `tasks/health-ledger.md` (if it exists) — running health trend log
-   - _"No workday-start today. Loaded available health files for context — run `/workday-start` for full orientation."_
-   - Skip doc gap checks — they're daily concerns, not per-session.
+If the hook reported no fresh cache, note: _"No orientation cache — run `/workday-start` or `/update-docs` to generate one."_ Otherwise, move on silently.
 
 ---
 

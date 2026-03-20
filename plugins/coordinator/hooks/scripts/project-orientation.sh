@@ -11,116 +11,80 @@ if [ -f "$CACHE" ]; then
     # Extract git HEAD from YAML frontmatter (portable across GNU/BSD sed)
     CACHE_HEAD=$(grep '^git_head_at_generation:' "$CACHE" | head -1 | sed 's/.*: *//; s/["'"'"'[:space:]]//g')
 
-    # File age check
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        file_epoch=$(stat -f %m "$CACHE" 2>/dev/null)
-    else
-        file_epoch=$(stat -c %Y "$CACHE" 2>/dev/null)
-    fi
+    if [ -n "$CACHE_HEAD" ] && git cat-file -t "$CACHE_HEAD" &>/dev/null; then
+        # Programmatic staleness: has anything the cache describes actually changed?
+        # These are the paths whose state the orientation cache summarizes.
+        CHANGED=$(git diff --name-only "${CACHE_HEAD}..HEAD" -- \
+            plugins/ tasks/health-*.md tasks/architecture-atlas/ \
+            .github/ CLAUDE.md DIRECTORY.md .claude/ \
+            2>/dev/null | head -1)
 
-    if [ -z "$file_epoch" ]; then
-        # Cannot stat — treat as stale
-        :
-    else
-        now_epoch=$(date +%s)
-        age_hours=$(( (now_epoch - file_epoch) / 3600 ))
-        # Review: patrik — short-circuit: cache < 1h old is always fresh enough,
-        # even on high-velocity days (50+ commits). Avoids fallthrough to raw injection.
-        age_minutes=$(( (now_epoch - file_epoch) / 60 ))
-        if [ "$age_minutes" -lt 60 ]; then
+        if [ -z "$CHANGED" ]; then
+            # No cache-relevant changes since generation — cache is fresh
             echo ""
-            echo "── Orientation (RAM cache, ${age_minutes}m old, fresh) ──"
+            echo "── Orientation (RAM cache, structurally current) ──"
             cat "$CACHE"
             echo ""
             echo "── Orientation: 1 document loaded (from cache) ──"
             exit 0
         fi
-        commits_since=$(git rev-list --count "${CACHE_HEAD}..HEAD" 2>/dev/null || echo "999")
-
-        if [ "$age_hours" -lt 24 ] && [ "$commits_since" -lt 50 ]; then
-            echo ""
-            echo "── Orientation (RAM cache, ${age_hours}h old, ${commits_since} commits since) ──"
-            cat "$CACHE"
-            echo ""
-            echo "── Orientation: 1 document loaded (from cache) ──"
-            exit 0
-        fi
+        # Cache-relevant files changed — fall through to pointers
     fi
+    # CACHE_HEAD missing or invalid — fall through to pointers
 fi
 
-# Fall through to raw doc injection (current behavior)
+# Fall through: orientation cache missing or stale.
+# Inject lightweight pointers — the EM can read full files on demand.
+# This replaced raw 300-line injection (repo map + DIRECTORY.md) with
+# a ~10-line summary. The EM has MEMORY.md and CLAUDE.md for structural
+# awareness; full docs are one Read away when a task needs them.
 
-MAX_LINES=150
+echo ""
+echo "── Orientation (no fresh cache — pointers only) ──"
 
-inject_doc() {
+pointer_doc() {
     local label="$1"
     shift
     for path in "$@"; do
         if [ -f "$path" ]; then
-            echo ""
-            echo "── $label ($path) ──"
-            head -n "$MAX_LINES" "$path"
-            local total
-            total=$(wc -l < "$path" | tr -d ' ')
-            if [ "$total" -gt "$MAX_LINES" ]; then
-                echo "[... truncated at $MAX_LINES of $total lines — read full file for details]"
-            fi
+            local lines
+            lines=$(wc -l < "$path" | tr -d ' ')
+            echo "  $label: $path (${lines} lines) — read when needed"
             return 0
         fi
     done
+    echo "  $label: not found"
     return 1
-}
-
-repomap_with_staleness() {
-    local path=".claude/repomap.md"
-    if [ ! -f "$path" ]; then
-        echo ""
-        echo "── Repo Map: NOT FOUND ──"
-        echo "No repository map. Run /generate-repomap to create one."
-        return 1
-    fi
-
-    # Staleness check
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        file_epoch=$(stat -f %m "$path" 2>/dev/null)
-    else
-        file_epoch=$(stat -c %Y "$path" 2>/dev/null)
-    fi
-
-    local stale_msg=""
-    if [ -n "$file_epoch" ]; then
-        now_epoch=$(date +%s)
-        age_hours=$(( (now_epoch - file_epoch) / 3600 ))
-        if [ "$age_hours" -ge 24 ]; then
-            stale_msg=" ⚠ STALE (${age_hours}h old) — run /generate-repomap to refresh"
-        fi
-    fi
-
-    echo ""
-    echo "── Repo Map ($path)${stale_msg} ──"
-    head -n "$MAX_LINES" "$path"
-    local total
-    total=$(wc -l < "$path" | tr -d ' ')
-    if [ "$total" -gt "$MAX_LINES" ]; then
-        echo "[... truncated at $MAX_LINES of $total lines — read full file for details]"
-    fi
-    return 0
 }
 
 found=0
 
-# 1. Repo map (with staleness check)
-repomap_with_staleness && found=$((found + 1))
+# Repo map — pointer with staleness note
+REPOMAP=".claude/repomap.md"
+if [ -f "$REPOMAP" ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        file_epoch=$(stat -f %m "$REPOMAP" 2>/dev/null)
+    else
+        file_epoch=$(stat -c %Y "$REPOMAP" 2>/dev/null)
+    fi
+    stale_note=""
+    if [ -n "$file_epoch" ]; then
+        now_epoch=$(date +%s)
+        age_hours=$(( (now_epoch - file_epoch) / 3600 ))
+        if [ "$age_hours" -ge 24 ]; then
+            stale_note=" [STALE: ${age_hours}h old — run /generate-repomap]"
+        fi
+    fi
+    lines=$(wc -l < "$REPOMAP" | tr -d ' ')
+    echo "  Repo Map: $REPOMAP (${lines} lines)${stale_note} — read when needed"
+    found=$((found + 1))
+else
+    echo "  Repo Map: not found — run /generate-repomap to create"
+fi
 
-# 2. Directory
-inject_doc "Directory" "DIRECTORY.md" "docs/DIRECTORY.md" && found=$((found + 1))
-
-# Action items and roadmap are loaded by /session-start (operational context),
-# not at boot (structural context). Quick sessions don't need them.
+# Directory
+pointer_doc "Directory" "DIRECTORY.md" "docs/DIRECTORY.md" && found=$((found + 1))
 
 echo ""
-if [ "$found" -gt 0 ]; then
-    echo "── Orientation: $found document(s) loaded ──"
-else
-    echo "── Orientation: no standard documents found (repomap, DIRECTORY.md) ──"
-fi
+echo "No orientation cache. Run /update-docs or /workday-start to generate one."
+echo "── Orientation: $found document(s) available (not loaded — read on demand) ──"

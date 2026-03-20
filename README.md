@@ -99,6 +99,7 @@ If you want stricter separation, you can tighten the instructions in your CLAUDE
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
 - A Claude API key or Claude Pro/Team subscription
+- **Opus as the coordinator model.** The orchestration layer — plan decomposition, review judgment, delegation decisions, quality gates — is designed for Opus-level reasoning. Substituting Sonnet or below for the coordinator is trouble with tribbles: it'll look like it's working until the tribbles are everywhere. Sonnet and Haiku are used extensively *within* the pipeline (executors, verifiers), but the coordinator itself needs Opus. Set it with `/model opus` or in your Claude Code settings.
 
 ### Installation
 
