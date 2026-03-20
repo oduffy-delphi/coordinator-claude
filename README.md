@@ -64,7 +64,7 @@ Never lose context:
 
 ### CI Pipeline for Prompts
 
-13 validation scripts that treat behavioral specs like code:
+10 validation checks that treat behavioral specs like code:
 - Frontmatter validation, cross-reference checking, inventory counts
 - Secret detection, file size limits, agent tool consistency
 - Broken link detection, spec line count ceilings

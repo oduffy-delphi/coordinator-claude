@@ -1,6 +1,10 @@
+<!-- TEMPLATE: Copy this file to your project's root and customize the sections below.
+     This ships as a starting point — replace placeholders with your actual project details. -->
+
+<!-- TEMPLATE: Copy this file to your project's CLAUDE.md and customize below. -->
 # Project Principles — coordinator-claude
 
-> This is a template. Customize it for your project.
+> This is a template. Customize the sections below for your project.
 
 ## Owner
 

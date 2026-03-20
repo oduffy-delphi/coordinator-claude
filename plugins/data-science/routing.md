@@ -10,5 +10,5 @@
 - **Agent file:** `agents/camelia-data-scientist.md`
 
 ## Project-Local Pairings
-- claude-unreal-holodeck: Camelia + Patrik default pairing (ML/AI heavy)
+- my-ue-project: Camelia + Patrik default pairing (ML/AI heavy)
 - fifa-stats: Camelia when data analysis needed, pairs with Palí (web-dev plugin)

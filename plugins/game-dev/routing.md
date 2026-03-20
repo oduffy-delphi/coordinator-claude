@@ -18,4 +18,4 @@
 
 ## Project-Local Pairings
 - DroneSim: Sid primary, Patrik backstop (default)
-- claude-unreal-holodeck: Sid + Camelia (if data-science plugin enabled) + Patrik
+- my-ue-project: Sid + Camelia (if data-science plugin enabled) + Patrik
