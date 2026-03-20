@@ -6,13 +6,39 @@ coordinator-claude is designed to be adapted. This guide covers the main customi
 
 The personas (Patrik, Zolí, Sid, Palí, Fru, Camelia) are names for convenience. The behavioral descriptions are what actually matter. You can rename them to anything.
 
-To rename a persona:
-1. Edit the agent file in `plugins/{plugin}/agents/{name}.md`
-2. Update the `name` field in the YAML frontmatter
-3. Update any references in `routing.md` files
-4. Update any references in command files (especially `/review-dispatch`)
+### Automated Rename
 
-The names create stable, reproducible perspectives. Once you and Claude build expectations around "Patrik means rigorous engineering review," renaming may disrupt that consistency. Think of it like renaming a role in your org — the function stays the same, but the mental shorthand changes.
+```bash
+bash setup/rename-personas.sh [--dry-run] OLD NEW [OLD NEW ...]
+
+# Examples:
+bash setup/rename-personas.sh Patrik "Alex" Zolí "Jordan"
+bash setup/rename-personas.sh --dry-run Camelia "DataBot"
+```
+
+The script:
+- Replaces display names in prose across all `.md` and `.sh` files under `plugins/`
+- Skips YAML frontmatter (agent identifiers are preserved)
+- Handles UTF-8 names correctly (Zolí, Palí) via Perl
+- Does NOT rename filenames (those are technical IDs)
+
+### Persona Registry
+
+| Persona | Plugin | Agent File | Role |
+|---------|--------|-----------|------|
+| Patrik | coordinator | `agents/patrik-code-review.md` | Code quality, architecture |
+| Zolí | coordinator | `agents/zoli-ambition-advocate.md` | Ambition backstop to Patrik |
+| Sid | game-dev | `agents/sid-game-dev.md` | Game dev, Unreal Engine |
+| Palí | web-dev | `agents/pali-frontend-reviewer.md` | Frontend, design systems |
+| Fru | web-dev | `agents/fru-ux-reviewer.md` | UX flow, trust signals |
+| Camelia | data-science | `agents/camelia-data-scientist.md` | ML, data science, statistics |
+
+### Manual Rename
+
+If you prefer to rename manually:
+1. Find references: `grep -r "OldName" plugins/`
+2. Replace in prose only — skip YAML frontmatter blocks
+3. Do NOT rename filenames (they are technical identifiers)
 
 ## Adding Domain Plugins
 
