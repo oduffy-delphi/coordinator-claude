@@ -1,10 +1,17 @@
 # coordinator-claude
 
-**A structured agent orchestration plugin for Claude Code.**
+**A structured agent orchestration plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — multi-agent workflows, named reviewer personas, and session continuity.**
 
-Built to mirror a PM-EM dynamic: you're the PM (product manager), Claude is the EM (engineering manager). The coordinator dispatches work to specialized agents, routes reviews to named personas, manages session continuity, and runs deep research — without being hamstrung by excessive guardrails or losing context across sessions.
+A Claude Code plugin that mirrors a PM-EM dynamic: you're the PM (product manager), Claude is the EM (engineering manager). The coordinator dispatches work to specialized agents across Opus/Sonnet/Haiku tiers, routes code reviews to named personas, manages session continuity, and runs deep research pipelines — without being hamstrung by excessive guardrails or losing context across sessions.
 
 > This isn't another "AI assistant" wrapper. It's an organizational model for human-AI collaboration — a bridge crew, not a chatbot. You set the heading; the coordinator makes it so.
+
+**Quick install:**
+```bash
+git clone https://github.com/oduffy-delphi/coordinator-claude.git
+cd coordinator-claude && bash setup/install.sh
+```
+Then start Claude Code and run `/session-start`. See [Getting Started](docs/getting-started.md) for detailed setup.
 
 ## Where This Sits in the Landscape
 
@@ -99,7 +106,7 @@ If you want stricter separation, you can tighten the instructions in your CLAUDE
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
 - A Claude API key or Claude Pro/Team subscription
-- **Opus as the coordinator model.** The orchestration layer — plan decomposition, review judgment, delegation decisions, quality gates — is designed for Opus-level reasoning. Substituting Sonnet or below for the coordinator is trouble with tribbles: it'll look like it's working until the tribbles are everywhere. Sonnet and Haiku are used extensively *within* the pipeline (executors, verifiers), but the coordinator itself needs Opus. Set it with `/model opus` or in your Claude Code settings.
+- **Opus as the coordinator model.** The orchestration layer — plan decomposition, review judgment, delegation decisions, quality gates — is designed for Opus-level reasoning. Substituting Sonnet or below for the coordinator is a [tribble problem](https://en.wikipedia.org/wiki/The_Trouble_with_Tribbles): it'll look like it's working until the tribbles are everywhere. Each individual judgment call degrades subtly — wrong delegation, shallow review, missed quality gates — and they compound. Sonnet and Haiku are used extensively *within* the pipeline (executors, verifiers), but the coordinator itself needs Opus. Set it with `/model opus` or in your Claude Code settings.
 
 ### Installation
 
