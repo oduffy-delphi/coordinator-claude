@@ -1,0 +1,12 @@
+{
+  "name": "game-dev",
+  "version": "1.0.0",
+  "description": "Game development domain plugin for coordinator-claude. Adds Sid (Unreal Engine reviewer), Blueprint inspector/worker agents, and routing for game dev signals.",
+  "author": {
+    "name": "Dónal O'Duffy & Claude"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/oduffy-delphi/coordinator-claude",
+  "homepage": "https://github.com/oduffy-delphi/coordinator-claude",
+  "keywords": ["game-dev", "unreal-engine", "blueprint", "code-review"]
+}

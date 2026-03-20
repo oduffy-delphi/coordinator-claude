@@ -1,0 +1,12 @@
+{
+  "name": "coordinator",
+  "version": "1.0.0",
+  "description": "Core orchestration plugin implementing a PM-EM dynamic for Claude Code. Provides workflow skills, named reviewer personas (Patrik, Zolí), session lifecycle commands, deep research pipelines, and three-tier agent delegation.",
+  "author": {
+    "name": "Dónal O'Duffy & Claude"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/oduffy-delphi/coordinator-claude",
+  "homepage": "https://github.com/oduffy-delphi/coordinator-claude",
+  "keywords": ["orchestration", "code-review", "workflow", "agents", "research", "session-management"]
+}

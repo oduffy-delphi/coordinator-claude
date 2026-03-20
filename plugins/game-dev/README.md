@@ -15,9 +15,9 @@ Game development domain plugin for the Donal + Claude agent hierarchy. Enable fo
 
 **Routing:** Registers Sid for game dev signals with Patrik (coordinator) as backstop. Simple doc lookups route to holodeck-docs plugin's ue-docs-researcher (Sonnet); architecture and review route to Sid (Opus).
 
-## Source of Truth
+## Standalone Plugin
 
-The `plugin/game-dev/` directory in the [claude-unreal-holodeck](https://github.com/oduffy-delphi/claude-unreal-holodeck) repo is the canonical source for this plugin. Install scripts (`scripts/install-game-dev-plugin.{sh,ps1}`) deploy from the repo to `~/.claude/plugins/game-dev/`. Changes should flow repo → install → live, not the other way around.
+The game-dev plugin is self-contained within this repository. MCP servers (`holodeck-control` for UE Editor integration, `holodeck-docs` for documentation RAG) are configured separately in your `~/.claude.json` per the Unreal Engine tooling docs. The plugin works without them — Sid's review and architecture capabilities don't require MCP — but Blueprint inspection and live editor authoring do.
 
 ## Authors
 

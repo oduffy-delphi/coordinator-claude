@@ -1,0 +1,12 @@
+{
+  "name": "data-science",
+  "version": "1.0.0",
+  "description": "Data science domain plugin for coordinator-claude. Adds Camelia, a specialized reviewer for ML, statistics, data modeling, and LLM workflows.",
+  "author": {
+    "name": "Dónal O'Duffy & Claude"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/oduffy-delphi/coordinator-claude",
+  "homepage": "https://github.com/oduffy-delphi/coordinator-claude",
+  "keywords": ["data-science", "machine-learning", "statistics", "code-review"]
+}

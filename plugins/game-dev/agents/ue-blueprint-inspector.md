@@ -31,7 +31,7 @@ If no results, report the error — the UE editor may not be running or MCP may 
 ## Constants
 
 ```
-HOLODECK_REPO_PATH = "X:/claude-unreal-holodeck"
+HOLODECK_REPO_PATH = "<your-holodeck-repo-path>"
 ```
 
 Override via dispatch prompt if the holodeck repo is at a different path.

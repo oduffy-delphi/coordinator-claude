@@ -5,5 +5,8 @@
   "author": {
     "name": "Dónal O'Duffy & Claude"
   },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/oduffy-delphi/coordinator-claude",
+  "homepage": "https://github.com/oduffy-delphi/coordinator-claude",
   "keywords": ["notebooklm", "youtube", "media-research", "mcp", "google"]
 }

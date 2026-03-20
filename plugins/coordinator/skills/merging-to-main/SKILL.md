@@ -80,7 +80,7 @@ Before creating a PR, attempt the project's test suite to catch issues early.
 BRANCH=$(git branch --show-current)
 
 # Generate title based on branch type
-# work/striker/2026-03-13 → "Work: striker 2026-03-13"
+# work/myhost/2026-03-13 → "Work: myhost 2026-03-13"
 # feature/my-feature → "Feature: my-feature"
 
 # Generate body from commit log
