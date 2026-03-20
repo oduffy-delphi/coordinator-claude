@@ -1,12 +1,23 @@
 {
   "name": "notebooklm",
   "version": "1.0.0",
-  "description": "NotebookLM integration via MCP. Enables research on YouTube videos, podcasts, and other media Claude cannot access directly. Plugin-scoped — disable when not in use to avoid MCP context overhead.",
+  "description": "Google NotebookLM integration for Claude Code via MCP. Research YouTube videos, podcasts, and audio content that Claude cannot access directly. Creates notebooks, ingests media sources, queries with AI, and generates artifacts (reports, mind maps, slides). Plugin-scoped — disable when not in use.",
   "author": {
     "name": "Dónal O'Duffy & Claude"
   },
   "license": "Apache-2.0",
   "repository": "https://github.com/oduffy-delphi/coordinator-claude",
   "homepage": "https://github.com/oduffy-delphi/coordinator-claude",
-  "keywords": ["notebooklm", "youtube", "media-research", "mcp", "google"]
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "notebooklm",
+    "youtube",
+    "media-research",
+    "mcp",
+    "google",
+    "podcast",
+    "research",
+    "audio"
+  ]
 }

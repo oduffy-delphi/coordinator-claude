@@ -1,12 +1,23 @@
 {
   "name": "web-dev",
   "version": "1.0.0",
-  "description": "Web development domain plugin for coordinator-claude. Adds Palí (frontend/design system reviewer) and Fru (UX flow reviewer).",
+  "description": "Web development domain plugin for coordinator-claude. Adds two specialized Claude Code reviewer personas: Palí reviews frontend code for design token adherence, component patterns, and CSS architecture; Fru reviews UX flows for trust signals, clarity, and intuitive interaction design.",
   "author": {
     "name": "Dónal O'Duffy & Claude"
   },
   "license": "Apache-2.0",
   "repository": "https://github.com/oduffy-delphi/coordinator-claude",
   "homepage": "https://github.com/oduffy-delphi/coordinator-claude",
-  "keywords": ["web-dev", "frontend", "ux", "design-system", "code-review"]
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "web-development",
+    "frontend",
+    "ux-review",
+    "design-system",
+    "code-review",
+    "css",
+    "react",
+    "tailwind"
+  ]
 }
