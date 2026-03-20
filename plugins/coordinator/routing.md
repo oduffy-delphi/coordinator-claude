@@ -58,7 +58,7 @@ Domain plugins MUST provide `routing.md` at the plugin root with this structure:
 Per-project config in `.claude/coordinator.local.md`:
 
     ---
-    project_type: unreal    # unreal | game-docs | web | pure-docs
+    project_type: game      # game | web | data-science | pure-docs
     active_reviewers:       # optional explicit override
       - patrik
       - sid

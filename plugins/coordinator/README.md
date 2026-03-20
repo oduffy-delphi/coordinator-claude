@@ -53,9 +53,7 @@ The coordinator plugin is the backbone of the system. It provides:
 **Workflow & Planning:**
 - `brainstorming` — Collaborative dialogue to refine ideas into designs. Scope assessment, design-for-isolation, existing-codebase awareness.
 - `writing-plans` — Decompose designs into executable tasks. Scope checking, file structure mapping, TDD-oriented granularity.
-- `executing-plans` — Execute plans task-by-task with review checkpoints. Prefers `/delegate-execution` in coordinator sessions.
 - `verification-before-completion` — Prove it works before claiming it's done.
-- `deep-research` — Multi-source investigation of repos or topics.
 
 **Development Process:**
 - `test-driven-development` — RED-GREEN-REFACTOR cycle, strictly enforced.
@@ -129,7 +127,7 @@ Default (no config): core-only (Patrik + Zolí).
 
 ### v1.3.0 (March 2026) — Squad Expansion
 
-- **Review-integrator:** New Opus agent that applies reviewer findings to artifacts. Replaces manual EM feedback application in review-dispatch, enrich-and-review, and delegate-execution. The EM now verifies rather than types.
+- **Review-integrator:** New Sonnet agent that applies reviewer findings to artifacts. Replaces manual EM feedback application in review-dispatch, enrich-and-review, and delegate-execution. The EM now verifies rather than types.
 - **Reviewer self-checks:** All 6 reviewers get built-in self-moderation prompts.
 - **Routing intelligence:** Effort calibration table, skip conditions, and EM override guidance added to routing.md.
 - **Health infrastructure:** New skills (debt-triage, tracker-maintenance, lessons-trim) with templates.

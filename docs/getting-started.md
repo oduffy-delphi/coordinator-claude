@@ -79,12 +79,19 @@ Create or edit `~/.claude/plugins/installed_plugins.json`:
       "version": "1.3.0",
       "installedAt": "2026-03-20T00:00:00Z",
       "lastUpdated": "2026-03-20T00:00:00Z"
+    }],
+    "notebooklm@coordinator-claude": [{
+      "scope": "user",
+      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/notebooklm",
+      "version": "1.0.0",
+      "installedAt": "2026-03-20T00:00:00Z",
+      "lastUpdated": "2026-03-20T00:00:00Z"
     }]
   }
 }
 ```
 
-> **Note:** `game-dev` is included but disabled by default (see Step 6). Install it but leave it disabled unless you're working on Unreal Engine projects.
+> **Note:** `game-dev` and `notebooklm` are included but disabled by default (see Step 6). Enable `game-dev` for Unreal Engine projects. The `notebooklm` plugin is managed automatically by the `/notebooklm-research` command — it enables the plugin when needed and disables it when done.
 
 ### Step 6: Enable plugins in settings.json
 
@@ -96,7 +103,8 @@ Create or edit `~/.claude/settings.json` to enable the plugins:
     "coordinator@coordinator-claude": true,
     "web-dev@coordinator-claude": true,
     "data-science@coordinator-claude": true,
-    "game-dev@coordinator-claude": false
+    "game-dev@coordinator-claude": false,
+    "notebooklm@coordinator-claude": false
   },
   "extraKnownMarketplaces": [
     "/home/{USERNAME}/.claude/plugins/coordinator-claude"

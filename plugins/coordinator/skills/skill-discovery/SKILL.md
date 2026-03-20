@@ -136,6 +136,7 @@ Commands are dispatch workflows — multi-phase agent pipelines invoked with one
 | `/deep-research repo <path>` | Study a repository — Haiku scouts, Sonnet analysts, Opus synthesis |
 | `/deep-research web <topic>` | Investigate a topic across internet sources — multi-agent verification |
 | `/structured-research <spec> [subject]` | **Batch research with schema-conforming output** — Pipeline C. Use for N entities with repeating structure (teams, companies, tools). Creates or runs a research spec. |
+| `/notebooklm-research <topic>` | **Media research via Google NotebookLM** — Pipeline D. YouTube videos, podcasts, audio. Requires notebooklm plugin (enabled/disabled automatically by the command). |
 
 ### Code Quality & Architecture
 | Command | When to Use |
