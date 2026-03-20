@@ -1,6 +1,6 @@
 ---
 name: project-onboarding
-description: "Bootstrap a new project's tracking and coordination infrastructure — tracker, tasks directory, archive structure, handoff directory. Walks the EM through scaffolding with PM input for workstream definition. Use when starting a new project or when /update-docs reports missing tracker infrastructure."
+description: "Use when starting work in a new project repository, when /update-docs reports tracker_missing, or when a marketplace user runs the coordinator plugin for the first time."
 ---
 
 # Project Onboarding
@@ -10,125 +10,196 @@ description: "Bootstrap a new project's tracking and coordination infrastructure
 - Starting work in a new project repository for the first time
 - `/update-docs` reports `tracker_missing` — the project lacks coordination infrastructure
 - PM asks to set up project tracking in an existing repo
+- **Marketplace first-run** — new coordinator plugin user setting up their first project
 
 ## Prerequisites
 
 - You are in the project's working directory (not `~/.claude`)
-- PM is available for workstream definition (Step 3 requires PM input)
+- PM is available for 3 questions (Step 2)
 
-## Steps
+## Phases
 
-### Step 1: Survey Existing State
+### Phase 1: DETECT — Survey Existing State
 
-Before scaffolding, check what already exists. Do NOT overwrite existing files.
+Before scaffolding, check what already exists. **Never overwrite existing files.**
+
+Check for each of these and record status (exists / missing / incomplete):
 
 ```
-Check for:
-├── docs/project-tracker.md          — if exists, skip to Step 5 (maintenance mode)
-├── tasks/                           — may exist from prior sessions
-│   └── lessons.md                   — may exist
-├── archive/completed/               — may exist
-├── .claude/                         — may exist (settings, handoffs)
-│   └── handoffs/                    — may exist
-└── CLAUDE.md                        — should exist (not created by this skill)
+├── CLAUDE.md                           — project conventions
+├── docs/project-tracker.md             — workstream tracking
+├── tasks/lessons.md                    — engineering patterns
+├── archive/completed/                  — completion archive
+├── .claude/handoffs/                   — session continuity
+├── DIRECTORY.md                        — source index
+└── .gitignore                          — check for .claude/settings.local.json entry
 ```
 
-Report what exists and what needs to be created. If `docs/project-tracker.md` already exists, this skill becomes a health check — verify the format matches the standard template and flag deviations.
+**If `docs/project-tracker.md` already exists:** This skill becomes a health check — verify the format matches the standard template, flag deviations, and skip to Phase 4 (REPORT).
 
-### Step 2: Scaffold Directory Structure
+**Global detection:** Check if `~/.claude/CLAUDE.md` exists. If yes, the generated CLAUDE.md will include an "extends global" reference. If not, the template is fully self-contained — no dependency on global config.
 
-Create only what's missing. Use `mkdir -p` for directories, create files only if absent.
+**Distribution repo detection:** Check if `.gitignore` excludes session infrastructure directories (`tasks/`, `archive/`, `.claude/handoffs/`). If 2+ of these are gitignored, this is likely a **distribution repo** — a public/shared repo where session artifacts are intentionally excluded from version control (e.g., an open-source release, a template repo, a package).
 
-**Directories:**
-- `docs/` — if missing
-- `tasks/` — if missing
-- `archive/completed/` — if missing
-- `.claude/handoffs/` — if missing
+**If distribution repo detected: STOP.** Do not proceed to Phase 2. Report:
 
-**Files:**
-- `tasks/lessons.md` — if missing, create with:
-```markdown
-# Lessons — [Project Name]
+> _"This looks like a distribution repo — `.gitignore` excludes session directories (`tasks/`, `archive/`, `.claude/handoffs/`). Onboarding infrastructure doesn't belong here — it's a product, not a workspace. Track work on this repo from your parent project's tracker instead."_
 
-Engineering patterns worth internalizing. Bold title + 1-2 sentence rule. Max 3 lines per entry.
+This is the correct exit — a distribution repo's CLAUDE.md is a template for downstream users, its .gitignore intentionally excludes session artifacts, and its workstreams belong in the tracker of whoever maintains it.
 
-<!-- This file is maintained by the EM. See CLAUDE.md § Self-Improvement Loop for conventions. -->
-```
+Report what exists and what needs to be created before proceeding.
 
-**Do NOT create:**
-- `CLAUDE.md` — project-specific, requires dedicated PM conversation
-- `tasks/health-ledger.md` — created by `/architecture-audit`
-- `.claude/orientation_cache.md` — created by `/workday-start` or `/update-docs`
-- `.claude/settings.local.json` — machine-specific, gitignored
+### Phase 2: ASK — PM Input (3 Questions)
 
-### Step 3: Define Workstreams (PM Conversation)
+Present all three questions together to minimize back-and-forth:
 
-**This step requires PM input.** Present a prompt to the PM:
-
-> I need to set up the project tracker. Workstream grouping is a PM call.
+> I need three things to set up this project:
 >
-> **What are the 3-5 major workstreams for this project?** For each, I need:
-> - A name (short, noun-phrase)
-> - Current status: `Ready` | `Enrichment` | `Review` | `Executing` | `Blocked`
-> - 2-5 immediate deliverables (checkbox items)
-> - Any known dependencies or blockers
+> **1. Project name** — short name for headers and references (e.g., "Geneva MVP", "DroneSim")
 >
-> I'll also add a Backlog section for items that are real but not imminent.
+> **2. Project type** — controls which domain agents and conventions are included:
+>    - `game-dev` — Unreal Engine, Blueprint/C++, Sid reviewer
+>    - `web-dev` — Web frameworks, Palí + Fru reviewers
+>    - `data-science` — Notebooks, pipelines, Camelia reviewer
+>    - `general` — Standard conventions only
+>
+> **3. Initial workstreams** (1-3) — what are you working on? For each:
+>    - Name (short noun-phrase)
+>    - 2-3 immediate deliverables
+>    - (Optional: dependencies, blockers)
+>
+> If you're not sure about workstreams yet, say "stubs" and I'll create placeholder sections you can fill in later.
 
-Wait for PM response before proceeding. Do not auto-generate workstreams — the PM defines what matters.
+Wait for PM response before proceeding.
 
-### Step 4: Create Project Tracker
+### Phase 3: GENERATE — Create Missing Files
 
-Write `docs/project-tracker.md` using the standard format:
+Create only what's missing. Use the templates in this skill's `templates/` directory as the base.
 
+#### 3a. CLAUDE.md (if missing)
+
+Use `templates/CLAUDE.md.template`. Process conditionals:
+
+1. Replace `[PROJECT_NAME]` with the PM's project name
+2. Replace `{{PROJECT_TYPE}}` with the PM's project type
+3. **Include** the block for the selected project_type (remove the `{{IF type}}` / `{{/IF type}}` markers). For `general` type: no conditional block exists in the template — skip steps 3 and 4 (the universal sections are sufficient).
+4. **Remove** blocks for other project types entirely
+5. **If global `~/.claude/CLAUDE.md` exists:** Keep the `{{IF_GLOBAL}}` content (remove markers). This tells the EM that global principles apply.
+6. **If no global exists:** Remove the `{{IF_GLOBAL}}` line entirely. The template is self-contained.
+
+Write the processed template to `CLAUDE.md` at the project root.
+
+**Important:** The template has `<!-- Fill in -->` comments — these are prompts for the PM to complete, not for the skill to guess at. Leave them as-is.
+
+#### 3b. docs/project-tracker.md (if missing)
+
+Use `templates/tracker.md.template`:
+
+1. Replace `[PROJECT_NAME]`, `[DATE]` (today), `[YEAR]`, `[MONTH]`
+2. Replace `[WORKSTREAMS]` with formatted workstream blocks from PM input:
+
+For each workstream the PM provided:
 ```markdown
-# Project Tracker — [Project Name]
-**Last updated:** YYYY-MM-DD
-**Overall status:** [one-line summary]
+### N. [Workstream Name]
+**Status:** Ready
+**Specs:** <!-- link when spec is written -->
 
-## Active Workstreams
-
-### 1. [Workstream Name]
-**Status:** [status]
-**Specs:** [path/to/spec.md] (if applicable)
-
-- [ ] Deliverable description
-- [ ] Another deliverable — **depends on:** [blocker]
-- [ ] _PM: Non-engineering action item_
-
-### 2. [Workstream Name]
-...
-
-## Backlog
-- Future item — brief context
-
-## Archive Pointer
-→ Completed work: archive/completed/
-→ Latest: archive/completed/YYYY-MM.md
+- [ ] [Deliverable 1]
+- [ ] [Deliverable 2]
+- [ ] [Deliverable 3]
 ```
 
-**Conventions (from tracker-maintenance skill):**
-- Max ~5 active workstreams
-- Engineering items are detailed enough to orient an agent
-- PM items are italic with `_PM:_` prefix — lightweight stubs
-- Dependencies use `**depends on:**` or `**blocked by:**` inline
-- Spec links use `**spec:**` inline
-- Status values: `Ready` → `Enrichment` → `Review` → `Executing` → `Complete`
+If PM said "stubs": create one placeholder workstream:
+```markdown
+### 1. [Define workstreams]
+**Status:** Ready
 
-### Step 5: Verify and Report
+- [ ] _PM: Define initial workstreams and deliverables_
+```
 
-Run a quick health check on what was created:
+#### 3c. tasks/lessons.md (if missing)
 
-1. Confirm `docs/project-tracker.md` exists and parses correctly (has `## Active Workstreams` heading)
-2. Confirm `tasks/lessons.md` exists
-3. Confirm `archive/completed/` directory exists
-4. Confirm `.claude/handoffs/` directory exists
-5. If CLAUDE.md is missing, flag it: "NOTE: No CLAUDE.md found. Create one with project-specific principles before starting work."
+Use `templates/lessons.md.template`. Replace `[PROJECT_NAME]` with PM's project name.
 
-Report: "Project onboarding complete. Created: [list]. Skipped (already existed): [list]. Next: run `/update-docs` to generate orientation cache."
+#### 3d. Directories (if missing)
+
+Create with .gitkeep files so they survive git clone:
+
+```bash
+mkdir -p .claude/handoffs && touch .claude/handoffs/.gitkeep
+mkdir -p archive/completed && touch archive/completed/.gitkeep
+mkdir -p docs  # for tracker
+mkdir -p tasks  # for lessons
+```
+
+#### 3e. .gitignore handling
+
+Check if `.gitignore` exists and contains an entry for `.claude/settings.local.json`:
+
+1. **If `.gitignore` exists but lacks the entry:** Append:
+   ```
+   # Machine-specific Claude settings (do not commit)
+   .claude/settings.local.json
+   ```
+
+2. **If `.gitignore` doesn't exist:** Create it with:
+   ```
+   # Machine-specific Claude settings (do not commit)
+   .claude/settings.local.json
+   ```
+
+3. **If the entry already exists:** Skip silently.
+
+**Warning check:** If `.gitignore` contains a line that would ignore all of `.claude/` (like `.claude/` or `.claude/*`), warn: "Your .gitignore ignores the entire .claude/ directory. This breaks handoff discovery. Only .claude/settings.local.json should be ignored — .claude/handoffs/ must be tracked."
+
+#### 3f. DIRECTORY.md
+
+Do NOT create this file directly. It requires source file analysis that `/update-docs` Phase 2 handles. Instead, note in the report that the PM should run `/update-docs` to generate the source index.
+
+### Phase 4: REPORT
+
+Present what was done:
+
+```
+## Onboarding Complete — [Project Name]
+
+### Created
+- [list each file/directory created]
+
+### Already Existed (untouched)
+- [list each file that was skipped]
+
+### Needs Attention
+- [any warnings — .gitignore issues, incomplete CLAUDE.md sections to fill in]
+
+### Next Steps
+1. **Fill in CLAUDE.md** — the `<!-- Fill in -->` sections need project-specific details
+2. **Run `/update-docs`** — generates DIRECTORY.md source index and orientation cache
+3. **Run `/session-start`** — verifies everything is wired up correctly
+```
+
+### Phase 5: PERSONALIZE (Optional)
+
+Offer persona customization:
+
+> The coordinator comes with named reviewers: **Patrik** (code quality), **Zolí** (ambition advocate), **Sid** (game dev), **Palí** (frontend), **Fru** (UX), and **Camelia** (data science).
+>
+> These names are cosmetic — behavior comes from the agent descriptions and system prompts, not the names. Want to rename any of them to something that fits your team better?
+>
+> You can also do this later by running `setup/rename-personas.sh`.
+
+If the user wants to rename:
+1. Collect old → new pairs
+2. Determine plugin root: look for `setup/rename-personas.sh` relative to where the coordinator plugin is installed. Check `$CLAUDE_PLUGIN_ROOT/../../setup/rename-personas.sh` (since plugins are under `plugins/{name}/` and setup is at repo root).
+3. Run: `bash "$RENAME_SCRIPT" OLD1 NEW1 [OLD2 NEW2 ...]`
+4. Report results
+
+If the user declines: continue to report. Note in the report that `setup/rename-personas.sh` is available for later use.
 
 ## Notes
 
 - This skill creates the **skeleton**. The tracker-maintenance skill (invoked by `/update-docs`) handles ongoing maintenance.
 - The project tracker format is defined in the tracker-maintenance skill — this skill uses the same format for consistency.
 - `.claude/` directory contents: `handoffs/` is tracked in git; `settings.local.json` should be in `.gitignore`.
+- **Template architecture:** One base CLAUDE.md template with conditional blocks per project type — NOT 4 separate files. Easier to maintain, stays under the 12-file ceiling.
+- **Self-contained design:** The CLAUDE.md template works standalone for marketplace users. If global `~/.claude/CLAUDE.md` exists, the DETECT phase adds an "extends global" reference. If not, the template is complete on its own.
