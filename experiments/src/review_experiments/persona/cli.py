@@ -5,7 +5,6 @@ Subcommands: pilot, run, score, analyze.
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 
 import click
@@ -20,25 +19,26 @@ def main() -> None:
 
 @main.command()
 @click.option("--runs", "-n", default=10, help="Number of runs per file")
-@click.option("--arm", default="D", help="Arm to pilot (default: D)")
+@click.option("--arm", default="SPECIALIST", help="Arm to pilot (default: SPECIALIST)")
 @click.option("--files", "-f", multiple=True, help="Specific files to pilot (stems)")
-def pilot(runs: int, arm: str, files: tuple[str, ...]) -> None:
+@click.option("--model", "-m", default="sonnet", help="Model alias (default: sonnet)")
+def pilot(runs: int, arm: str, files: tuple[str, ...], model: str) -> None:
     """Run the determinism pilot (small-scale variance test)."""
     from .runner import run_pilot
 
     pilot_arm = Arm(arm)
     pilot_files = list(files) if files else None
 
-    stats = asyncio.run(run_pilot(n_runs=runs, pilot_arm=pilot_arm, pilot_files=pilot_files))
+    stats = run_pilot(n_runs=runs, pilot_arm=pilot_arm, pilot_files=pilot_files, model=model)
     _print_stats(stats, "Pilot")
 
 
 @main.command()
 @click.option("--runs", "-n", default=5, help="Number of complete runs")
 @click.option("--arms", "-a", multiple=True, help="Arms to include (default: all)")
-@click.option("--concurrency", "-c", default=10, help="Max concurrent API calls")
+@click.option("--model", "-m", default="sonnet", help="Model alias (default: sonnet)")
 @click.option("--experiment-id", default=EXPERIMENT_ID, help="Experiment identifier")
-def run(runs: int, arms: tuple[str, ...], concurrency: int, experiment_id: str) -> None:
+def run(runs: int, arms: tuple[str, ...], model: str, experiment_id: str) -> None:
     """Run the full experiment (or a subset of arms)."""
     from .runner import RunConfig, run_experiment
 
@@ -47,10 +47,10 @@ def run(runs: int, arms: tuple[str, ...], concurrency: int, experiment_id: str) 
         experiment_id=experiment_id,
         arms=arm_list,
         n_runs=runs,
-        concurrency=concurrency,
+        model=model,
     )
 
-    stats = asyncio.run(run_experiment(config))
+    stats = run_experiment(config)
     _print_stats(stats, "Experiment")
 
 
@@ -77,7 +77,7 @@ def score(experiment_id: str, threshold: float, line_tolerance: int) -> None:
 @click.option("--output", "-o", default=None, help="Output report path")
 def analyze(experiment_id: str, output: str | None) -> None:
     """Run the analysis pipeline and generate the report."""
-    click.echo(f"Analysis pipeline for {experiment_id} — not yet implemented (Phase 7)")
+    click.echo(f"Analysis pipeline for {experiment_id} — not yet implemented (Phase 6)")
 
 
 def _print_stats(stats, label: str) -> None:

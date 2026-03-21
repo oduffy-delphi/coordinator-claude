@@ -1,21 +1,22 @@
-"""Async orchestrator for running the persona review experiment.
+"""Sequential orchestrator for running the persona review experiment.
 
 Builds the full matrix of (arm × file × run), randomizes file order per run,
-checks the result store for completed work, and runs with adaptive concurrency.
+checks the result store for completed work, and runs sequentially with
+progress tracking. Agent spawning is inherently sequential — each review
+is a subprocess call.
 """
 
 from __future__ import annotations
 
-import asyncio
 import random
+import time
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 from tqdm import tqdm
 
 from .api_client import ReviewClient
-from .config import Arm, CORPUS_DIR, DEFAULT_CONCURRENCY, EXPERIMENT_ID
+from .config import Arm, CORPUS_DIR, EXPERIMENT_ID, PILOT_ARM, PILOT_RUNS
 from .parser import parse_review_response
 from .prompt_builder import build_system_prompt, build_user_message
 from .result_store import ResultStore
@@ -28,8 +29,8 @@ class RunConfig:
     experiment_id: str = EXPERIMENT_ID
     arms: list[Arm] | None = None  # None = all arms
     n_runs: int = 5
-    concurrency: int = DEFAULT_CONCURRENCY
     corpus_dir: Path | None = None
+    model: str = "sonnet"
 
     def __post_init__(self) -> None:
         if self.arms is None:
@@ -61,15 +62,16 @@ class RunStats:
     total_duration: float
 
 
-async def run_experiment(config: RunConfig) -> RunStats:
+def run_experiment(config: RunConfig) -> RunStats:
     """Execute the full experiment matrix.
 
-    For each run, file order is randomized (even though fresh sessions make
-    ordering theoretically irrelevant — satisfies the control requirement).
+    Arms are interleaved within each run: for each file, run both arms before
+    moving to the next file. This ensures any within-session API quality drift
+    affects both arms equally.
     """
     corpus_dir = config.corpus_dir or CORPUS_DIR / "files"
     store = ResultStore(config.experiment_id)
-    client = ReviewClient()
+    client = ReviewClient(model=config.model)
 
     # Discover corpus files
     code_files = sorted(
@@ -79,15 +81,16 @@ async def run_experiment(config: RunConfig) -> RunStats:
     if not code_files:
         raise FileNotFoundError(f"No code files found in {corpus_dir}")
 
-    # Build work items
+    # Build work items — interleave arms within each run
     all_items: list[WorkItem] = []
     skipped = 0
     for run_idx in range(config.n_runs):
         # Randomize file order per run
         shuffled = list(code_files)
         random.shuffle(shuffled)
-        for arm in config.arms:
-            for file_path in shuffled:
+        for file_path in shuffled:
+            # Both arms on same file before moving to next (interleaving)
+            for arm in config.arms:
                 if store.exists(arm.value, file_path.stem, run_idx):
                     skipped += 1
                     continue
@@ -108,62 +111,52 @@ async def run_experiment(config: RunConfig) -> RunStats:
             total_duration=0.0,
         )
 
-    # Adaptive concurrency
-    semaphore = asyncio.Semaphore(config.concurrency)
-    completed = 0
-    failed = 0
-    parse_errors = 0
-    start_time = asyncio.get_event_loop().time()
-
     # Pre-build system prompts (one per arm, reused across files/runs)
     system_prompts = {arm: build_system_prompt(arm) for arm in config.arms}
 
+    completed = 0
+    failed = 0
+    parse_errors = 0
+    start_time = time.monotonic()
+
     progress = tqdm(total=len(all_items), desc="Reviews", unit="call")
 
-    async def process_item(item: WorkItem) -> None:
-        nonlocal completed, failed, parse_errors
+    for item in all_items:
+        try:
+            user_msg = build_user_message(item.file_path)
+            response = client.review(
+                system_prompt=system_prompts[item.arm],
+                user_message=user_msg,
+                arm=item.arm.value,
+                run_id=f"run_{item.run_index}",
+                file_id=item.file_stem,
+            )
 
-        async with semaphore:
-            try:
-                user_msg = build_user_message(item.file_path)
-                response = await client.review(
-                    system_prompt=system_prompts[item.arm],
-                    user_message=user_msg,
-                    arm=item.arm.value,
-                    run_id=f"run_{item.run_index}",
-                    file_id=item.file_stem,
-                )
+            # Parse the response
+            parse_result = parse_review_response(response.text)
+            if parse_result.review.parse_status == "parse_failed":
+                parse_errors += 1
 
-                # Parse the response
-                parse_result = parse_review_response(response.text)
-                if parse_result.review.parse_status == "parse_failed":
-                    parse_errors += 1
+            # Save immediately (crash-resume)
+            store.save(
+                arm=item.arm.value,
+                file_stem=item.file_stem,
+                run_index=item.run_index,
+                review=parse_result.review,
+                call_record=response.call_record,
+            )
+            completed += 1
 
-                # Save immediately (crash-resume)
-                store.save(
-                    arm=item.arm.value,
-                    file_stem=item.file_stem,
-                    run_index=item.run_index,
-                    review=parse_result.review,
-                    call_record=response.call_record,
-                )
-                completed += 1
+        except Exception as e:
+            failed += 1
+            tqdm.write(f"FAILED: {item.arm.value}/{item.file_stem}/run_{item.run_index}: {e}")
 
-            except Exception as e:
-                failed += 1
-                tqdm.write(f"FAILED: {item.arm.value}/{item.file_stem}/run_{item.run_index}: {e}")
-
-            finally:
-                progress.update(1)
-
-    # Run all items concurrently (bounded by semaphore)
-    tasks = [asyncio.create_task(process_item(item)) for item in all_items]
-    await asyncio.gather(*tasks)
+        finally:
+            progress.update(1)
 
     progress.close()
-    await client.close()
 
-    total_duration = asyncio.get_event_loop().time() - start_time
+    total_duration = time.monotonic() - start_time
 
     return RunStats(
         total_scheduled=total_scheduled,
@@ -175,15 +168,16 @@ async def run_experiment(config: RunConfig) -> RunStats:
     )
 
 
-async def run_pilot(
-    n_runs: int = 10,
-    pilot_arm: Arm = Arm.D,
+def run_pilot(
+    n_runs: int = PILOT_RUNS,
+    pilot_arm: Arm = PILOT_ARM,
     pilot_files: list[str] | None = None,
     corpus_dir: Path | None = None,
+    model: str = "sonnet",
 ) -> RunStats:
     """Run the determinism pilot: limited files × limited runs × single arm.
 
-    Default: 3 files × 10 runs × Arm D = 30 calls.
+    Default: 3 files × 10 runs × SPECIALIST arm = 30 calls.
     """
     corpus_dir = corpus_dir or CORPUS_DIR / "files"
 
@@ -201,8 +195,7 @@ async def run_pilot(
         arms=[pilot_arm],
         n_runs=n_runs,
         corpus_dir=corpus_dir,
+        model=model,
     )
-    # Override corpus_dir to use the pilot files specifically
-    config.corpus_dir = corpus_dir
 
-    return await run_experiment(config)
+    return run_experiment(config)

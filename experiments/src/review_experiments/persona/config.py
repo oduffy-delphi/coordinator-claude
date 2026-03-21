@@ -1,4 +1,9 @@
-"""Configuration for the persona review experiment."""
+"""Configuration for the persona review experiment.
+
+2-arm design: BASELINE (generic reviewer) vs SPECIALIST (richly-described
+Patrik persona). Execution via Claude Code agent spawning — no direct API
+access, so no temperature/model/max_tokens controls.
+"""
 
 from __future__ import annotations
 
@@ -12,37 +17,24 @@ from pathlib import Path
 EXPERIMENT_ID = "persona_review_v1"
 
 # ---------------------------------------------------------------------------
-# Arms — the 5 experimental conditions
+# Arms — the 2 experimental conditions
 # ---------------------------------------------------------------------------
 
 
 class Arm(str, Enum):
-    """Experimental conditions forming a 2×2 factorial + baseline.
+    """Experimental conditions for the specialist review experiment.
 
-    The 2×2 factorial crosses naming (unnamed/named) × framing (1p/3p):
-        |           | 1st person | 3rd person |
-        |-----------|------------|------------|
-        | Unnamed   | B          | B_PRIME    |
-        | Named     | D          | C          |
+    BASELINE:   Generic reviewer — no behavioral description, no focus areas.
+    SPECIALIST: Full production Patrik prompt — rich description, stated focus
+                areas, review standards, adversarial framing.
 
-    Arm A is the external baseline (vanilla, no persona description).
+    The shared output format (JSON schema + coverage declaration) is identical
+    across both arms.
     """
 
-    A = "A"              # Vanilla — minimal instruction
-    B = "B"              # Rich description, unnamed, 1st person
-    B_PRIME = "B_PRIME"  # Rich description, unnamed, 3rd person
-    C = "C"              # Rich description, named (Patrik), 3rd person
-    D = "D"              # Rich description, named (Patrik), 1st person — production
+    BASELINE = "BASELINE"
+    SPECIALIST = "SPECIALIST"
 
-
-# ---------------------------------------------------------------------------
-# Model configuration
-# ---------------------------------------------------------------------------
-
-# Pinned to exact dated ID — aliases may resolve to different checkpoints.
-MODEL = "claude-opus-4-6-20250115"
-TEMPERATURE = 0
-MAX_TOKENS = 4096
 
 # ---------------------------------------------------------------------------
 # Paths (relative to experiments/ directory)
@@ -60,11 +52,8 @@ ADJUDICATIONS_MANIFEST = CORPUS_DIR / "manifests" / "adjudications.yaml"
 
 # Prompt file names per arm
 ARM_PROMPT_FILES: dict[Arm, str] = {
-    Arm.A: "arm_a_vanilla.md",
-    Arm.B: "arm_b_rich_unnamed_1p.md",
-    Arm.B_PRIME: "arm_bp_rich_unnamed_3p.md",
-    Arm.C: "arm_c_rich_named_3p.md",
-    Arm.D: "arm_d_rich_named_1p.md",
+    Arm.BASELINE: "arm_baseline.md",
+    Arm.SPECIALIST: "arm_specialist.md",
 }
 
 SHARED_OUTPUT_FORMAT = "shared_output_format.md"
@@ -73,6 +62,5 @@ SHARED_OUTPUT_FORMAT = "shared_output_format.md"
 # Runner defaults
 # ---------------------------------------------------------------------------
 
-DEFAULT_CONCURRENCY = 10
 PILOT_RUNS = 10
-PILOT_ARM = Arm.D
+PILOT_ARM = Arm.SPECIALIST
