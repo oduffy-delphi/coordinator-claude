@@ -214,8 +214,9 @@ Human evaluation:
 
 ### Primary analysis
 
-Residual defect count is count data with a hierarchical structure (defects nested within files, files crossed with arms and runs). The primary model is a **generalized linear mixed model (GLMM)** with:
-- **Response:** Residual defect count (Poisson or negative binomial family, chosen based on overdispersion in pilot data)
+Residual defect count is bounded count data (k defects remaining out of n seeded per file) with a hierarchical structure (defects nested within files, files crossed with arms and runs). The primary model is a **generalized linear mixed model (GLMM)** with:
+- **Response:** Residual defects out of total seeded — binomial family (cbind(residual, fixed) ~ ...). Binomial is correct because counts are bounded by the number of seeded defects per file; Poisson assumes unbounded counts and would produce nonsensical predictions exceeding the maximum.
+- **Link function:** Logit (default for binomial in lme4::glmer). Pre-registered.
 - **Fixed effect:** Arm (A, B, C)
 - **Random effects:** File (intercept) and Run (intercept), crossed
 

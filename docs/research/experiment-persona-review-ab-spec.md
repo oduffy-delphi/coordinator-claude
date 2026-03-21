@@ -138,7 +138,7 @@ For each condition × each file (5 × 25 = 125 reviews per run, N runs):
 
 ### Controls
 
-- **Model:** Claude Opus 4.6 (current production reviewer model — production Patrik runs on Opus). Single model across all conditions. Note: if results are positive, a follow-up experiment on Sonnet could test whether the effect transfers to cheaper models.
+- **Model:** Claude Opus 4.6, pinned to dated checkpoint `claude-opus-4-6-20250115` (current production reviewer model — production Patrik runs on Opus). Single model across all conditions. Pinning to a dated checkpoint ensures reproducibility — model aliases may resolve to different checkpoints over time. Note: if results are positive, a follow-up experiment on Sonnet could test whether the effect transfers to cheaper models.
 - **Temperature:** 0 (lowest available). Note: temp=0 does **not** guarantee deterministic output — infrastructure-level non-determinism (batching, floating-point variance) produces variation across calls. The determinism pilot (see Prerequisites) will measure actual variance to inform the required number of runs.
 - **Token budget:** Same max_tokens across all conditions.
 - **Context:** Fresh API session per review — no cross-contamination.
@@ -169,12 +169,13 @@ Three sub-dimensions are reported separately (not averaged or summed). Pre-regis
 **Primary analysis:** Generalized linear mixed model (GLMM) with binomial family.
 
 ```
-defect_detected ~ condition + (1 | file) + (1 | defect_id)
+defect_detected ~ condition + (1 | defect_id)
 ```
 
 - **Outcome:** Binary — did this condition detect this specific defect on this run? (1/0)
 - **Fixed effect:** Condition (5 levels: A, B, B′, C, D)
-- **Random effects:** File (accounts for some files being inherently harder) and defect nested within file (accounts for some defects being inherently harder)
+- **Random effects:** Defect (accounts for some defects being inherently harder). Note: defect_ids are globally unique, so this random intercept implicitly captures file-level variance (each defect belongs to exactly one file). A separate `(1 | file)` random effect would be redundant and cause identifiability issues.
+- **Link function:** Logit (the default for binomial family in lme4::glmer). Pre-registered — no researcher degrees of freedom.
 - **Post-hoc:** Estimated marginal means (emmeans) with Tukey adjustment for pairwise comparisons. Pre-registered contrasts:
   - H1: Any of {B, B′, C, D} vs A (description richness)
   - H2: (C + D) vs (B + B′) (naming main effect)
@@ -186,7 +187,9 @@ defect_detected ~ condition + (1 | file) + (1 | defect_id)
 - Difficulty-specific detection: Add defect_difficulty as a fixed effect interaction term. The sycophancy hypothesis predicts condition × difficulty interaction (first-person framing underperforms on obvious defects).
 - Explanation quality: Linear mixed model with rater as a random effect, condition as fixed effect. Separate models for each sub-dimension.
 
-**Implementation:** R with `lme4` (GLMM) and `emmeans` (post-hoc). Python alternative: `statsmodels` mixed linear model or `pymer4` wrapper.
+**Implementation:** R with `lme4` (GLMM) and `emmeans` (post-hoc contrasts + equivalence tests). Python alternative: `pymer4` wrapper (note: `statsmodels.MixedLM` is linear only — cannot fit binomial GLMM).
+
+**Human review step for FP_novel findings:** Before computing precision for any arm, all findings classified as `FP_novel` by the automated scorer must be reviewed by a human to reclassify genuine issues as `valid_unexpected`. The automated scorer cannot assign `valid_unexpected` — it requires human judgment. This is a hard prerequisite before analysis; precision computed without this step will be biased downward.
 
 ### Power Analysis (simulation-based)
 
@@ -199,10 +202,14 @@ The classical Cohen's d framework does not apply to a GLMM with crossed random e
 - Description richness effect (B/B′/C/D vs A): +10-15 percentage points (based on A-HMAD's 4-6% accuracy gains, adjusted upward because code review is more subjective than reasoning benchmarks)
 - Naming effect (C/D vs B/B′): +0-3 percentage points (literature suggests near-zero; we're powered to detect ≥5pp if it exists)
 - Framing effect (B′/C vs B/D): +0-5 percentage points (speculative; sycophancy literature suggests measurable but small)
-- File-level variance (σ²_file): To be estimated from pilot
 - Defect-level variance (σ²_defect): To be estimated from pilot
 
-**Key insight:** With 25 files (the primary unit of generalization) and ~100 total seeded defects, we have ~100 binary observations per condition per run. For the description richness effect (expected large), power should be very high. For the naming effect (expected small-to-null), we are explicitly acknowledging limited power — a null result is interpretable as "the effect, if it exists, is too small to matter for our architecture."
+**Key insight:** With 25 files (the primary unit of generalization) and ~100 total seeded defects, we have ~100 binary observations per condition per run. For the description richness effect (expected large), power should be very high. For the naming effect (expected small-to-null), we are explicitly acknowledging limited power — a well-powered test of H2 would require ~1000+ observations per arm for a 3pp effect at 80% power.
+
+**Equivalence testing for H2 (naming effect):** A non-significant naming contrast is not evidence that naming has no effect — it could reflect insufficient power. To make a null H2 interpretable, we pre-register a **TOST (Two One-Sided Tests)** procedure:
+- **Smallest effect size of interest (SESOI):** 5 percentage points in recall (effects smaller than this do not justify architectural changes)
+- **Procedure:** After fitting the GLMM, compute the 90% CI for the naming contrast (C+D) vs (B+B′) on the probability scale. If the entire 90% CI falls within [−5pp, +5pp], conclude practical equivalence. If the CI is wide (includes both meaningful positive and negative effects), conclude "inconclusive" — not "no effect."
+- This applies to H2 only. H1 (description richness) is expected to show a clear effect; H3 (framing) uses standard NHST since a non-significant result there is less decision-relevant.
 
 **The determinism pilot will provide the empirical variance estimates needed to run the simulation and finalize N.**
 

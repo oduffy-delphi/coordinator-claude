@@ -69,7 +69,8 @@ CREATE TABLE IF NOT EXISTS scores (
     classification TEXT NOT NULL,
     matched_defect_id TEXT,
     matched_distractor_id TEXT,
-    match_method TEXT NOT NULL
+    match_method TEXT NOT NULL,
+    match_score REAL  -- numerical similarity that drove the assignment; enables post-hoc threshold sensitivity analysis
 );
 
 CREATE TABLE IF NOT EXISTS file_scores (

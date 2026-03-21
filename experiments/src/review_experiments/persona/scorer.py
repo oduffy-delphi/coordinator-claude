@@ -7,6 +7,7 @@ assignment (no LLM-as-judge). This ensures reproducible, auditable scoring.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -113,11 +114,11 @@ def _optimal_assignment(
     defects: list[DefectEntry],
     threshold: float = DEFAULT_THRESHOLD,
     line_tolerance: int = DEFAULT_LINE_TOLERANCE,
-) -> dict[int, int]:
+) -> dict[int, tuple[int, float]]:
     """Optimal bipartite matching: findings → defects.
 
     Uses scipy.optimize.linear_sum_assignment on the negated cost matrix.
-    Returns dict mapping finding_index → defect_index for matched pairs.
+    Returns dict mapping finding_index → (defect_index, match_score) for matched pairs.
     """
     if not findings or not defects:
         return {}
@@ -130,17 +131,20 @@ def _optimal_assignment(
     for i, finding in enumerate(findings):
         for j, defect in enumerate(defects):
             score = match_score(finding, defect, line_tolerance)
-            cost_matrix[i, j] = score if score >= threshold else 0.0
+            # Use large negative penalty (not zero) for below-threshold pairs so
+            # the Hungarian algorithm actively avoids them rather than wasting
+            # assignment slots on zero-weight matches.
+            cost_matrix[i, j] = score if score >= threshold else -1e6
 
     # Negate for maximum-weight matching
     # linear_sum_assignment minimizes, so we negate to maximize
     row_indices, col_indices = linear_sum_assignment(-cost_matrix)
 
-    # Filter out zero-weight matches (below threshold)
+    # Filter out penalized matches (below threshold)
     matches = {}
     for r, c in zip(row_indices, col_indices):
-        if cost_matrix[r, c] > 0:
-            matches[r] = c
+        if cost_matrix[r, c] >= threshold:
+            matches[r] = (c, float(cost_matrix[r, c]))
 
     return matches
 
@@ -184,14 +188,14 @@ class ScoredReview:
     def recall(self) -> float:
         total_defects = len(self.true_positives) + len(self.undetected_defects)
         if total_defects == 0:
-            return 1.0  # No defects to find = perfect recall
+            return math.nan  # No defects to find — undefined, exclude from aggregation
         return len(self.true_positives) / total_defects
 
     @property
     def precision(self) -> float:
         total_findings = len(self.scored_findings)
         if total_findings == 0:
-            return 1.0
+            return math.nan  # No findings — undefined, exclude from aggregation
         useful = len(self.true_positives) + len(self.valid_unexpected)
         return useful / total_findings
 
@@ -217,8 +221,13 @@ def score_review(
     """
     # Get file-specific defects and distractors
     # Match against any finding whose file field contains the stem
-    file_defects = [d for d in defect_manifest.defects if file_stem in d.file]
-    file_distractors = [d for d in distractor_manifest.distractors if file_stem in d.file]
+    file_defects = defect_manifest.defects_for_file(file_stem)
+    if not file_defects:
+        # Fallback: try matching against stem (manifest may store with extension)
+        file_defects = [d for d in defect_manifest.defects if Path(d.file).stem == file_stem]
+    file_distractors = distractor_manifest.distractors_for_file(file_stem)
+    if not file_distractors:
+        file_distractors = [d for d in distractor_manifest.distractors if Path(d.file).stem == file_stem]
 
     findings = review.findings
     scored: list[ScoredFinding] = []
@@ -227,15 +236,16 @@ def score_review(
     assignment = _optimal_assignment(findings, file_defects, threshold, line_tolerance)
 
     matched_finding_indices = set(assignment.keys())
-    matched_defect_indices = set(assignment.values())
+    matched_defect_indices = {defect_idx for defect_idx, _ in assignment.values()}
 
     # Classify matched findings as TP
-    for finding_idx, defect_idx in assignment.items():
+    for finding_idx, (defect_idx, score) in assignment.items():
         scored.append(ScoredFinding(
             finding=findings[finding_idx],
             classification=FindingClassification.TRUE_POSITIVE,
             matched_defect_id=file_defects[defect_idx].defect_id,
             match_method=MatchMethod.FUZZY,
+            match_score=score,
         ))
 
     # Step 3: Check unmatched findings against distractors
@@ -243,21 +253,23 @@ def score_review(
         if i in matched_finding_indices:
             continue
 
-        # Check against distractors
-        is_distractor = False
+        # Check against distractors — a finding can match any distractor
+        # (distractors are not a limited resource like defects, so no
+        # bipartite assignment needed; multiple findings can match the same one)
+        matched_distractor = None
         for distractor in file_distractors:
             if match_score_distractor(finding, distractor, line_tolerance) > 0:
-                scored.append(ScoredFinding(
-                    finding=finding,
-                    classification=FindingClassification.FALSE_POSITIVE_DISTRACTOR,
-                    matched_distractor_id=distractor.distractor_id,
-                    match_method=MatchMethod.FUZZY,
-                ))
-                is_distractor = True
+                matched_distractor = distractor
                 break
 
-        # Step 4: Remaining = novel FP
-        if not is_distractor:
+        if matched_distractor is not None:
+            scored.append(ScoredFinding(
+                finding=finding,
+                classification=FindingClassification.FALSE_POSITIVE_DISTRACTOR,
+                matched_distractor_id=matched_distractor.distractor_id,
+                match_method=MatchMethod.FUZZY,
+            ))
+        else:
             scored.append(ScoredFinding(
                 finding=finding,
                 classification=FindingClassification.FALSE_POSITIVE_NOVEL,

@@ -125,6 +125,7 @@ class ScoredFinding(BaseModel):
     matched_defect_id: str | None = None
     matched_distractor_id: str | None = None
     match_method: MatchMethod = MatchMethod.NONE
+    match_score: float | None = None  # numerical similarity; enables post-hoc threshold sensitivity analysis
 
 
 class FileScore(BaseModel):
