@@ -14,7 +14,7 @@ This is a top-level orientation for anyone wondering: *what are people actually 
 
 2. **[Novel Claude Code Implementations](2026-03-21-novel-claude-code-implementations.md)** (2026-03-21) — Outward-looking: surveyed the Claude Code ecosystem for ambitious implementations, meta-strategies, and honest criticism. 5 topic specialists collaborating via Agent Teams, 30+ sources. Found the productivity perception gap, the major community frameworks, and the real limitations.
 
-Supporting studies: [Aider Architectural Assessment](../../research/AIDER-ASSESSMENT.md) | [Warm RAM / Tiered Context Novelty](../../archive/research/2026-03-20-warm-ram-novelty.md)
+Supporting studies: [Agent Orchestration Novelty Assessment (unified)](2026-03-20-agent-orchestration-novelty-unified.md)
 
 ---
 

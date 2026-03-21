@@ -47,7 +47,7 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/distill` | Distill accumulated artifacts into wiki guides + decision records, then delete source material |
 
 <!-- Review: patrik — corrected count: 20 SKILL.md-backed skills, 7 PIPELINE.md definitions listed separately under Commands -->
-### Skills (21)
+### Skills (22)
 
 **Workflow & Planning:**
 - `brainstorming` — Collaborative dialogue to refine ideas into designs. Scope assessment, design-for-isolation, existing-codebase awareness.
@@ -130,7 +130,7 @@ The coordinator defines the routing framework that domain plugins extend:
 3. At dispatch time, `/review-dispatch` merges all fragments into a composite routing table
 4. Signals from changed code determine which reviewer handles the review
 
-See the parent [ARCHITECTURE.md](../ARCHITECTURE.md) for the full conceptual model.
+See the parent [ARCHITECTURE.md](ARCHITECTURE.md) for the full conceptual model.
 
 ## Per-Project Config
 
@@ -177,7 +177,7 @@ All pipeline phases now mark documents *before* starting work, not just on compl
 - **Executing-plans:** Plan document updated on disk (not just the task list) before and after each task.
 - **Writing-plans:** Plan header template now includes `Status:` field.
 
-See [ARCHITECTURE.md](../ARCHITECTURE.md) § "The Write-Ahead Status Protocol" for the conceptual model and state machine.
+See [ARCHITECTURE.md](ARCHITECTURE.md) § "The Write-Ahead Status Protocol" for the conceptual model and state machine.
 
 ### v1.1.0 (March 2026) — Superpowers v5.0.0 Absorption
 
