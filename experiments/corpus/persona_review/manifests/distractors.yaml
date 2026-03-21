@@ -2,7 +2,7 @@
 # No distractor is within ±5 lines of a seeded defect.
 
 experiment: persona_review_v1
-version: "0.1.0"
+version: "0.2.0"
 
 distractors:
   # -----------------------------------------------------------------------
@@ -145,3 +145,111 @@ distractors:
       Returning shared references to task objects is the expected pattern
       for introspection APIs. Deep copying would be wasteful and would
       hide live task state, which is exactly what callers want to inspect.
+
+  # -----------------------------------------------------------------------
+  # payment_processor.py
+  # -----------------------------------------------------------------------
+  - distractor_id: payment_import_inside_function
+    file: payment_processor.py
+    line_start: 171
+    line_end: 171
+    description: >
+      "import json" appears inside verify_webhook rather than at the top
+      of the file. This might be flagged as a code style violation, but
+      deferred imports are a valid Python pattern for optional/rarely-used
+      dependencies, reducing import-time overhead for the common path.
+    explanation: >
+      The json import is only needed in the webhook verification path.
+      Deferring it is a micro-optimization that's common in Python
+      libraries. PEP 8 acknowledges deferred imports as acceptable.
+
+  - distractor_id: payment_quantize_decimal
+    file: payment_processor.py
+    line_start: 74
+    line_end: 75
+    description: >
+      Decimal(10) ** -decimals looks unusual and might be flagged as
+      confusing arithmetic. But this is the standard Decimal quantization
+      pattern — Decimal("0.01") for 2 decimal places, Decimal("1") for
+      0 decimal places — just expressed programmatically.
+    explanation: >
+      This is idiomatic Python Decimal usage. Decimal(10)**-2 gives
+      Decimal("0.01"), which is exactly the quantize exponent needed
+      for currencies with 2 decimal places.
+
+  # -----------------------------------------------------------------------
+  # websocket_handler.ts
+  # -----------------------------------------------------------------------
+  - distractor_id: ws_try_catch_socket_close
+    file: websocket_handler.ts
+    line_start: 78
+    line_end: 82
+    description: >
+      The disconnect method wraps socket.close() in a try/catch that
+      silently swallows all errors. This looks like error suppression,
+      but WebSocket.close() can throw if the socket is already in a
+      CLOSING or CLOSED state. The catch-all is a standard defensive
+      pattern for cleanup code.
+    explanation: >
+      The socket.close() call is best-effort cleanup. If it throws,
+      the socket is already closing/closed and no further action is
+      needed. Logging would add noise without value.
+
+  # -----------------------------------------------------------------------
+  # user_service.py
+  # -----------------------------------------------------------------------
+  - distractor_id: user_timing_attack_authenticate
+    file: user_service.py
+    line_start: 135
+    line_end: 143
+    description: >
+      authenticate() returns early for non-existent users (line 136)
+      but performs hash computation for existing users, creating a
+      timing difference that could enable user enumeration. This looks
+      like a timing attack vulnerability, but for an in-memory service
+      the timing difference is negligible (microseconds), and the
+      hash computation is SHA-256 (fast), not bcrypt (slow). The
+      actual security issue (SHA-256 for passwords) is a separate concern.
+    explanation: >
+      Timing-based user enumeration requires measuring microsecond
+      differences over a network. For this service's threat model
+      (in-memory, likely behind an API gateway with its own latency
+      variance), the timing signal is undetectable.
+
+  # -----------------------------------------------------------------------
+  # event_emitter.ts
+  # -----------------------------------------------------------------------
+  - distractor_id: emitter_max_listeners_default
+    file: event_emitter.ts
+    line_start: 17
+    line_end: 17
+    description: >
+      maxListeners defaults to 10, which looks like an arbitrary low
+      limit. But this mirrors Node.js's EventEmitter default, which
+      exists as a leak-detection heuristic (a process with 10+ listeners
+      on one event often has a bug). The warning is informational, not
+      an error — events still fire normally.
+    explanation: >
+      The maxListeners default of 10 is the same as Node.js's built-in
+      EventEmitter. It's a development-time warning, not a hard limit.
+      setMaxListeners() is provided for legitimate high-listener-count
+      use cases.
+
+  # -----------------------------------------------------------------------
+  # file_processor.py
+  # -----------------------------------------------------------------------
+  - distractor_id: file_delete_unlink_no_permission_check
+    file: file_processor.py
+    line_start: 198
+    line_end: 201
+    description: >
+      delete_file calls path.unlink() without checking file permissions
+      first. This might be flagged as a reliability concern — the unlink
+      could raise PermissionError. But for a storage directory the service
+      controls, the service has write permissions by construction. Checking
+      permissions before unlink would be a TOCTOU race anyway.
+    explanation: >
+      The service owns the storage directory and all files within it.
+      Permission checks before deletion are unnecessary and would
+      themselves be race-prone. If permissions are wrong, the OSError
+      propagates to the caller as expected.

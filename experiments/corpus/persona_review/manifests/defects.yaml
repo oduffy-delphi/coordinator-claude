@@ -1,8 +1,11 @@
-# Defect manifest for persona review experiment — seed corpus (5 files)
+# Defect manifest for persona review experiment — expanded corpus (10 files)
 # Each defect has a globally unique ID for use as GLMM random effect.
+#
+# Difficulty distribution target: ~25% obvious, ~40% moderate, ~35% subtle
+# Category spread: security, logic, performance, error_handling
 
 experiment: persona_review_v1
-version: "0.1.0"
+version: "0.2.0"
 
 defects:
   # -----------------------------------------------------------------------
@@ -298,3 +301,315 @@ defects:
     correct_fix: >
       Add a "pending" count to the summary for tasks not completed and
       not dead. Assert total == completed + failed + pending.
+
+  # -----------------------------------------------------------------------
+  # payment_processor.py — MODERATE (4 defects)
+  # -----------------------------------------------------------------------
+  - defect_id: payment_refund_log_pii
+    file: payment_processor.py
+    line_start: 131
+    line_end: 134
+    category: security
+    severity: major
+    difficulty: obvious
+    keywords: ["log", "card", "PII", "card_last4", "sensitive", "PCI"]
+    description: >
+      The refund method logs the last 4 digits of the card number in a
+      plain-text log message. Even card_last4 is considered PII under PCI
+      DSS and should not appear in application logs that may be aggregated,
+      shipped to third-party log services, or persisted without encryption.
+    correct_fix: >
+      Remove the card_last4 from the log message. Log only the intent_id
+      and refund_amount, which are sufficient for audit trail purposes.
+
+  - defect_id: payment_capture_toctou
+    file: payment_processor.py
+    line_start: 91
+    line_end: 96
+    category: logic
+    severity: major
+    difficulty: moderate
+    keywords: ["race condition", "TOCTOU", "balance", "concurrent", "atomic", "check"]
+    description: >
+      The capture method reads the balance into a local variable, checks
+      sufficiency, then writes the updated balance. Without any locking or
+      transactional mechanism, two concurrent captures for the same customer
+      could both see sufficient balance and both deduct, resulting in a
+      negative balance (double-spend).
+    correct_fix: >
+      Use a lock per customer or a compare-and-swap pattern. Alternatively,
+      perform the check and deduction atomically within a single operation.
+
+  - defect_id: payment_webhook_decode_before_verify
+    file: payment_processor.py
+    line_start: 161
+    line_end: 161
+    category: security
+    severity: major
+    difficulty: moderate
+    keywords: ["decode", "verify", "signature", "UTF-8", "webhook", "payload"]
+    description: >
+      The webhook verification method decodes the payload from bytes to
+      UTF-8 string (line 161) before verifying the HMAC signature. If an
+      attacker sends a payload with invalid UTF-8 sequences, the decode
+      raises UnicodeDecodeError before the signature is checked, causing
+      a denial of service and potentially leaking timing information about
+      the verification process.
+    correct_fix: >
+      Compute the HMAC on the raw bytes. Construct the signed payload as
+      bytes (timestamp_bytes + b"." + payload) and only decode to string
+      after the signature is verified.
+
+  - defect_id: payment_refund_zero_falsy
+    file: payment_processor.py
+    line_start: 115
+    line_end: 115
+    category: logic
+    severity: major
+    difficulty: subtle
+    keywords: ["falsy", "zero", "Decimal", "or", "amount", "default"]
+    description: >
+      The expression `amount or intent.amount` uses Python truthiness.
+      Decimal("0") is falsy, so passing amount=Decimal("0") (intending a
+      no-op or zero-adjustment refund) silently becomes a full refund of
+      intent.amount. This is a data loss/financial correctness bug.
+    correct_fix: >
+      Use `amount if amount is not None else intent.amount` to distinguish
+      between "not provided" (None) and "explicitly zero" (Decimal(0)).
+
+  # -----------------------------------------------------------------------
+  # websocket_handler.ts — MODERATE (3 defects)
+  # -----------------------------------------------------------------------
+  - defect_id: ws_no_message_size_limit
+    file: websocket_handler.ts
+    line_start: 188
+    line_end: 195
+    category: error_handling
+    severity: major
+    difficulty: obvious
+    keywords: ["message", "size", "limit", "JSON.parse", "DoS", "memory", "payload"]
+    description: >
+      handleMessage parses any incoming WebSocket message with JSON.parse
+      without checking the message size first. A malicious client can send
+      arbitrarily large messages that consume server memory. There is no
+      maxPayload or size guard before the parse attempt.
+    correct_fix: >
+      Check event.data.length (or byteLength) before parsing. Reject
+      messages exceeding a reasonable limit (e.g., 64KB). Alternatively,
+      configure maxPayload on the WebSocket server.
+
+  - defect_id: ws_broadcast_all_reserialize
+    file: websocket_handler.ts
+    line_start: 165
+    line_end: 172
+    category: performance
+    severity: minor
+    difficulty: moderate
+    keywords: ["broadcast", "JSON.stringify", "serialize", "loop", "per-client", "N times"]
+    description: >
+      broadcastAll calls JSON.stringify(message) inside the loop for every
+      connected client. For N connections, this serializes the same object
+      N times. With 10K connections this means 10K identical serializations.
+      Compare with broadcastToRoom which correctly delegates to send().
+    correct_fix: >
+      Hoist JSON.stringify outside the loop: serialize once, then send the
+      pre-serialized string to each client.
+
+  - defect_id: ws_close_no_heartbeat_cleanup
+    file: websocket_handler.ts
+    line_start: 211
+    line_end: 222
+    category: logic
+    severity: major
+    difficulty: subtle
+    keywords: ["heartbeat", "clearInterval", "timer", "close", "cleanup", "leak", "interval"]
+    description: >
+      handleClose (triggered by socket.onclose) removes the connection from
+      rooms and the connections map, but does not call clearInterval on
+      conn.heartbeatTimer. The interval continues firing, attempting to send
+      pings to a removed/closed connection. This is both a resource leak
+      (timer never garbage-collected) and a source of spurious errors.
+      Compare with disconnect() which is never called from handleClose.
+    correct_fix: >
+      Add clearInterval(conn.heartbeatTimer) in handleClose, or have
+      handleClose delegate to disconnect() instead of duplicating cleanup.
+
+  # -----------------------------------------------------------------------
+  # user_service.py — MODERATE (3 defects)
+  # -----------------------------------------------------------------------
+  - defect_id: user_sha256_password
+    file: user_service.py
+    line_start: 50
+    line_end: 52
+    category: security
+    severity: critical
+    difficulty: obvious
+    keywords: ["SHA-256", "sha256", "password", "hash", "bcrypt", "argon2", "fast", "brute"]
+    description: >
+      Passwords are hashed with SHA-256, which is a fast cryptographic hash.
+      A single GPU can compute billions of SHA-256 hashes per second, making
+      brute-force attacks on the password database trivial even with salting.
+      Password hashing requires a deliberately slow algorithm.
+    correct_fix: >
+      Use bcrypt, scrypt, or argon2id for password hashing. These algorithms
+      have configurable work factors that make brute-force infeasible.
+
+  - defect_id: user_get_by_email_returns_deleted
+    file: user_service.py
+    line_start: 121
+    line_end: 127
+    category: logic
+    severity: major
+    difficulty: subtle
+    keywords: ["get_by_email", "deleted", "soft-delete", "is_deleted", "inconsistent"]
+    description: >
+      get_by_email() returns the user object without checking is_deleted.
+      Compare with get_user() which filters out deleted users. Any code
+      calling get_by_email() directly (e.g., for display, search, or API
+      responses) will return soft-deleted users as if they still exist.
+      The authenticate() method compensates with its own is_deleted check,
+      but the method itself violates the soft-delete contract.
+    correct_fix: >
+      Add an is_deleted check in get_by_email, consistent with get_user().
+      Or extract the check into a shared helper method.
+
+  - defect_id: user_change_password_reuses_salt
+    file: user_service.py
+    line_start: 241
+    line_end: 242
+    category: security
+    severity: minor
+    difficulty: subtle
+    keywords: ["salt", "reuse", "password", "change", "new salt", "rainbow"]
+    description: >
+      change_password reuses the existing salt for the new password hash.
+      Best practice is to generate a fresh salt on every password change.
+      Reusing the salt means that if the old hash and salt are compromised,
+      an attacker who can observe the new hash can determine whether the
+      new password is the same as the old one (hashes will match). It also
+      reduces the entropy of the salt space over time if passwords are
+      changed frequently.
+    correct_fix: >
+      Generate a new salt via _generate_salt() and update user.salt along
+      with user.password_hash.
+
+  # -----------------------------------------------------------------------
+  # event_emitter.ts — MODERATE (3 defects)
+  # -----------------------------------------------------------------------
+  - defect_id: emitter_async_listener_unhandled
+    file: event_emitter.ts
+    line_start: 138
+    line_end: 138
+    category: error_handling
+    severity: major
+    difficulty: moderate
+    keywords: ["async", "Promise", "unhandled", "rejection", "await", "try-catch"]
+    description: >
+      fireEntries calls entry.fn(...args) synchronously. If fn is an async
+      function, it returns a Promise. The surrounding try/catch only catches
+      synchronous exceptions — the rejected Promise propagates as an
+      unhandled rejection, potentially crashing the Node.js process
+      (--unhandled-rejections=throw). The Listener type signature explicitly
+      allows async functions (Promise<void>).
+    correct_fix: >
+      Detect or await the return value. If the return is a Promise, attach
+      a .catch() handler. Or make fireEntries async and await each listener,
+      though this changes the emission semantics.
+
+  - defect_id: emitter_once_splice_during_iteration
+    file: event_emitter.ts
+    line_start: 136
+    line_end: 151
+    category: logic
+    severity: major
+    difficulty: subtle
+    keywords: ["splice", "iteration", "once", "for-of", "skip", "remove", "concurrent"]
+    description: >
+      fireEntries iterates over the entries array with for-of, and when a
+      once-listener fires, it splices the entry out of the underlying array
+      (via this.listeners.get(eventKey)). Since entries IS the same array
+      reference, the splice shifts subsequent elements down. The for-of
+      iterator, which tracks by internal index, advances past the shifted
+      element — skipping the listener that was immediately after the removed
+      once-listener.
+    correct_fix: >
+      Collect once-listeners to remove after the iteration completes, or
+      iterate over a shallow copy of the array (entries.slice()).
+
+  - defect_id: emitter_wildcard_exponential
+    file: event_emitter.ts
+    line_start: 159
+    line_end: 184
+    category: performance
+    severity: minor
+    difficulty: subtle
+    keywords: ["wildcard", "recursive", "exponential", "backtrack", "pattern", "DoS"]
+    description: >
+      matchesWildcard with "**" patterns uses recursive calls that try every
+      possible skip position (line 172-179). For a pattern like "**.**.**"
+      matched against "a.b.c.d.e", this produces exponential backtracking.
+      A malicious or carelessly registered pattern could cause severe
+      performance degradation on every emit() call.
+    correct_fix: >
+      Use dynamic programming or convert the pattern to a regex. For the
+      common case, limit ** to appearing at most once per pattern.
+
+  # -----------------------------------------------------------------------
+  # file_processor.py — MODERATE (3 defects)
+  # -----------------------------------------------------------------------
+  - defect_id: file_path_traversal
+    file: file_processor.py
+    line_start: 179
+    line_end: 179
+    category: security
+    severity: critical
+    difficulty: obvious
+    keywords: ["path traversal", "sanitize", "filename", "backslash", "directory", "escape"]
+    description: >
+      _build_storage_path sanitizes the filename by replacing ".." and "/"
+      but does not handle backslashes (\), which are valid path separators
+      on Windows. A filename like "..\\..\\etc\\passwd" bypasses the
+      sanitization and traverses outside the storage directory. The
+      blocklist approach to path sanitization is inherently fragile.
+    correct_fix: >
+      Use Path(filename).name or os.path.basename(filename) to extract
+      only the filename component, stripping all directory components
+      regardless of separator.
+
+  - defect_id: file_size_check_after_full_read
+    file: file_processor.py
+    line_start: 96
+    line_end: 118
+    category: error_handling
+    severity: major
+    difficulty: moderate
+    keywords: ["size", "check", "read", "stream", "max_size", "upload", "after"]
+    description: >
+      The file stream is fully read and written to the temp file (lines
+      96-106) before the size check on line 109. A 10GB upload will be
+      written in full to the temp file before being rejected. The size
+      check should be streaming — checked after each chunk with early
+      termination.
+    correct_fix: >
+      Move the size check inside the while loop. After each chunk, check
+      if total_size > self._max_size and return REJECTED immediately if so.
+
+  - defect_id: file_temp_leak_on_reject
+    file: file_processor.py
+    line_start: 108
+    line_end: 168
+    category: error_handling
+    severity: major
+    difficulty: subtle
+    keywords: ["temp", "cleanup", "leak", "NamedTemporaryFile", "delete", "finally"]
+    description: >
+      The temp file is created with delete=False. On the happy path it's
+      moved to storage or quarantine (shutil.move). But on two error paths —
+      size rejection (line 110, returns without cleanup) and the except
+      block (line 159, returns without cleanup) — the temp file is left on
+      disk. Over time this accumulates orphaned temp files, especially
+      under adversarial upload patterns.
+    correct_fix: >
+      Add a finally block (or use a try/finally wrapper) that calls
+      os.unlink(tmp.name) if the temp file still exists at the original
+      path (i.e., was not moved).
