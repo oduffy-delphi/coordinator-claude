@@ -8,9 +8,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from .client import ExperimentClient
 from .corpus import Corpus
-from .runner import PersonaExperimentRunner
 from .storage import ExperimentDB
 
 console = Console()
@@ -50,8 +48,17 @@ def validate_corpus(experiment: str, corpus_path: str | None):
     console.print(f"  SHA256: {corpus.manifest_sha256()[:16]}...")
 
 
-@main.command("run")
-@click.option("--experiment", required=True, type=click.Choice(["persona", "sequential"]))
+# ---------------------------------------------------------------------------
+# Persona experiment commands
+# ---------------------------------------------------------------------------
+
+@main.group("persona")
+def persona_group():
+    """Persona review experiment commands."""
+    pass
+
+
+@persona_group.command("run")
 @click.option("--n-runs", default=5, help="Number of complete runs")
 @click.option("--arms", default=None, help="Comma-separated arm names (default: all)")
 @click.option("--files", default=None, help="Comma-separated file IDs (default: all)")
@@ -59,11 +66,8 @@ def validate_corpus(experiment: str, corpus_path: str | None):
 @click.option("--db", default=DEFAULT_DB, help="Path to results database")
 @click.option("--model", default="claude-sonnet-4-20250514", help="Model ID")
 @click.option("--temperature", default=0.0, help="Temperature")
-@click.option("--seed", default=42, help="Random seed for file ordering")
 @click.option("--dry-run", is_flag=True, help="Show work items without calling API")
-@click.option("--llm-judge", is_flag=True, help="Enable LLM-judge fallback for scoring")
-def run_experiment(
-    experiment: str,
+def persona_run(
     n_runs: int,
     arms: str | None,
     files: str | None,
@@ -71,13 +75,17 @@ def run_experiment(
     db: str,
     model: str,
     temperature: float,
-    seed: int,
     dry_run: bool,
-    llm_judge: bool,
 ):
-    """Run an experiment."""
+    """Run the persona review experiment."""
+    from .client import ExperimentClient
+    from .persona.config import CORPUS_DIR, Arm
+    from .persona.prompt_builder import build_system_prompt
+    from .persona.pipeline import run_persona_review
+    from .schemas import WorkItem
+
     if corpus_path is None:
-        corpus_path = str(Path("corpus") / experiment)
+        corpus_path = str(CORPUS_DIR)
 
     corpus = Corpus(corpus_path)
     errors = corpus.validate()
@@ -87,35 +95,52 @@ def run_experiment(
             console.print(f"  - {err}")
         raise SystemExit(1)
 
-    arm_list = arms.split(",") if arms else None
-    file_list = files.split(",") if files else None
+    arm_list = [Arm(a) for a in arms.split(",")] if arms else list(Arm)
+    file_list = files.split(",") if files else corpus.file_ids()
+
+    if dry_run:
+        total = len(arm_list) * len(file_list) * n_runs
+        console.print(f"[yellow]Dry run — {total} work items:[/yellow]")
+        console.print(f"  Arms: {[a.value for a in arm_list]}")
+        console.print(f"  Files: {len(file_list)}")
+        console.print(f"  Runs: {n_runs}")
+        return
 
     client = ExperimentClient(model=model, temperature=temperature)
 
-    if experiment == "persona":
-        with ExperimentDB(db) as database:
-            runner = PersonaExperimentRunner(
-                corpus=corpus,
-                db=database,
-                client=client,
-                use_llm_judge=llm_judge,
-            )
-            if dry_run:
-                runner.dry_run(n_runs=n_runs, arms=arm_list, file_ids=file_list, seed=seed)
-            else:
-                runner.run(n_runs=n_runs, arms=arm_list, file_ids=file_list, seed=seed)
-    else:
-        console.print("[yellow]Sequential experiment not yet implemented.[/yellow]")
-        raise SystemExit(1)
+    with ExperimentDB(db) as database:
+        completed = 0
+        skipped = 0
+
+        for run_idx in range(n_runs):
+            for arm in arm_list:
+                system_prompt = build_system_prompt(arm)
+                for file_id in file_list:
+                    item = WorkItem(
+                        experiment="persona_review_v1",
+                        run_id=f"run_{run_idx}",
+                        file_id=file_id,
+                        arm=arm.value,
+                        step="review",
+                    )
+                    executed = run_persona_review(
+                        item=item,
+                        system_prompt=system_prompt,
+                        corpus=corpus,
+                        client=client,
+                        db=database,
+                    )
+                    if executed:
+                        completed += 1
+                    else:
+                        skipped += 1
+
+        console.print(f"[green]Done. {completed} completed, {skipped} skipped (already done).[/green]")
 
 
-@main.command("resume")
-@click.option("--db", default=DEFAULT_DB, help="Path to results database")
-def resume(db: str):
-    """Resume an interrupted experiment run."""
-    console.print(f"[yellow]Resume reads state from {db} and re-runs pending items.[/yellow]")
-    console.print("[yellow]Use 'run' with the same parameters — checkpointing handles resume automatically.[/yellow]")
-
+# ---------------------------------------------------------------------------
+# Status and export (shared across experiments)
+# ---------------------------------------------------------------------------
 
 @main.command("status")
 @click.option("--db", default=DEFAULT_DB, help="Path to results database")
@@ -148,8 +173,6 @@ def status(db: str):
 @click.option("--output", default=None, help="Output file path")
 def export_data(experiment: str, db: str, fmt: str, output: str | None):
     """Export results for external analysis (R, etc.)."""
-    import json as json_mod
-
     import pandas as pd
 
     db_path = Path(db)

@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-persona-review = "review_experiments.persona.cli:main"
+review-experiments = "review_experiments.cli:main"
 
 [project.optional-dependencies]
 stats = ["pymer4>=0.8"]
