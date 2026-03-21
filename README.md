@@ -47,6 +47,8 @@ The **tiered context injection** system ("warm RAM") was found to be composition
 
 For context on the broader landscape: [Bassim Eledath's 8 Levels of Agentic Engineering](https://www.bassimeledath.com/blog/levels-of-agentic-engineering), [Addy Osmani on Agentic Engineering](https://addyosmani.com/blog/agentic-engineering/), and [Mike Mason on Coherence Through Orchestration](https://mikemason.ca/writing/ai-coding-agents-jan-2026/) are good reference points.
 
+For the full picture — the ecosystem survey, the novelty assessment, the productivity paradox, and the real constraints — see **[State of the Meta](docs/research/STATE-OF-THE-META.md)**.
+
 ## What You Get
 
 ### Deep Research Pipelines
