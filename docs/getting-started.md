@@ -25,7 +25,7 @@ The install script handles:
 - JSON registration (`known_marketplaces.json`, `installed_plugins.json`, `settings.json`)
 - Platform detection (macOS, Linux, Windows/Git Bash, WSL)
 
-Use `--non-interactive` for unattended installs (installs coordinator + web-dev + data-science).
+Use `--non-interactive` for unattended installs (installs coordinator + deep-research + web-dev + data-science).
 Use `--plugins coordinator,game-dev` to specify an explicit plugin list.
 
 ### Persona Customization
@@ -115,6 +115,13 @@ Create or edit `~/.claude/plugins/installed_plugins.json`:
       "installedAt": "2026-03-20T00:00:00Z",
       "lastUpdated": "2026-03-20T00:00:00Z"
     }],
+    "deep-research@coordinator-claude": [{
+      "scope": "user",
+      "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/deep-research",
+      "version": "1.0.0",
+      "installedAt": "2026-03-20T00:00:00Z",
+      "lastUpdated": "2026-03-20T00:00:00Z"
+    }],
     "notebooklm@coordinator-claude": [{
       "scope": "user",
       "installPath": "/home/{USERNAME}/.claude/plugins/coordinator-claude/notebooklm",
@@ -126,7 +133,7 @@ Create or edit `~/.claude/plugins/installed_plugins.json`:
 }
 ```
 
-> **Note:** `game-dev` and `notebooklm` are included but disabled by default (see Step 6).
+> **Note:** `game-dev` and `notebooklm` are included but disabled by default (see Step 6). `deep-research` requires the Agent Teams experimental flag — see [README prerequisites](../README.md#prerequisites).
 
 #### Step 6: Enable plugins
 
@@ -136,6 +143,7 @@ Create or edit `~/.claude/settings.json`:
 {
   "enabledPlugins": {
     "coordinator@coordinator-claude": true,
+    "deep-research@coordinator-claude": true,
     "web-dev@coordinator-claude": true,
     "data-science@coordinator-claude": true,
     "game-dev@coordinator-claude": false,
