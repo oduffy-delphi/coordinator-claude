@@ -87,7 +87,7 @@ The coordinator plugin is the backbone of the system. It provides:
 - `bug-sweep` — Systematic codebase sweep for bug patterns — fix AI-fixable, defer rest to backlog.
 - `tracker-maintenance` — Maintain the project tracker — archive completed work, update dependencies, sweep for untracked commits.
 - `lessons-trim` — Trim stale entries from lessons files, merge duplicates, clean up feature-scoped files.
-- `handoff-archival` — Archive consumed handoffs older than 48 hours, migrate legacy locations.
+- `handoff-archival` — Archive consumed handoffs older than 48 hours.
 - `atlas-integrity-check` — Check changed files against the architecture atlas for unmapped entries.
 - `artifact-consolidation` — Bulk prune accumulated artifacts without knowledge extraction. For distill-then-delete, use `/distill` instead.
 - `project-onboarding` — Bootstrap project tracking infrastructure — tracker, tasks, archive, handoffs.

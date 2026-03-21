@@ -84,7 +84,7 @@ Note: Project `CLAUDE.md` and global `~/.claude/CLAUDE.md` are already in system
 
 ### Handoffs
 
-Check `.claude/handoffs/` for `.md` files (active handoffs). If handoffs exist:
+Check `tasks/handoffs/` for `.md` files (active handoffs). If handoffs exist:
 
 1. **Read only filenames** (do NOT read file contents). Extract dates and session IDs from the filename pattern `YYYY-MM-DD_HHMMSS_sessionid.md`.
 2. List each file with its date/time. To get the heading, read only line 1 of each file.
@@ -97,7 +97,7 @@ Check `.claude/handoffs/` for `.md` files (active handoffs). If handoffs exist:
 
 **Archiving is handled by `/update-docs` only** (48-hour threshold). This ensures handoffs persist until the work they describe has had time to complete.
 
-**Path convention:** Active handoffs in `.claude/handoffs/`, archived in `archive/handoffs/`. Both git-tracked.
+**Path convention:** Active handoffs in `tasks/handoffs/`, archived in `archive/handoffs/`. Both git-tracked.
 
 **If `.claude/` is gitignored:** Warn the user — this breaks handoff discovery. `.claude/` should be tracked; only `.claude/settings.local.json` should be ignored.
 
@@ -190,7 +190,7 @@ Choose work and load task-specific context.
 
 If `$ARGUMENTS` is provided, use it to identify the task directly and skip the menu.
 
-**Adapt this menu to the project:** If the project tracker was loaded, surface its ready/executing items as concrete options. If project-specific plan docs or priority lists exist (check `docs/`, `tasks/`, `.claude/plans/`), surface those too. The menu should reflect what's actually available, not just generic categories.
+**Adapt this menu to the project:** If the project tracker was loaded, surface its ready/executing items as concrete options. If project-specific plan docs or priority lists exist (check `docs/`, `tasks/`, `tasks/plans/`), surface those too. The menu should reflect what's actually available, not just generic categories.
 
 ### Load task context
 
