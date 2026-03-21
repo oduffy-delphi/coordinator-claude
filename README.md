@@ -55,9 +55,9 @@ For the full picture — the ecosystem survey, the novelty assessment, the produ
 
 Three research modes that go well beyond a single search call — built on Claude Code's **Agent Teams** (experimental), where teammates collaborate autonomously via messaging and shared tasks:
 
-- **Pipeline A (Codebase Research):** 2 Haiku scouts build structured file inventories → 4 Sonnet specialists analyze architecture and patterns → 1 Opus synthesizer produces the final assessment. Optional `--compare` mode diffs the assessment against your own project. All teammates run as an Agent Teams swarm — the EM spawns the team and is freed; the team handles everything.
+- **Pipeline A (Internet Research):** 1 Haiku scout builds a shared source corpus from EM-crafted search queries → 3-5 Sonnet specialists deep-read, verify claims, and cross-pollinate findings via peer messaging → 1 Opus synthesizer resolves contradictions and writes the final document. Specialists self-govern their timing (floor/ceiling/diminishing-returns) with no EM monitoring.
 
-- **Pipeline B (Internet Research):** 1 Haiku scout builds a shared source corpus from EM-crafted search queries → 3-5 Sonnet specialists deep-read, verify claims, and cross-pollinate findings via peer messaging → 1 Opus synthesizer resolves contradictions and writes the final document. Specialists self-govern their timing (floor/ceiling/diminishing-returns) with no EM monitoring.
+- **Pipeline B (Repo Research):** 2 Haiku scouts build structured file inventories (function signatures, constant values, cross-subsystem data flow) → 4 Sonnet specialists deep-read source files, analyze architecture and patterns, and cross-pollinate findings in real time via peer messaging → 1 Opus synthesizer cross-references all specialist assessments into a final document with file:line references and confidence levels. Optional `--compare` mode adds a gap analysis against your own project. The entire team runs as an Agent Teams swarm — the EM scopes the repo into 4 domain-aligned chunks, spawns 7 teammates, and is freed; the team handles everything autonomously including convergence timing and cross-chunk discovery.
 
 - **Pipeline C (Structured Batch Research):** Schema-driven research across N entities (companies, tools, teams) with a repeating structure. Input is a spec file declaring subjects, topics, acceptance criteria, and output schema. Output is structured data conforming to the schema — not prose. Supports incremental campaigns across sessions: research 5 subjects today, resume with the next 5 tomorrow, and the manifest tracks what's done and what's pending.
 
@@ -70,7 +70,7 @@ Pipelines A and B use Claude Code's experimental [Agent Teams](https://docs.anth
 - **Shared artifacts over broadcast:** Scouts write to disk (file inventories, source corpora); specialists read from disk. This avoids the message explosion of N×N communication and lets specialists start from curated input rather than raw search results.
 - **Task-gated blocking:** Specialists are `blockedBy` the scout task — they auto-start when the scout completes. The synthesizer is `blockedBy` all specialist tasks, but since it's already running and idle, specialists send explicit `DONE` messages as wake-up signals (`blockedBy` is a [status gate, not an event trigger](plugins/deep-research/pipelines/team-protocol.md#how-agent-teams-blocking-actually-works-empirical--sourced)).
 - **Self-governing timing:** Specialists manage their own convergence using a floor (minimum research time + source count), ceiling (maximum time), and diminishing-returns detector (last 3 sources added nothing new). No EM monitoring or WRAP_UP broadcast needed.
-- **7-teammate ceiling:** Agent Teams supports up to 7 parallel teammates. Team compositions are designed around this constraint (1 scout + 5 specialists + 1 synthesizer = 7 exactly).
+- **7-teammate ceiling:** Agent Teams supports up to 7 parallel teammates. Team compositions are designed around this constraint (e.g., Pipeline B: 2 scouts + 4 specialists + 1 synthesizer = 7 exactly).
 
 </details>
 

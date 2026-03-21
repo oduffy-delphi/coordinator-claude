@@ -36,7 +36,7 @@
     {
       "name": "deep-research",
       "path": "plugins/deep-research",
-      "description": "Multi-agent deep research pipelines — repo assessment (Pipeline A), internet research with Agent Teams (Pipeline B). Haiku scout builds shared source corpus, Sonnet specialists verify and cross-pollinate, Opus synthesizes findings.",
+      "description": "Multi-agent deep research pipelines — internet research with Agent Teams (Pipeline A), repo assessment (Pipeline B). Haiku scout builds shared source corpus, Sonnet specialists verify and cross-pollinate, Opus synthesizes findings.",
       "tags": ["research", "deep-research", "agent-teams", "multi-agent", "web-research"]
     }
   ]
