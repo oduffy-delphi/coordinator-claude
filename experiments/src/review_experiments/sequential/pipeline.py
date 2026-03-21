@@ -23,6 +23,7 @@ from ..schemas import FileScore, ReviewOutput, ScoredFinding, WorkItem, WorkItem
 from ..scorer import score_review
 from ..storage import ExperimentDB
 from .config import ARM_STEPS, Arm, EXPERIMENT_ID
+from .correction_audit import run_correction_audit
 
 
 # ---------------------------------------------------------------------------
@@ -225,11 +226,17 @@ def run_sequential_file(
     corpus: Corpus,
     client: ExperimentClient,
     db: ExperimentDB,
+    run_audit: bool = True,
+    audit_use_llm: bool = False,
 ) -> bool:
     """Run the full pipeline for one (file, arm, run) triple.
 
     Handles checkpoint/resume: checks each step against DB, skips completed
     steps and retrieves their outputs for downstream use.
+
+    Args:
+        run_audit: Run correction audit after each execute step (default True).
+        audit_use_llm: Use Haiku-based audit instead of keyword heuristic.
 
     Returns True if any work was done, False if all steps already complete.
     """
@@ -354,8 +361,6 @@ def run_sequential_file(
                 exec_findings = merged_findings
                 exec_code = code_content
             elif arm == Arm.SEQUENTIAL_NO_FIX:
-                # Combine R1 + R2 findings
-                combined = {"note": "Combined findings from R1 and R2"}
                 exec_findings = (
                     f"## Reviewer 1 Findings\n{r1_findings_text}\n\n"
                     f"## Reviewer 2 Additional Findings\n{r2_findings_text}"
@@ -377,5 +382,20 @@ def run_sequential_file(
                 client=client,
                 db=db,
             )
+
+            # Correction audit after each execute step
+            if run_audit and corrected_code is not None:
+                run_correction_audit(
+                    original_code=exec_code,
+                    corrected_code=corrected_code,
+                    defect_manifest=corpus.defect_manifest,
+                    file_id=file_id,
+                    run_id=run_id,
+                    arm=arm.value,
+                    step=step_name,
+                    db=db,
+                    client=client if audit_use_llm else None,
+                    use_llm=audit_use_llm,
+                )
 
     return any_work_done

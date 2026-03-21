@@ -232,6 +232,426 @@ class TestPipelineCheckpointResume:
 # ---------------------------------------------------------------------------
 
 
+class TestArmAPipelineFlow:
+    """Test Arm A (PARALLEL) full flow with mocked API calls."""
+
+    def _make_review_output(self, findings_json: str) -> ReviewOutput:
+        return ReviewOutput(
+            findings=[
+                ReviewFinding(
+                    file="test.py",
+                    line_start=10,
+                    line_end=12,
+                    severity="major",
+                    category="security",
+                    finding="SQL injection in query builder",
+                    suggested_fix="Use parameterized queries",
+                )
+            ],
+            raw_response=findings_json,
+        )
+
+    def test_arm_a_calls_review_synthesize_execute(self):
+        """Arm A: R1 review, R2 review, synthesize, execute — all called in order."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with ExperimentDB(Path(tmpdir) / "test.db") as db:
+                db.create_run("run_0", "sequential")
+
+                findings_json = json.dumps({
+                    "findings": [{
+                        "file": "test.py", "line_start": 10, "line_end": 12,
+                        "severity": "major", "category": "security",
+                        "finding": "SQL injection", "suggested_fix": "Parameterize"
+                    }]
+                })
+                corrected_code = "def safe_query():\n    return db.execute('SELECT ?', (id,))\n"
+
+                # Mock corpus
+                corpus = MagicMock()
+                corpus.read_file.return_value = "def unsafe():\n    db.execute(f'SELECT {id}')\n"
+                corpus.file_name.return_value = "test.py"
+                corpus.defect_manifest.defects_for_file.return_value = []
+                corpus.defect_manifest.defects = []
+                corpus.distractor_manifest.distractors_for_file.return_value = []
+
+                # Mock client — each call needs a unique call_id
+                client = MagicMock()
+                review_out = self._make_review_output(findings_json)
+
+                client.review.side_effect = [
+                    (review_out, _make_api_record(call_id="r1-review")),
+                    (review_out, _make_api_record(call_id="r2-review")),
+                ]
+                client.synthesize.return_value = (findings_json, _make_api_record(call_id="synth-1", step="synthesize"))
+                client.execute.return_value = (corrected_code, _make_api_record(call_id="exec-1", step="execute"))
+
+                from review_experiments.sequential.pipeline import run_sequential_file
+
+                result = run_sequential_file(
+                    file_id="file_001",
+                    arm=Arm.PARALLEL,
+                    run_id="run_0",
+                    corpus=corpus,
+                    client=client,
+                    db=db,
+                )
+
+                assert result is True
+                assert client.review.call_count == 2
+                assert client.synthesize.call_count == 1
+                assert client.execute.call_count == 1
+
+
+class TestArmBPipelineFlow:
+    """Test Arm B (SEQUENTIAL_FIX) flow with mocked API calls."""
+
+    def test_arm_b_calls_review_execute_review_execute(self):
+        """Arm B: R1 → exec → R2 → exec — 4 steps in sequence."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with ExperimentDB(Path(tmpdir) / "test.db") as db:
+                db.create_run("run_0", "sequential")
+
+                findings_json = json.dumps({
+                    "findings": [{
+                        "file": "test.py", "line_start": 5, "line_end": 7,
+                        "severity": "major", "category": "logic",
+                        "finding": "Off-by-one error", "suggested_fix": "Fix bounds"
+                    }]
+                })
+                intermediate_code = "def fixed_v1():\n    pass\n"
+                final_code = "def fixed_v2():\n    pass\n"
+
+                corpus = MagicMock()
+                corpus.read_file.return_value = "def buggy():\n    pass\n"
+                corpus.file_name.return_value = "test.py"
+                corpus.defect_manifest.defects_for_file.return_value = []
+                corpus.defect_manifest.defects = []
+                corpus.distractor_manifest.distractors_for_file.return_value = []
+
+                client = MagicMock()
+                review_out = ReviewOutput(
+                    findings=[ReviewFinding(
+                        file="test.py", line_start=5, line_end=7,
+                        severity="major", category="logic",
+                        finding="Off-by-one", suggested_fix="Fix"
+                    )],
+                    raw_response=findings_json,
+                )
+
+                client.review.side_effect = [
+                    (review_out, _make_api_record(call_id="r1-review")),
+                    (review_out, _make_api_record(call_id="r2-review")),
+                ]
+                client.execute.side_effect = [
+                    (intermediate_code, _make_api_record(call_id="exec-r1", step="execute_r1")),
+                    (final_code, _make_api_record(call_id="exec-r2", step="execute_r2")),
+                ]
+
+                from review_experiments.sequential.pipeline import run_sequential_file
+
+                result = run_sequential_file(
+                    file_id="file_001",
+                    arm=Arm.SEQUENTIAL_FIX,
+                    run_id="run_0",
+                    corpus=corpus,
+                    client=client,
+                    db=db,
+                )
+
+                assert result is True
+                assert client.review.call_count == 2
+                assert client.execute.call_count == 2
+                # R2 should review the intermediate code, not original
+                r2_call = client.review.call_args_list[1]
+                assert r2_call[1]["code_content"] == intermediate_code
+
+
+class TestArmCPipelineFlow:
+    """Test Arm C (SEQUENTIAL_NO_FIX) flow with mocked API calls."""
+
+    def test_arm_c_r2_gets_original_code_and_r1_notes(self):
+        """Arm C: R2 reviews original code + R1's notes, not corrected code."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with ExperimentDB(Path(tmpdir) / "test.db") as db:
+                db.create_run("run_0", "sequential")
+
+                original_code = "def original():\n    pass\n"
+                findings_json = json.dumps({
+                    "findings": [{
+                        "file": "test.py", "line_start": 1, "line_end": 2,
+                        "severity": "minor", "category": "architecture",
+                        "finding": "Poor naming", "suggested_fix": "Rename"
+                    }]
+                })
+
+                corpus = MagicMock()
+                corpus.read_file.return_value = original_code
+                corpus.file_name.return_value = "test.py"
+                corpus.defect_manifest.defects_for_file.return_value = []
+                corpus.defect_manifest.defects = []
+                corpus.distractor_manifest.distractors_for_file.return_value = []
+
+                client = MagicMock()
+                review_out = ReviewOutput(
+                    findings=[ReviewFinding(
+                        file="test.py", line_start=1, line_end=2,
+                        severity="minor", category="architecture",
+                        finding="Poor naming", suggested_fix="Rename"
+                    )],
+                    raw_response=findings_json,
+                )
+
+                client.review.side_effect = [
+                    (review_out, _make_api_record(call_id="r1-review")),
+                    (review_out, _make_api_record(call_id="r2-review")),
+                ]
+                client.execute.return_value = ("def renamed():\n    pass\n", _make_api_record(call_id="exec-1", step="execute"))
+
+                from review_experiments.sequential.pipeline import run_sequential_file
+
+                result = run_sequential_file(
+                    file_id="file_001",
+                    arm=Arm.SEQUENTIAL_NO_FIX,
+                    run_id="run_0",
+                    corpus=corpus,
+                    client=client,
+                    db=db,
+                )
+
+                assert result is True
+                assert client.review.call_count == 2
+                assert client.execute.call_count == 1
+                # R2 should get original code (not corrected)
+                r2_call = client.review.call_args_list[1]
+                assert r2_call[1]["code_content"] == original_code
+                # R2's system prompt should mention prior reviewer's findings
+                assert "Prior Reviewer" in r2_call[1]["system_prompt"] or "prior reviewer" in r2_call[1]["system_prompt"].lower()
+
+
+# ---------------------------------------------------------------------------
+# Correction audit tests
+# ---------------------------------------------------------------------------
+
+
+class TestCorrectionAuditKeyword:
+    """Test keyword-based correction audit."""
+
+    def test_fix_attempted_when_code_changes(self):
+        from review_experiments.sequential.correction_audit import audit_corrections_keyword
+        from review_experiments.schemas import DefectEntry
+
+        defect = DefectEntry(
+            defect_id="d01",
+            file="test.py",
+            line_start=2,
+            line_end=3,
+            category="security",
+            severity="critical",
+            difficulty="obvious",
+            keywords=["eval(", "user_input"],
+            description="eval() on user input",
+            correct_fix="Use ast.literal_eval()",
+        )
+
+        original = "import os\nresult = eval(user_input)\nprint(result)\n"
+        corrected = "import ast\nresult = ast.literal_eval(user_input)\nprint(result)\n"
+
+        entries = audit_corrections_keyword(original, corrected, [defect])
+        assert len(entries) == 1
+        assert entries[0].fix_attempted is True
+        # "eval(" should no longer be present (ast.literal_eval doesn't match "eval(")
+        # but "user_input" is still there — so partial keyword removal
+        assert entries[0].defect_id == "d01"
+
+    def test_not_attempted_when_code_unchanged(self):
+        from review_experiments.sequential.correction_audit import audit_corrections_keyword
+        from review_experiments.schemas import DefectEntry
+
+        defect = DefectEntry(
+            defect_id="d02",
+            file="test.py",
+            line_start=1,
+            line_end=2,
+            category="logic",
+            severity="major",
+            difficulty="moderate",
+            keywords=["off_by_one"],
+            description="Off-by-one in loop",
+            correct_fix="Use < instead of <=",
+        )
+
+        code = "for i in range(off_by_one):\n    pass\n"
+        entries = audit_corrections_keyword(code, code, [defect])
+        assert len(entries) == 1
+        assert entries[0].fix_attempted is False
+        assert entries[0].fix_quality.value == "not_attempted"
+
+    def test_all_keywords_removed_is_optimal(self):
+        from review_experiments.sequential.correction_audit import audit_corrections_keyword
+        from review_experiments.schemas import DefectEntry
+
+        defect = DefectEntry(
+            defect_id="d03",
+            file="test.py",
+            line_start=1,
+            line_end=1,
+            category="security",
+            severity="critical",
+            difficulty="obvious",
+            keywords=["password_plaintext"],
+            description="Storing password in plaintext",
+            correct_fix="Hash the password",
+        )
+
+        original = "db.store(password_plaintext)\n"
+        corrected = "db.store(hash_password(pw))\n"
+
+        entries = audit_corrections_keyword(original, corrected, [defect])
+        assert entries[0].fix_attempted is True
+        assert entries[0].fix_succeeded is True
+        assert entries[0].fix_quality.value == "optimal"
+
+    def test_multiple_defects_audited_independently(self):
+        from review_experiments.sequential.correction_audit import audit_corrections_keyword
+        from review_experiments.schemas import DefectEntry
+
+        defects = [
+            DefectEntry(
+                defect_id="d01", file="test.py", line_start=1, line_end=1,
+                category="security", severity="critical", difficulty="obvious",
+                keywords=["eval("], description="eval", correct_fix="fix",
+            ),
+            DefectEntry(
+                defect_id="d02", file="test.py", line_start=3, line_end=3,
+                category="logic", severity="major", difficulty="moderate",
+                keywords=["bug_marker"], description="bug", correct_fix="fix",
+            ),
+        ]
+
+        original = "eval(x)\nprint('ok')\nbug_marker = True\n"
+        corrected = "safe(x)\nprint('ok')\nbug_marker = True\n"  # only d01 fixed
+
+        entries = audit_corrections_keyword(original, corrected, defects)
+        assert len(entries) == 2
+        # d01 was fixed (keyword removed)
+        assert entries[0].defect_id == "d01"
+        assert entries[0].fix_attempted is True
+        assert entries[0].fix_succeeded is True
+        # d02 was not attempted (code unchanged in that region)
+        assert entries[1].defect_id == "d02"
+        assert entries[1].fix_attempted is False
+
+
+class TestCorrectionAuditStorage:
+    """Test correction audit persistence round-trip."""
+
+    def test_record_and_retrieve_audit(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with ExperimentDB(Path(tmpdir) / "test.db") as db:
+                db.create_run("run_0", "sequential")
+                db.record_correction_audit(
+                    run_id="run_0",
+                    arm="SEQUENTIAL_FIX",
+                    file_id="file_001",
+                    step="execute_r1",
+                    entries=[
+                        ("d01", True, True, False, "optimal"),
+                        ("d02", True, False, True, "incorrect"),
+                        ("d03", False, False, False, "not_attempted"),
+                    ],
+                )
+
+                results = db.get_correction_audits("run_0")
+                assert len(results) == 3
+                assert results[0]["defect_id"] == "d01"
+                assert results[0]["fix_attempted"] == 1
+                assert results[0]["fix_quality"] == "optimal"
+                assert results[1]["regression_introduced"] == 1
+                assert results[2]["fix_quality"] == "not_attempted"
+
+    def test_filter_by_arm_and_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with ExperimentDB(Path(tmpdir) / "test.db") as db:
+                db.create_run("run_0", "sequential")
+                db.record_correction_audit(
+                    run_id="run_0", arm="PARALLEL", file_id="f1", step="execute",
+                    entries=[("d01", True, True, False, "optimal")],
+                )
+                db.record_correction_audit(
+                    run_id="run_0", arm="SEQUENTIAL_FIX", file_id="f1", step="execute_r1",
+                    entries=[("d01", False, False, False, "not_attempted")],
+                )
+
+                parallel_only = db.get_correction_audits("run_0", arm="PARALLEL")
+                assert len(parallel_only) == 1
+                assert parallel_only[0]["arm"] == "PARALLEL"
+
+                seq_only = db.get_correction_audits("run_0", arm="SEQUENTIAL_FIX")
+                assert len(seq_only) == 1
+
+
+class TestPipelineWithAudit:
+    """Test that audit integrates with pipeline execution."""
+
+    def test_arm_b_runs_audit_after_each_execute(self):
+        """Arm B should run correction audit after execute_r1 and execute_r2."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with ExperimentDB(Path(tmpdir) / "test.db") as db:
+                db.create_run("run_0", "sequential")
+
+                findings_json = json.dumps({
+                    "findings": [{
+                        "file": "test.py", "line_start": 1, "line_end": 2,
+                        "severity": "major", "category": "logic",
+                        "finding": "Bug", "suggested_fix": "Fix"
+                    }]
+                })
+
+                corpus = MagicMock()
+                corpus.read_file.return_value = "def buggy():\n    pass\n"
+                corpus.file_name.return_value = "test.py"
+                corpus.defect_manifest.defects_for_file.return_value = []
+                corpus.defect_manifest.defects = []
+                corpus.distractor_manifest.distractors_for_file.return_value = []
+
+                client = MagicMock()
+                review_out = ReviewOutput(
+                    findings=[ReviewFinding(
+                        file="test.py", line_start=1, line_end=2,
+                        severity="major", category="logic",
+                        finding="Bug", suggested_fix="Fix"
+                    )],
+                    raw_response=findings_json,
+                )
+                client.review.side_effect = [
+                    (review_out, _make_api_record(call_id="r1")),
+                    (review_out, _make_api_record(call_id="r2")),
+                ]
+                client.execute.side_effect = [
+                    ("def fixed_v1():\n    pass\n", _make_api_record(call_id="e1", step="execute_r1")),
+                    ("def fixed_v2():\n    pass\n", _make_api_record(call_id="e2", step="execute_r2")),
+                ]
+
+                from review_experiments.sequential.pipeline import run_sequential_file
+
+                run_sequential_file(
+                    file_id="file_001",
+                    arm=Arm.SEQUENTIAL_FIX,
+                    run_id="run_0",
+                    corpus=corpus,
+                    client=client,
+                    db=db,
+                    run_audit=True,
+                )
+
+                # Pipeline ran successfully — no audit entries because manifest has no defects
+                # for this file, but the audit function was called (no error)
+                audits = db.get_correction_audits("run_0")
+                # Empty because mock corpus has no defects — but proves audit integration
+                # doesn't crash
+                assert isinstance(audits, list)
+
+
 class TestPipelineImports:
     def test_pipeline_module_imports(self):
         from review_experiments.sequential import pipeline

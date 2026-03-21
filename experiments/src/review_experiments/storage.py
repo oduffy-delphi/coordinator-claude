@@ -408,6 +408,51 @@ class ExperimentDB:
         ).fetchone()
         return row[0] if row else None
 
+    def record_correction_audit(
+        self,
+        run_id: str,
+        arm: str,
+        file_id: str,
+        step: str,
+        entries: list[tuple[str, bool, bool, bool, str]],
+    ) -> None:
+        """Record correction audit results for a set of defects.
+
+        Each entry is (defect_id, fix_attempted, fix_succeeded, regression_introduced, fix_quality).
+        """
+        cursor = self._conn.cursor()
+        try:
+            cursor.execute("BEGIN")
+            for defect_id, attempted, succeeded, regression, quality in entries:
+                cursor.execute(
+                    "INSERT INTO correction_audits "
+                    "(run_id, arm, file_id, step, defect_id, "
+                    "fix_attempted, fix_succeeded, regression_introduced, fix_quality) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (run_id, arm, file_id, step, defect_id,
+                     int(attempted), int(succeeded), int(regression), quality),
+                )
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            raise
+
+    def get_correction_audits(
+        self, run_id: str, arm: str | None = None, file_id: str | None = None
+    ) -> list[dict]:
+        """Retrieve correction audit entries, optionally filtered."""
+        query = "SELECT * FROM correction_audits WHERE run_id = ?"
+        params: list = [run_id]
+        if arm:
+            query += " AND arm = ?"
+            params.append(arm)
+        if file_id:
+            query += " AND file_id = ?"
+            params.append(file_id)
+        cursor = self._conn.execute(query, params)
+        cols = [d[0] for d in cursor.description]
+        return [dict(zip(cols, row)) for row in cursor.fetchall()]
+
     def get_file_scores(
         self, experiment: str, run_id: str | None = None
     ) -> list[dict]:
