@@ -123,7 +123,7 @@ Then `/session-start` command runs the full orientation protocol.
 
 ### Session Continuity
 State survives compaction through:
-- **TodoWrite** — per-conversation flight recorder, survives compaction
+- **Tasks API** (TaskCreate/TaskUpdate/TaskList/TaskGet) — per-conversation flight recorder, persists through compaction by design
 - **Handoffs** — structured disk-based state capture between sessions
 - **Orientation cache** — compact project awareness document, sub-second load
 - **Plan documents** — on-disk specs with write-ahead status fields
