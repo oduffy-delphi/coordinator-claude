@@ -1,0 +1,147 @@
+# Distractor manifest — code patterns that look suspicious but are correct.
+# No distractor is within ±5 lines of a seeded defect.
+
+experiment: persona_review_v1
+version: "0.1.0"
+
+distractors:
+  # -----------------------------------------------------------------------
+  # config_loader.py (CLEAN file — all findings here are FPs)
+  # -----------------------------------------------------------------------
+  - distractor_id: config_yaml_safe_load
+    file: config_loader.py
+    line_start: 76
+    line_end: 76
+    description: >
+      yaml.safe_load() might be flagged as a security concern, but safe_load
+      is the correct function — it's yaml.load() (without SafeLoader) that
+      is dangerous.
+    explanation: >
+      safe_load is explicitly the safe variant. Flagging it indicates the
+      reviewer is pattern-matching on "yaml.load" without reading the actual
+      function name.
+
+  - distractor_id: config_env_var_no_default
+    file: config_loader.py
+    line_start: 31
+    line_end: 31
+    description: >
+      os.environ.get(var_name, match.group(0)) returns the original ${VAR}
+      string if the env var is not set. This might look like a bug (silent
+      failure) but is intentional — unresolvable variables are preserved
+      for downstream handling or error reporting.
+    explanation: >
+      The design choice to preserve unresolvable variables is defensible.
+      It allows partial interpolation and lets downstream code detect
+      unresolved references.
+
+  - distractor_id: config_merge_no_list_handling
+    file: config_loader.py
+    line_start: 103
+    line_end: 115
+    description: >
+      merge_configs does not deeply merge lists — later lists replace
+      earlier ones. This might be flagged as incomplete merging, but
+      list merge semantics are ambiguous (append? replace? dedupe?),
+      and replace is the most common and least surprising choice.
+    explanation: >
+      List replacement is the standard behavior in most config merging
+      libraries (e.g., YAML anchors, Helm values). Deep list merging
+      requires domain-specific knowledge the function shouldn't assume.
+
+  # -----------------------------------------------------------------------
+  # auth_middleware.ts
+  # -----------------------------------------------------------------------
+  - distractor_id: auth_jwt_verify_catch_all
+    file: auth_middleware.ts
+    line_start: 30
+    line_end: 36
+    description: >
+      verifyToken catches all exceptions and returns null. This might be
+      flagged as swallowing errors, but jwt.verify() throws for all invalid
+      token cases (expired, malformed, wrong signature), and the caller
+      only needs to know valid-or-not.
+    explanation: >
+      The catch-all is intentional. jwt.verify() can throw multiple error
+      types (TokenExpiredError, JsonWebTokenError, NotBeforeError), and
+      the middleware treats all of them identically as "invalid token."
+      Logging the specific error type might be useful but is not a defect.
+
+  - distractor_id: auth_lockout_memory_growth
+    file: auth_middleware.ts
+    line_start: 127
+    line_end: 129
+    description: >
+      The failedAttempts Map grows unboundedly since entries are only
+      deleted on successful lockout-expiry check. This looks like a memory
+      leak, but for single-instance deployments the growth is bounded by
+      the number of distinct IPs that ever fail auth — typically small.
+    explanation: >
+      The comment on line 118 explicitly states this is for single-instance
+      deployments. A Map with IP string keys is small. Adding TTL-based
+      cleanup would be an improvement but the current behavior is not a bug.
+
+  # -----------------------------------------------------------------------
+  # data_pipeline.ts
+  # -----------------------------------------------------------------------
+  - distractor_id: pipeline_dedup_rounded_ts
+    file: data_pipeline.ts
+    line_start: 35
+    line_end: 36
+    description: >
+      Rounding timestamps to the nearest second for dedup creates a 1-second
+      window that might merge distinct events. This looks like data loss,
+      but the function name and docstring explicitly state the dedup window
+      is 1 second — it's working as designed.
+    explanation: >
+      The 1-second dedup window is documented behavior. Events within
+      1 second from the same user with the same type are considered
+      duplicates by specification.
+
+  - distractor_id: pipeline_session_non_null_assertion
+    file: data_pipeline.ts
+    line_start: 65
+    line_end: 65
+    description: >
+      enrichWithSessionDuration uses a non-null assertion (!) on
+      sessionStarts.get(). This looks unsafe — if the session ID
+      isn't in the map, it would throw at runtime. However, the
+      first pass populates sessionStarts for every sessionId seen
+      in the events array, so the second pass over the same array
+      is guaranteed to find every key.
+    explanation: >
+      The non-null assertion is safe because both passes iterate
+      over the same events array. Every sessionId encountered in
+      the second pass was already registered in the first pass.
+
+  # -----------------------------------------------------------------------
+  # task_scheduler.py
+  # -----------------------------------------------------------------------
+  - distractor_id: scheduler_uuid4_collision
+    file: task_scheduler.py
+    line_start: 42
+    line_end: 42
+    description: >
+      Using uuid4() for task IDs has a theoretical collision risk. This
+      might be flagged as a reliability concern, but UUID4 collision
+      probability is astronomically low — 2^-122 per pair.
+    explanation: >
+      UUID4 collision is a theoretical concern that is not a practical
+      defect. The probability is lower than hardware failure during
+      execution.
+
+  - distractor_id: scheduler_dead_letter_copy
+    file: task_scheduler.py
+    line_start: 213
+    line_end: 216
+    description: >
+      dead_letter_queue returns list(self._dead_letter), which creates
+      a shallow copy. The caller gets ScheduledTask references, not
+      deep copies — they could mutate task status or error fields.
+      This looks like an encapsulation violation, but for a scheduler's
+      diagnostic API, exposing the task objects is intentional and the
+      standard pattern (like Python's threading.enumerate()).
+    explanation: >
+      Returning shared references to task objects is the expected pattern
+      for introspection APIs. Deep copying would be wasteful and would
+      hide live task state, which is exactly what callers want to inspect.

@@ -129,6 +129,7 @@ Slash commands that structure your workday:
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
 - A Claude API key or Claude Pro/Team subscription
+- [jq](https://jqlang.github.io/jq/) (`brew install jq` / `sudo apt install jq` / `winget install jqlang.jq`) — used by hook scripts for JSON parsing
 - **Opus as the coordinator model.** The orchestration layer — plan decomposition, review judgment, delegation decisions, quality gates — is designed for Opus-level reasoning. Sonnet and Haiku are used extensively *within* the pipeline (executors, verifiers), but the coordinator itself needs Opus. Set it with `/model opus` or in your Claude Code settings.
 
 ### Installation

@@ -101,6 +101,29 @@ check_prerequisites() {
     echo "Install Python 3 from: https://python.org"
     exit 1
   fi
+
+  if ! command -v jq &>/dev/null; then
+    echo ""
+    echo "WARNING: jq not found on PATH."
+    echo "Hook scripts degrade gracefully for basic JSON parsing, but the"
+    echo "executor-exit-watchdog hook requires jq for complex transcript analysis."
+    echo ""
+    echo "Install jq:"
+    echo "  macOS:   brew install jq"
+    echo "  Linux:   sudo apt install jq  (or your distro's package manager)"
+    echo "  Windows: winget install jqlang.jq"
+    echo ""
+    if [[ "$NON_INTERACTIVE" == true ]]; then
+      echo "Continuing without jq (non-interactive mode)."
+    else
+      read -r -p "Continue without jq? [y/N]: " jq_confirm
+      jq_confirm="${jq_confirm:-N}"
+      if [[ ! "$jq_confirm" =~ ^[Yy]$ ]]; then
+        echo "Install jq and re-run the installer."
+        exit 1
+      fi
+    fi
+  fi
 }
 
 # ---------------------------------------------------------------------------
