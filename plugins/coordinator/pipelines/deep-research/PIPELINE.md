@@ -83,7 +83,7 @@ Phase 0 → [wait] → Phase 1 → [wait for ALL] → Phase 2 → [wait for ALL]
 3. **Survey repo structure** — 2-3 `ls` commands on the target repo
 4. **Define chunk boundaries** — Split target repo into 4-6 domain-aligned chunks based on the repo's own architecture
 5. **Write focus questions** — What are the key design decisions? What patterns does this repo use? What are its architectural strengths?
-6. **Generate run ID** — format: `YYYY-MM-DD-HHhMM` (current timestamp). This identifies the scratch directory for all phases: `.claude/scratch/deep-research/{run-id}/`
+6. **Generate run ID** — format: `YYYY-MM-DD-HHhMM` (current timestamp). This identifies the scratch directory for all phases: `tasks/scratch/deep-research/{run-id}/`
 7. **If Phase 3 will run:** Also identify comparison targets — for each chunk, list project files implementing equivalent functionality
 
 **Output:** Chunk table with version header (see agent-prompts.md).
@@ -104,15 +104,15 @@ Each agent reads every file in its chunk and produces:
 
 **DISPATCH:** Open `agent-prompts.md` in this directory. Copy the **Phase 1: Haiku File Mapping Prompt** template verbatim. Fill in the bracketed fields: `[REPO NAME]`, `[CHUNK LETTER]`, `[CHUNK DESCRIPTION]`, `[LIST OF DIRECTORIES/FILES]`. Dispatch that. Do NOT write a custom prompt — the template's structure (especially "completeness matters more than analysis") prevents Haiku from confabulating analysis it isn't qualified to produce.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
-**Scratch verification:** Before proceeding to Phase 2, verify all expected scratch files exist (`ls .claude/scratch/deep-research/{run-id}/*-phase1-haiku.md`). If any are missing, re-dispatch the failed agent once. If it fails again, skip that chunk and note the gap in the Phase 4 synthesis.
+**Scratch verification:** Before proceeding to Phase 2, verify all expected scratch files exist (`ls tasks/scratch/deep-research/{run-id}/*-phase1-haiku.md`). If any are missing, re-dispatch the failed agent once. If it fails again, skip that chunk and note the gap in the Phase 4 synthesis.
 
 ---
 
 ### Phase 2: Standalone Analysis (Sonnet agents, parallel)
 
-**Model:** Sonnet. **Input:** Phase 1 inventory per chunk (read from `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`).
+**Model:** Sonnet. **Input:** Phase 1 inventory per chunk (read from `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`).
 
 Each agent reads the repo files deeply and produces per domain area:
 ```
@@ -129,7 +129,7 @@ Each agent reads the repo files deeply and produces per domain area:
 
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 2: Sonnet Standalone Analysis Prompt** template verbatim. Fill in `[REPO NAME]`, `[CHUNK DESCRIPTION]`, and read the Phase 1 output from the scratch file and paste it where indicated. Do NOT write a custom prompt — the template's "Rules" section encodes critical guardrails (no comparison, file:line references, actual values).
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Output:** Domain-specific analysis reports — the raw material for synthesis.
 
@@ -139,7 +139,7 @@ Each agent reads the repo files deeply and produces per domain area:
 
 ### Phase 3: Comparison (Sonnet agents, parallel) — OPTIONAL
 
-**Model:** Sonnet. **Input:** Phase 2 analysis per chunk (read from `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`) + project files to compare against.
+**Model:** Sonnet. **Input:** Phase 2 analysis per chunk (read from `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`) + project files to compare against.
 
 **When to include:** When you have a target project to compare against AND comparison is in scope for this session.
 
@@ -158,7 +158,7 @@ Each agent reads the **project files** (not the reference — Phase 2 already an
 
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 3: Sonnet Comparison Prompt** template verbatim. Fill in `[REPO NAME]`, `[PROJECT NAME]`, `[CHUNK DESCRIPTION]`, read the Phase 2 output from the scratch file and paste it, and list the project files. Do NOT write a custom prompt — the template's "Look specifically for" checklist (disconnected code, wrong consumers, coincidental values) encodes the One-Line Bug Principle.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase3-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase3-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Scratch verification:** If Phase 3 ran, verify all expected Phase 3 scratch files exist before proceeding to Phase 4. Re-dispatch once on failure; skip chunk on second failure.
 
@@ -166,7 +166,7 @@ Each agent reads the **project files** (not the reference — Phase 2 already an
 
 ### Phase 4: Synthesis (Opus, single agent)
 
-**Model:** Opus. **Input:** ALL Phase 2 reports (read from `.claude/scratch/deep-research/{run-id}/*-phase2-sonnet.md`) and Phase 3 reports if they exist (read from `*-phase3-sonnet.md`).
+**Model:** Opus. **Input:** ALL Phase 2 reports (read from `tasks/scratch/deep-research/{run-id}/*-phase2-sonnet.md`) and Phase 3 reports if they exist (read from `*-phase3-sonnet.md`).
 
 **If assessment only (no Phase 3):**
 
@@ -213,9 +213,9 @@ After synthesis is complete and the PM discussion has concluded:
 
 1. **Default: DELETE all scratch files.** Phase 1 (Haiku) output was consumed by Phase 2. Phase 2 (Sonnet) was consumed by Phase 4. Phase 3 (Sonnet) was consumed by Phase 4. The durable artifacts are the assessment and gap analysis documents.
 
-2. **Exception — keep Phase 2 if assessment-only and comparison deferred:** If Phase 3 was skipped and comparison will happen in a future session, keep Phase 2 files (move to `.claude/scratch/deep-research/kept/` with a header noting the expiry: 30 days). The 30-day expiry is advisory — the next deep-research run for the same repo should check `kept/` and clean up expired files. No automated enforcement exists.
+2. **Exception — keep Phase 2 if assessment-only and comparison deferred:** If Phase 3 was skipped and comparison will happen in a future session, keep Phase 2 files (move to `tasks/scratch/deep-research/kept/` with a header noting the expiry: 30 days). The 30-day expiry is advisory — the next deep-research run for the same repo should check `kept/` and clean up expired files. No automated enforcement exists.
 
-3. **Clean up:** `rm -rf .claude/scratch/deep-research/{run-id}/` (or move kept files first).
+3. **Clean up:** `rm -rf tasks/scratch/deep-research/{run-id}/` (or move kept files first).
 
 ---
 
@@ -252,7 +252,7 @@ Each agent:
 
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 1: Haiku Broad Discovery Prompt** template verbatim. Fill in `[TOPIC AREA LETTER]`, `[TOPIC DESCRIPTION]`, `[ANY KNOWN URLS/DOCS]`, `[WHAT SPECIFICALLY DO WE NEED TO KNOW]`. The template's "You are FILTERING, not analyzing" instruction prevents Haiku from producing unverified analysis. Do NOT write a custom prompt.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Output per agent:**
 ```
@@ -282,10 +282,30 @@ After scratch verification passes, dispatch a **Haiku agent per topic** to verif
 
 **Why:** Phase 1 Haiku scouts can produce shallow or hallucinated output silently. Without this gate, Sonnet Phase 2 agents waste tokens reading bad input and producing unreliable analysis. The gate costs ~1 minute of Haiku time per topic and catches the ~1-in-4 failure rate observed in AI-generated content.
 
+#### Phase 1.5b: Cross-Pollination (Coordinator)
+
+After all Phase 1 topics pass the quality gate, the coordinator reads ALL Phase 1 outputs and performs cross-pollination before dispatching Phase 2:
+
+1. **Cross-topic findings:** Identify findings from Topic X that should change the focus for Topic Y's Phase 2 deep-read. Example: if Topic A's discovery reveals that a library was deprecated, Topic B's Phase 2 should know this before deep-reading sources that reference it.
+
+2. **Shared search terms:** Note search terms discovered in one topic that are relevant to another. Include these as "additional search terms to try" in the Phase 2 dispatch for the relevant topic.
+
+3. **Cross-topic contradictions:** Flag where different topics' Phase 1 outputs contradict each other. Add these as explicit contradiction-resolution tasks in the relevant Phase 2 dispatches.
+
+4. **Adjust Phase 2 prompts accordingly:** When dispatching Phase 2 agents, append a "Cross-Pollination Context" section to each agent's prompt with the relevant findings from other topics. Format:
+
+```
+## Cross-Pollination Context (from other topic areas)
+- [Topic X] found that [relevant finding] — consider this when evaluating [specific aspect]
+- [Topic Y] and [Topic Z] contradict on [specific claim] — try to resolve from your sources
+```
+
+**Cost:** Near-zero. The coordinator already reads all Phase 1 outputs for the quality gate. This extends that read to also inform Phase 2 dispatch. No additional agent dispatches needed.
+
 ### Phase 2: Analytical Deep-Read (Sonnet agents, parallel)
 
 **Model:** Sonnet. **Tools:** WebFetch, Context7, Read.
-**Input:** Phase 1 discovery report per topic (read from `.claude/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`).
+**Input:** Phase 1 discovery report per topic (read from `tasks/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`).
 
 Each agent:
 - Reads the recommended sources in full (WebFetch for web pages, Context7 for library docs)
@@ -306,15 +326,19 @@ Each agent:
 
 **Critical instruction:** "Verify, don't trust. If Phase 1 flagged a claim, find the primary source. If sources disagree, say so explicitly with the evidence each side presents. Do not average contradictions into a vague 'it depends.'"
 
+For complex topics (5+ sources or contradictions present), Phase 2 agents also produce a
+structured claims table. This gives Phase 3 Opus structured data to work with rather than
+only prose paragraphs, improving synthesis rigor for topics where source quality varies.
+
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 2: Sonnet Analytical Deep-Read Prompt** template verbatim. Fill in `[TOPIC DESCRIPTION]`, read Phase 1 output from the scratch file and paste it, add project context. Do NOT write a custom prompt — the template's verification structure (verified/refuted/contradictions resolved) is the core value of Phase 2.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{topic-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{topic-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Scratch verification:** Before proceeding to Phase 3, verify all expected Phase 2 scratch files exist. Re-dispatch once on failure; skip that topic on second failure.
 
 ### Phase 3: Research Synthesis (Opus, single agent)
 
-**Model:** Opus. **Input:** ALL Phase 2 reports (read all Phase 2 reports from scratch files: `.claude/scratch/deep-research/{run-id}/*-phase2-sonnet.md`).
+**Model:** Opus. **Input:** ALL Phase 2 reports (read all Phase 2 reports from scratch files: `tasks/scratch/deep-research/{run-id}/*-phase2-sonnet.md`).
 
 1. **Cross-references** findings across topic areas — identifies reinforcing or contradictory evidence
 2. **Evaluates source quality** — primary docs > peer-reviewed > well-maintained OSS > blog posts > forums
@@ -339,7 +363,7 @@ After synthesis is complete and the PM discussion has concluded:
 
 1. **Default: DELETE all scratch files.** Phase 1 (Haiku) output was consumed by Phase 2. Phase 2 (Sonnet) was consumed by Phase 3. The durable artifact is the research synthesis document.
 
-2. **Clean up:** `rm -rf .claude/scratch/deep-research/{run-id}/`
+2. **Clean up:** `rm -rf tasks/scratch/deep-research/{run-id}/`
 
 ---
 

@@ -257,6 +257,9 @@ You are the synthesis agent. You have received standalone analysis reports from
 - Be concrete — "uses a 4th-order Runge-Kutta integrator at physics/integrator.cpp:42"
   not "uses a sophisticated integration method"
 - Strengths and limitations are both stated factually, not as judgments
+- When citing findings from the Phase 2 analysis reports, preserve the original
+  file:line references. Every factual claim should trace back to a specific location
+  in the codebase via the Phase 2 agent's references.
 ```
 
 ---
@@ -337,6 +340,9 @@ reference the comparison project.]
 - Include specific file:line references throughout
 - The ASSESSMENT.md must stand alone — no references to the comparison project
 - The GAP-ANALYSIS.md references both repos freely
+- When citing findings from the Phase 2 analysis reports, preserve the original
+  file:line references. Every factual claim should trace back to a specific location
+  in the codebase via the Phase 2 agent's references.
 ```
 
 ---
@@ -386,13 +392,18 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
    to pull official documentation
 3. Skim all results — don't deep-read, just catalog
 4. Filter for relevance and quality
+5. For at least ONE of your searches, deliberately search for criticism, limitations,
+   problems, or opposing views on the topic. Use search terms like:
+   "[topic] problems", "[topic] limitations", "[topic] criticism",
+   "[topic] vs alternatives", "why not [topic]"
+   This is mandatory — research that only finds supporting evidence is incomplete.
 
 ## Output Format
 
 ### [Topic Area]
 
 **Sources found (ranked by quality):**
-1. [URL] — [type: official docs/blog/forum/paper] — [1-line description]
+1. [URL] — [type: official docs/blog/forum/paper] — [date: YYYY-MM or "unknown"] — [1-line description]
 2. ...
 
 **Key claims (UNVERIFIED — Sonnet will verify):**
@@ -409,12 +420,16 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 **Search terms used:**
 - [list for reproducibility]
 
+**Research intent per search:**
+- [search term] — Goal: [what we hoped to learn] — Outcome: [what we actually found — briefly]
+
 **Important:**
 - You are FILTERING, not analyzing. Cast a wide net.
 - Flag contradictions — don't resolve them. That's Sonnet's job.
 - Include source type (official docs > maintained OSS > blog > forum > AI-generated)
 - If a source looks AI-generated or low-quality, note that explicitly
 - Completeness of the catalog matters more than depth of any one source
+- At least one search MUST target criticism or limitations — not just supporting evidence
 ```
 
 ---
@@ -429,6 +444,9 @@ that Phase 1 identified for [TOPIC DESCRIPTION].
 
 ### Phase 1 Discovery Report (paste complete)
 [PASTE PHASE 1 OUTPUT HERE]
+
+### Cross-Pollination Context (if provided by coordinator)
+[OPTIONAL — PASTE CROSS-POLLINATION NOTES FROM OTHER TOPICS IF ANY]
 
 ### Project Context
 [BRIEF DESCRIPTION OF THE PROJECT AND ITS CONSTRAINTS]
@@ -455,13 +473,17 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 2. Verify or refute the "Key claims (UNVERIFIED)" from Phase 1
 3. Resolve contradictions Phase 1 flagged — determine which source is correct and why
 4. Extract specific, actionable information (API signatures, config values, code patterns)
+5. After reading each recommended source, pause and assess: What changed about your
+   understanding? Did this source confirm, contradict, or add nuance to prior sources?
+   Note these reflections in your output — they help the synthesis agent understand
+   which sources are reinforcing vs. challenging the emerging consensus.
 
 ## Output Format
 
 ### [Topic Area]
 
-**Verified findings:**
-- [finding] — [source, specific section] — CONFIDENCE: [HIGH/MEDIUM/LOW]
+**Verified findings (lead with source):**
+- According to [Source, specific section]: [finding] — CONFIDENCE: [HIGH/MEDIUM/LOW]
 - ...
 
 **Refuted claims:**
@@ -485,6 +507,16 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 **Sources cited:**
 - [URL] — [specific sections referenced]
 
+**Structured Claims Table (for complex/multi-source topics):**
+
+| # | Claim | Source | Date | Confidence | Corroborated By | Type |
+|---|-------|--------|------|------------|-----------------|------|
+| 1 | [specific factual claim] | [primary source URL] | [pub date] | HIGH/MED/LOW | [other source #s or "—"] | fact/limitation/opinion |
+| 2 | ... | ... | ... | ... | ... | ... |
+
+Include this table when the topic has 5+ sources or when contradictions exist between sources.
+For simpler topics with fewer sources, the prose format above is sufficient.
+
 ## Rules
 
 - VERIFY, don't trust. If Phase 1 flagged a claim, find the PRIMARY source.
@@ -495,6 +527,18 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
   shipped breaking changes in 2025.
 - If you can't verify a claim, say so explicitly rather than passing it through.
 - Include specific URLs and sections for every cited finding.
+- If no Phase 1 source presents criticism or limitations, note this explicitly as
+  a coverage gap. Absence of criticism in sources ≠ absence of real limitations.
+- For each source, note its publication date. Apply these freshness rules:
+  - Sources older than 12 months: flag whether the information is likely still current
+  - For fast-moving topics (LLM tools, frameworks, APIs): treat sources older than
+    6 months as potentially stale unless corroborated by a recent source
+  - If ALL sources for a finding are older than 12 months, flag this explicitly:
+    "[STALE SOURCES — all pre-{date minus 12 months}, verify currency]"
+  - Include the publication date in your source citations
+- If Cross-Pollination Context is provided, use it to inform your analysis —
+  especially when resolving contradictions or evaluating claims that other topics
+  have flagged as uncertain.
 ```
 
 ---
@@ -566,6 +610,11 @@ You are the research synthesis agent. You have received analytical reports from
 - Do not manufacture consensus — if sources genuinely disagree, present the trade-off
 - Open questions are as valuable as answers — knowing what we don't know prevents
   false confidence
+- Lead with source attribution when stating findings. Write "According to [Source],
+  [claim]" rather than "[Claim] ([Source])". This ensures every claim in the synthesis
+  is visibly traceable to a specific source and makes unsourced claims immediately
+  obvious. If a finding has no source, mark it explicitly as [UNSOURCED — from
+  training knowledge].
 ```
 
 ---
@@ -675,6 +724,11 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 2. For library/framework topics, use Context7 if relevant
 3. Catalog what you find — don't deep-read, just collect and organize
 4. Map each finding to the schema fields it could populate
+5. For at least ONE of your searches, deliberately search for criticism, limitations,
+   problems, or opposing views on the topic. Use search terms like:
+   "[topic] problems", "[topic] limitations", "[topic] criticism",
+   "[topic] vs alternatives", "why not [topic]"
+   This is mandatory — research that only finds supporting evidence is incomplete.
 
 ## Output Format
 
@@ -712,6 +766,7 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 - Flag contradictions — don't resolve them. That's Sonnet's job.
 - Include source language and publication date on every source.
 - Completeness of the catalog matters more than depth of any one source.
+- At least one search MUST target criticism or limitations — not just supporting evidence
 ```
 
 ---
