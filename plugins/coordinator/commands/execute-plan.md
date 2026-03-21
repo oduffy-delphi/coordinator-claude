@@ -8,7 +8,7 @@ argument-hint: <plan-path>
 
 Run a PM-approved implementation plan to completion without stopping for permission between tasks. The PM's approval of the plan is the authorization — this command executes it diligently and in its entirety, then tails with the `coordinator:finishing-a-development-branch` skill.
 
-**Core principle:** Write-ahead every task (both plan document on disk AND TodoWrite), execute autonomously, stop only when your judgment says the plan itself is in trouble — not when a task is merely hard.
+**Core principle:** Write-ahead every task (both plan document on disk AND task list via TaskUpdate), execute autonomously, stop only when your judgment says the plan itself is in trouble — not when a task is merely hard.
 
 **When to use `/delegate-execution` instead:** If the plan contains enriched stubs with known file paths, exact line numbers, and code sketches, dispatch Sonnet executors via `/delegate-execution` — execution is cheap when the blueprint is complete. Use `/execute-plan` for plans that require EM-level judgment, have accumulated conversation context, or are mid-size with straightforward steps that don't need separate executor dispatch.
 
@@ -37,13 +37,13 @@ If no path is provided, report: _"Usage: /execute-plan <plan-path>. Provide the 
 
 ## Phase 2: Create Flight Recorder
 
-Create a TodoWrite task list for this execution session:
+Create a task list (TaskCreate) for this execution session:
 
 - **One session-goal task** — titled with the overall objective and the plan path, so a post-compaction agent can re-orient without re-reading the conversation
 - **One task per plan phase or major task** — enough granularity that "what is in progress" is unambiguous at any point
-- **Mark the session-goal task `in_progress`** immediately
+- **Mark the session-goal task `in_progress`** immediately via TaskUpdate
 
-This flight recorder is your compaction insurance. Keep it current throughout execution.
+This flight recorder is your compaction insurance — tasks persist through compaction by design. Keep it current throughout execution.
 
 ---
 
@@ -57,7 +57,7 @@ For each task in the plan:
 
 Update BOTH:
 1. **The plan document on disk** — mark the current task as `In progress (started YYYY-MM-DD HH:MM)`. Edit the file directly. This is crash insurance — if the session dies, the plan shows where execution stopped.
-2. **TodoWrite** — mark the corresponding task `in_progress`
+2. **Task list** — mark the corresponding task `in_progress` via TaskUpdate
 
 ### 3b. Execute
 
@@ -69,7 +69,7 @@ Update BOTH:
 
 Update BOTH:
 1. **The plan document on disk** — update the task to `Complete (YYYY-MM-DD HH:MM)`
-2. **TodoWrite** — mark the corresponding task `completed`
+2. **Task list** — mark the corresponding task `completed` via TaskUpdate
 
 ### 3d. Proceed
 
@@ -87,7 +87,7 @@ Stop executing and consult the PM when, in your best judgment, there is genuine 
 - **Scope surprise** — the work is significantly larger, riskier, or more invasive than the plan anticipated.
 - **Breaking change discovered** — something in the codebase has changed since the plan was written that invalidates its assumptions.
 
-**When you stop:** Record in both the plan document AND the relevant TodoWrite task what approach was tried and why it failed. Format: `"Tried: [approach] — Failed: [reason]"`. This prevents a future session from retrying the same dead end.
+**When you stop:** Record in both the plan document AND the relevant task's `metadata.tried_and_abandoned` field (via TaskUpdate) what approach was tried and why it failed. Format: `"Tried: [approach] — Failed: [reason]"`. This prevents a future session from retrying the same dead end.
 
 **Do NOT stop for:**
 - Routine fixable errors — fix them and move on

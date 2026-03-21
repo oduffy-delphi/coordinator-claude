@@ -12,9 +12,9 @@ Routing table lives in the coordinator plugin. Use /review-dispatch for reviewer
 
 ## HARD RULES
 
-- Once a goal is set, IMMEDIATELY create a TodoWrite task list before any work.
-  This is the flight recorder — it survives compaction. Include goal context,
-  discrete steps, and key decisions. Update it as you go.
+- Once a goal is set, IMMEDIATELY create a task list (TaskCreate) before any work.
+  This is the flight recorder — persists through compaction by design. Include goal context,
+  discrete steps, and key decisions. Update via TaskUpdate as you go.
 - Research needing 2+ queries → delegate to Explore/Enricher agents
 - Code implementation from specs → delegate to Executor agents
 - Reviews → route through /review-dispatch to named reviewers

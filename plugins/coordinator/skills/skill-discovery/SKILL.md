@@ -47,7 +47,7 @@ digraph skill_flow {
     "Invoke Skill tool" [shape=box];
     "Announce: 'Using [skill] to [purpose]'" [shape=box];
     "Has checklist?" [shape=diamond];
-    "Create TodoWrite todo per item" [shape=box];
+    "Create task per item (TaskCreate)" [shape=box];
     "Follow skill exactly" [shape=box];
     "Respond (including clarifications)" [shape=doublecircle];
 
@@ -61,9 +61,9 @@ digraph skill_flow {
     "Might any skill apply?" -> "Respond (including clarifications)" [label="definitely not"];
     "Invoke Skill tool" -> "Announce: 'Using [skill] to [purpose]'";
     "Announce: 'Using [skill] to [purpose]'" -> "Has checklist?";
-    "Has checklist?" -> "Create TodoWrite todo per item" [label="yes"];
+    "Has checklist?" -> "Create task per item (TaskCreate)" [label="yes"];
     "Has checklist?" -> "Follow skill exactly" [label="no"];
-    "Create TodoWrite todo per item" -> "Follow skill exactly";
+    "Create task per item (TaskCreate)" -> "Follow skill exactly";
 }
 ```
 
@@ -191,7 +191,8 @@ These directories contain pipeline definitions (`PIPELINE.md`) that the correspo
 | `/architecture-audit` | `pipelines/deep-architecture-audit/PIPELINE.md` |
 | `/architecture-rotation` | `pipelines/weekly-architecture-audit/PIPELINE.md` |
 | `/code-health` | `pipelines/daily-code-health/PIPELINE.md` |
-| `/deep-research`, `/structured-research` | `pipelines/deep-research/PIPELINE.md` |
+| `/deep-research` | `plugins/deep-research/pipelines/PIPELINE.md` |
+| `/structured-research` | `plugins/coordinator/pipelines/structured-research/PIPELINE.md` |
 | `/distill` | `pipelines/artifact-distillation/PIPELINE.md` |
 
 ### Maintenance

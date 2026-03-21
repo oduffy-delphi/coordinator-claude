@@ -66,7 +66,7 @@ Identify:
 
 ### Phase 3: Flight Recorder — Compaction-Proof State
 
-**This is the critical step.** Build a TodoWrite task list that will survive context compaction and allow the run to continue without re-reading everything.
+**This is the critical step.** Build a task list (TaskCreate) that persists through context compaction and allows the run to continue without re-reading everything.
 
 Create tasks with this structure:
 
@@ -79,16 +79,16 @@ Create tasks with this structure:
    - Item identifier and file path to spec
    - Key details from the spec (enough to execute without re-reading if compacted)
    - Verification criteria
-   - **Tried and abandoned:** (initially empty — update during execution if approaches fail. Format: "Tried: [approach] — Failed: [reason]". One line per attempt. This survives compaction and prevents post-compaction repetition.)
+   - **Tried and abandoned:** (initially empty — update during execution via `TaskUpdate` metadata field `tried_and_abandoned`. Format: "Tried: [approach] — Failed: [reason]". One line per attempt. Persists through compaction and prevents post-compaction repetition.)
    - Status: `pending`
 
 3. **Tail tasks** (based on mode):
    - **Standard:** "Run /update-docs" — `pending`
    - **Hibernate:** "Run /update-docs" — `pending`, then "Hibernate PC" — `pending`
 
-**The flight recorder must contain enough context to resume cold.** After compaction, you may have lost the conversation but the TodoWrite survives. Write it like a handoff to a stranger.
+**The flight recorder must contain enough context to resume cold.** After compaction, you may have lost the conversation but the task list survives. Write it like a handoff to a stranger.
 
-**Anti-amnesia rule:** If you abandon an approach during execution, update your TodoWrite task's description to include what you tried and why it failed BEFORE trying something new. After compaction, always read your TodoWrite task descriptions for "Tried and abandoned" notes before starting work — do not retry approaches that are recorded as failed.
+**Anti-amnesia rule:** If you abandon an approach during execution, update the task's `metadata.tried_and_abandoned` field via TaskUpdate to include what you tried and why it failed BEFORE trying something new. After compaction, always read task metadata and descriptions (TaskGet) for "Tried and abandoned" notes before starting work — do not retry approaches that are recorded as failed.
 
 ### Phase 4: Confirm and Fire
 
@@ -117,11 +117,11 @@ This is a launch announcement, not a proposal. Output it and immediately begin P
 
 For each item in sequence:
 
-1. **Write-ahead:** Mark item `in_progress` in TodoWrite. Update plan document status if applicable.
+1. **Write-ahead:** Mark item `in_progress` via TaskUpdate. Update plan document status if applicable.
 2. **Execute:** Follow the spec. Use `/execute-plan` patterns for plan-based items, or direct implementation for simpler items.
 3. **Verify:** Run the verification method identified in Phase 1. Apply `coordinator:verification-before-completion` — evidence before claims.
 4. **Commit:** Commit at completion of each item. Stage everything, brief message. The post-commit hook handles push.
-5. **Mark complete:** Update TodoWrite. Update plan document if applicable.
+5. **Mark complete:** Update task via TaskUpdate. Update plan document if applicable.
 6. **Brief status update:** One line — "[Item X] complete, moving to [Item Y]." Output-only — do NOT frame as a question, do NOT offer choices, do NOT wait for a response. Examples of what NEVER to output:
    - ~~"Want me to fire those now?"~~ — Just fire them.
    - ~~"Ready for the next batch?"~~ — Just start it.
@@ -132,7 +132,7 @@ For each item in sequence:
 
 ### Phase 6: Tail — Close Out the Run
 
-After all items are executed and verified, mark all item tasks as `completed` in TodoWrite, then execute the tail action based on mode:
+After all items are executed and verified, mark all item tasks as `completed` via TaskUpdate, then execute the tail action based on mode:
 
 **Standard (default):**
 1. Invoke `/update-docs` — sync documentation, commit, push to branch (includes artifact distillation if thresholds are met)
@@ -174,11 +174,11 @@ Apply the same judgment as `/execute-plan`:
 
 **If you must stop:**
 1. Commit all current work — even partial progress. Stage everything.
-2. Update TodoWrite with where you stopped and why, including which items remain.
+2. Update tasks via TaskUpdate with where you stopped and why, including which items remain.
 3. Update any plan documents with current status.
 4. Push is automatic via post-commit hook, but verify the branch is on remote.
 5. **If hibernate mode was invoked:** Presume the PM is away. Hibernate the machine. The PM will see the incomplete run on the branch when they wake up. Incomplete work on a branch is safe — it's not on main, colleagues aren't affected, and it's better than leaving a power-hungry PC running overnight waiting for input that won't come.
-6. **If standard mode:** Just stop. The PM will see the state in TodoWrite and on the branch.
+6. **If standard mode:** Just stop. The PM will see the state in the task list and on the branch.
 
 ## Safety Boundaries
 
@@ -195,7 +195,7 @@ Apply the same judgment as `/execute-plan`:
 **Required workflow skills:**
 - **`/execute-plan`** — Pattern for executing individual plan items
 - **coordinator:verification-before-completion** — Evidence before claims on each item
-- **coordinator:update-docs** — Tail action after all items complete (both modes)
+- **`/update-docs`** — Tail action after all items complete (both modes)
 
 **Optional workflow skills:**
 - **coordinator:dispatching-parallel-agents** — If independent items can be parallelized
@@ -205,4 +205,4 @@ Apply the same judgment as `/execute-plan`:
 
 **Pairs with:**
 - **coordinator:writing-plans** — Creates the scoped items this skill executes
-- **coordinator:session-start** — Often follows session-start when the PM reviews the backlog and decides to straight-shot it
+- **`/session-start`** — Often follows session-start when the PM reviews the backlog and decides to straight-shot it

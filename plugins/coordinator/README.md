@@ -22,9 +22,8 @@ The coordinator plugin is the backbone of the system. It provides:
 | **review-integrator** | Opus | Applies reviewer findings to artifacts with annotations, escalates disagreements |
 | **patrik-code-review** | Opus | Senior engineer reviewer — exacting standards, documentation completeness, architecture |
 | **zoli-ambition-advocate** | Opus | Backstop reviewer — challenges conservative recommendations, never a primary reviewer |
-| **structured-research-orchestrator** | Opus | Pipeline C orchestrator — owns full research lifecycle per subject, dispatches Haiku/Sonnet sub-agents |
 
-### Commands (19, all user-invocable via `/`)
+### Commands (18, all user-invocable via `/`)
 
 | Command | Purpose |
 |---------|---------|
@@ -40,7 +39,6 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/review-dispatch` | Route artifacts to the right reviewer |
 | `/generate-repomap` | Generate a ranked repository map for LLM context injection |
 | `/mise-en-place` | Autonomous backlog execution — gather ready items, execute without stopping |
-| `/deep-research` | Deep research pipeline — codebase (Pipeline A) or internet sources (Pipeline B) |
 | `/structured-research` | Batch research across multiple subjects with repeating structure and output schema |
 | `/architecture-audit` | Bootstrap or refresh the architecture atlas via multi-phase agent pipeline |
 | `/architecture-rotation` | Run the weekly architecture audit rotation — score, audit, apply, update ledger |
@@ -56,7 +54,6 @@ The coordinator plugin is the backbone of the system. It provides:
 - `writing-plans` — Decompose designs into executable tasks. Scope checking, file structure mapping, TDD-oriented granularity.
 - `executing-plans` — Execute plans task-by-task with review checkpoints. Prefers `/delegate-execution` in coordinator sessions.
 - `verification-before-completion` — Prove it works before claiming it's done.
-- `deep-research` — Multi-source investigation of repos or topics.
 
 **Development Process:**
 - `test-driven-development` — RED-GREEN-REFACTOR cycle, strictly enforced.
@@ -87,14 +84,42 @@ The coordinator plugin is the backbone of the system. It provides:
 - `bug-sweep` — Systematic codebase sweep for bug patterns — fix AI-fixable, defer rest to backlog.
 - `tracker-maintenance` — Maintain the project tracker — archive completed work, update dependencies, sweep for untracked commits.
 - `lessons-trim` — Trim stale entries from lessons files, merge duplicates, clean up feature-scoped files.
-- `handoff-archival` — Archive consumed handoffs older than 48 hours, migrate legacy locations.
+- `handoff-archival` — Archive consumed handoffs older than 48 hours.
 - `atlas-integrity-check` — Check changed files against the architecture atlas for unmapped entries.
 - `artifact-consolidation` — Bulk prune accumulated artifacts without knowledge extraction. For distill-then-delete, use `/distill` instead.
 - `project-onboarding` — Bootstrap project tracking infrastructure — tracker, tasks, archive, handoffs.
 
 ### Hooks
 
-- **SessionStart** — Coordinator discipline reminder (sets EM role, loads pipeline awareness)
+| Event | Script | Purpose |
+|-------|--------|---------|
+| **SessionStart** | `coordinator-reminder.sh` | Sets EM role, loads pipeline awareness |
+| **SessionStart** | `project-orientation.sh` | Loads project-specific orientation cache |
+| **PreToolUse** (WebSearch/WebFetch) | `suggest-sonnet-research.sh` | Nudges delegation to Sonnet research agents |
+| **PreToolUse** (holodeck MCP) | `nudge-holodeck-delegation.sh` | Nudges delegation to UE domain agents |
+| **PostToolUse** (ExitPlanMode) | `plan-persistence-check.sh` | Verifies plan was written to disk |
+| **SubagentStop** | `executor-exit-watchdog.sh` | Validates executor output before accepting |
+| **UserPromptSubmit** | `context-pressure-advisory.sh` | Context pressure warnings (see below) |
+| **PreCompact** | `context-pressure-precompact.sh` | Writes compaction sentinel for post-compaction orientation |
+
+#### Context Pressure Advisory
+
+Proactive warnings when the context window is filling up, giving the user time to handoff before compaction fires and causes context loss.
+
+**How it works:** Two phases in a single `UserPromptSubmit` hook:
+
+1. **Post-compaction orientation** (Phase 1) — After compaction occurs, the `PreCompact` hook writes a sentinel file. On the next user message, Phase 1 detects it and emits orientation guidance (re-read plans, check tasks, verify state).
+
+2. **Threshold-based warnings** (Phase 2) — Measures transcript file size, detects the model from the transcript, and emits proportional warnings:
+   - **Advisory at 60%** of estimated context usage — "Context is getting heavy, consider wrapping up"
+   - **Critical at 78%** — "Compaction is imminent, handoff now"
+   - Both bark once per session (sentinel files prevent repeated nagging)
+
+**Why these thresholds:** Research (2026-03-21) established that Claude Code's compaction fires at **~83.5% of the context window** — a 33K token buffer reserved from a 200K window, not the widely-cited "95%". Advisory at 60% gives ~23.5% headroom for a clean handoff. Critical at 78% gives ~5.5% buffer before compaction.
+
+**How token usage is estimated:** We can't access Claude's tokenizer from a shell hook. Instead, transcript file size (bytes) is used as a proxy. JSONL transcripts run ~5-8 bytes per token (content + JSON overhead + tool I/O). We use **5 bytes/token** — the low end — so we deliberately overestimate token usage and warn earlier than strictly necessary. For an advisory system, early warnings (false positives) are cheap; missed warnings (false negatives) are expensive. The percentage shown in the message (e.g., "~62% est.") is explicitly an estimate.
+
+**Thresholds are proportional, not absolute.** The script detects the model ID from the transcript and looks up its context window size (Opus 4.6 = 1M, Sonnet 4.6 = 200K, etc.). Percentages are applied to that window. Adding a new model requires only a new `case` branch. Thresholds can be overridden via `CONTEXT_ADVISORY_THRESHOLD` and `CONTEXT_CRITICAL_THRESHOLD` env vars (absolute byte values).
 
 ## Routing Extension Protocol
 
@@ -105,7 +130,7 @@ The coordinator defines the routing framework that domain plugins extend:
 3. At dispatch time, `/review-dispatch` merges all fragments into a composite routing table
 4. Signals from changed code determine which reviewer handles the review
 
-See the parent [ARCHITECTURE.md](../ARCHITECTURE.md) for the full conceptual model.
+See the parent [ARCHITECTURE.md](ARCHITECTURE.md) for the full conceptual model.
 
 ## Per-Project Config
 
@@ -149,10 +174,10 @@ All pipeline phases now mark documents *before* starting work, not just on compl
 - **Enrich-and-review:** New Phase 2.5 (pre-enrichment status) and Phase 4.5 (pre-review status) — coordinator updates tracker and commits before dispatching agents.
 - **Delegate-execution:** New Phase 1.5 — coordinator marks tracker as "Execution in progress" and commits before dispatching executors.
 - **Review-dispatch:** New Phase 2.5 — marks artifact with reviewer name before dispatching.
-- **Executing-plans:** Plan document updated on disk (not just TodoWrite) before and after each task.
+- **Executing-plans:** Plan document updated on disk (not just the task list) before and after each task.
 - **Writing-plans:** Plan header template now includes `Status:` field.
 
-See [ARCHITECTURE.md](../ARCHITECTURE.md) § "The Write-Ahead Status Protocol" for the conceptual model and state machine.
+See [ARCHITECTURE.md](ARCHITECTURE.md) § "The Write-Ahead Status Protocol" for the conceptual model and state machine.
 
 ### v1.1.0 (March 2026) — Superpowers v5.0.0 Absorption
 

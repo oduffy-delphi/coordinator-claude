@@ -27,9 +27,9 @@ If you've written 3+ paragraphs of analysis without making a single tool call, y
 
 ## Pattern 4: Post-Compaction Repetition
 
-After context compaction, check your TodoWrite tasks for "tried and abandoned" notes before attempting any approach. If TodoWrite records that an approach was tried and failed, do not retry it.
+After context compaction, check your tasks (TaskList/TaskGet) for "tried and abandoned" notes before attempting any approach. Check both `metadata.tried_and_abandoned` and task descriptions (legacy format). If a task records that an approach was tried and failed, do not retry it.
 
-**Recovery:** Read all TodoWrite task descriptions for notes about failed approaches. Choose a different strategy.
+**Recovery:** Read all task metadata and descriptions via TaskGet for notes about failed approaches. Choose a different strategy.
 
 ## When Stuck Detection Triggers
 

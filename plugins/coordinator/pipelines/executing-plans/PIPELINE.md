@@ -16,17 +16,17 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 1. Read plan file
 2. Review critically — identify any questions or concerns about the plan
 3. If concerns: Raise them with your human partner before starting
-4. If no concerns: Create TodoWrite and proceed
+4. If no concerns: Create task list (TaskCreate) and proceed
 
 ### Step 2: Execute Through the Entire Plan
 
 **Default behavior: execute all tasks in sequence without stopping to ask permission between them.**
 
 For each task:
-1. **Write-ahead: Update the plan document itself** — mark the current phase/task as "In progress (started YYYY-MM-DD HH:MM)" in the plan file on disk. This is crash insurance — if the session dies, the plan shows where execution stopped rather than misleading "not started." Update TodoWrite simultaneously.
+1. **Write-ahead: Update the plan document itself** — mark the current phase/task as "In progress (started YYYY-MM-DD HH:MM)" in the plan file on disk. This is crash insurance — if the session dies, the plan shows where execution stopped rather than misleading "not started." Update task list via TaskUpdate simultaneously.
 2. Follow each step exactly (plan has bite-sized steps)
 3. Run verifications as specified
-4. **Mark completed in both the plan document AND TodoWrite** — update the plan file to show "Complete (YYYY-MM-DD HH:MM)" for the task
+4. **Mark completed in both the plan document AND task list** — update the plan file to show "Complete (YYYY-MM-DD HH:MM)" for the task, and mark `completed` via TaskUpdate
 5. Proceed immediately to the next task
 
 Do NOT pause between tasks to ask "should I proceed?" or "ready for feedback?" — the PM authorized the plan when they approved it. Your job is to execute it diligently and in its entirety.
@@ -49,7 +49,7 @@ After all tasks complete and verified:
 - **Verification fails structurally** — not a typo or import fix, but repeated failures that suggest the approach is wrong.
 - **Scope surprise** — the work is significantly larger, riskier, or more invasive than the plan anticipated.
 - **Breaking change discovered** — something in the codebase has changed since the plan was written that invalidates assumptions.
-- **Recording what failed:** When you stop and reassess, record in both the plan document AND your TodoWrite task what approach was tried and why it failed. Format: "Tried: [approach] — Failed: [reason]". This prevents future sessions or post-compaction agents from retrying the same dead end.
+- **Recording what failed:** When you stop and reassess, record in both the plan document AND the task's `metadata.tried_and_abandoned` field (via TaskUpdate) what approach was tried and why it failed. Format: "Tried: [approach] — Failed: [reason]". This prevents future sessions or post-compaction agents from retrying the same dead end.
 
 **Do NOT stop for:**
 - Routine fixable errors (type errors, missing imports, lint failures) — fix them and move on

@@ -62,8 +62,8 @@ Applies reviewer findings to artifacts after review dispatch. Receives structure
 
 ### Research Orchestrators (Opus)
 Dispatch Haiku scouts and Sonnet verifiers, evaluate quality gates, synthesize final output. Three pipeline modes:
-- **Pipeline A (Codebase):** Haiku scouts survey the repo, Sonnet analysts synthesize, Opus judges
-- **Pipeline B (Internet):** Multi-source web research with cross-verification and source grading
+- **Pipeline A (Internet):** Multi-source web research with cross-verification and source grading
+- **Pipeline B (Codebase):** 2 Haiku scouts build file inventories, 4 Sonnet specialists analyze architecture with real-time cross-pollination, Opus synthesizes
 - **Pipeline C (Structured Batch):** Schema-driven research across N entities with repeating structure
 
 ## The Full Pipeline
@@ -123,7 +123,7 @@ Then `/session-start` command runs the full orientation protocol.
 
 ### Session Continuity
 State survives compaction through:
-- **TodoWrite** — per-conversation flight recorder, survives compaction
+- **Tasks API** (TaskCreate/TaskUpdate/TaskList/TaskGet) — per-conversation flight recorder, persists through compaction by design
 - **Handoffs** — structured disk-based state capture between sessions
 - **Orientation cache** — compact project awareness document, sub-second load
 - **Plan documents** — on-disk specs with write-ahead status fields

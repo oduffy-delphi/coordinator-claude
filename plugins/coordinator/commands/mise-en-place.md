@@ -54,7 +54,7 @@ Identify:
 
 ### Phase 3: Flight Recorder — Compaction-Proof State
 
-**This is the critical step.** Build a TodoWrite task list that survives context compaction and allows the run to continue without re-reading everything.
+**This is the critical step.** Build a task list (TaskCreate) that persists through context compaction and allows the run to continue without re-reading everything.
 
 Create tasks with this structure:
 
@@ -67,16 +67,16 @@ Create tasks with this structure:
    - Item identifier and file path to spec
    - Key details from the spec (enough to execute without re-reading if compacted)
    - Verification criteria
-   - **Tried and abandoned:** (initially empty — update during execution if approaches fail. Format: "Tried: [approach] — Failed: [reason]". One line per attempt. Survives compaction; prevents post-compaction repetition.)
+   - **Tried and abandoned:** (initially empty — update during execution via `TaskUpdate` metadata field `tried_and_abandoned`. Format: "Tried: [approach] — Failed: [reason]". One line per attempt. Persists through compaction; prevents post-compaction repetition.)
    - Status: `pending`
 
 3. **Tail tasks** (based on mode):
    - **Standard:** "Run /update-docs" — `pending`
    - **Hibernate:** "Run /update-docs" — `pending`, then "Hibernate PC" — `pending`
 
-**The flight recorder must contain enough context to resume cold.** After compaction, you may have lost the conversation but the TodoWrite survives. Write it like a handoff to a stranger.
+**The flight recorder must contain enough context to resume cold.** After compaction, you may have lost the conversation but the task list survives. Write it like a handoff to a stranger.
 
-**Anti-amnesia rule:** If you abandon an approach during execution, update the TodoWrite task's description to include what you tried and why it failed BEFORE trying something new. After compaction, always read TodoWrite task descriptions for "Tried and abandoned" notes before starting work — never retry a recorded-failed approach.
+**Anti-amnesia rule:** If you abandon an approach during execution, update the task's `metadata.tried_and_abandoned` field via TaskUpdate to include what you tried and why it failed BEFORE trying something new. After compaction, always read task metadata and descriptions (TaskGet) for "Tried and abandoned" notes before starting work — never retry a recorded-failed approach.
 
 ### Phase 4: Confirm and Fire
 
@@ -103,12 +103,12 @@ The tail line is the EM's confirmation of mode — stated declaratively, not as 
 
 For each item in the sequenced order:
 
-1. **Write-ahead:** Mark item `in_progress` in TodoWrite. Update the plan document status if applicable.
+1. **Write-ahead:** Mark item `in_progress` via TaskUpdate. Update the plan document status if applicable.
 2. **Execute:** Follow the spec. Use `/execute-plan` patterns for plan-based items, or direct implementation for simpler items.
 3. **Verify:** Run the verification method identified in Phase 1. Apply `coordinator:verification-before-completion` — evidence before claims.
 4. **Spec-check:** If the item has an enriched stub or plan document with `## Acceptance Criteria`, read the criteria and confirm each was implemented. For items without formal acceptance criteria (simple backlog items, one-liners), skip — the verification in step 3 suffices.
 5. **Commit:** Commit at completion of each item. Stage everything, brief message. The post-commit hook handles push.
-6. **Mark complete:** Update TodoWrite. Update the plan document if applicable.
+6. **Mark complete:** Update task via TaskUpdate. Update the plan document if applicable.
 7. **Brief status update:** One line — "[Item X] complete, moving to [Item Y]." Output-only. These are progress breadcrumbs, not check-ins. Never output:
    - "Want me to fire those now?" — Just fire them.
    - "Ready for the next batch?" — Just start it.
@@ -119,7 +119,7 @@ For each item in the sequenced order:
 
 ### Phase 6: Tail — Close Out the Run
 
-After all items are executed and verified, mark all item tasks `completed` in TodoWrite, then execute the tail action:
+After all items are executed and verified, mark all item tasks `completed` via TaskUpdate, then execute the tail action:
 
 **Standard (default):**
 1. Invoke `/update-docs` — sync documentation, commit, push to branch
@@ -169,11 +169,11 @@ Hibernate over shutdown: same zero power draw, but the machine resumes to its pr
 
 **If you must stop early:**
 1. Commit all current work — even partial progress. Stage everything.
-2. Update TodoWrite with where you stopped and why, including which items remain.
+2. Update tasks via TaskUpdate with where you stopped and why, including which items remain.
 3. Update any plan documents with current status.
 4. Verify the branch is on remote (post-commit hook should have handled it — confirm).
 5. **If hibernate mode was invoked:** Hibernate anyway. The PM will see the incomplete run on the branch on wake. Safe — work is on a branch, not main.
-6. **If standard mode:** Stop. The PM will see the state in TodoWrite and on the branch.
+6. **If standard mode:** Stop. The PM will see the state in the task list and on the branch.
 
 ## Failure Modes
 
@@ -186,7 +186,7 @@ Hibernate over shutdown: same zero power draw, but the machine resumes to its pr
 | `/update-docs` fails in standard mode | Report the failure, leave work on branch |
 | `/update-docs` fails in hibernate mode | Hibernate anyway — item commits already pushed |
 | Push fails before hibernate | Do NOT hibernate — work must be on remote first. Stop and report. |
-| Context compacted mid-run | Read TodoWrite goal task and per-item tasks to re-orient; check "Tried and abandoned" notes; continue from `in_progress` item |
+| Context compacted mid-run | Read goal task and per-item tasks via TaskList/TaskGet to re-orient; check `metadata.tried_and_abandoned`; continue from `in_progress` item |
 
 ## Relationship to Other Commands
 

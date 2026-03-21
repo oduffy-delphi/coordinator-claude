@@ -3,8 +3,9 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 [![Opus](https://img.shields.io/badge/Model-Opus_4.6-orange)](https://www.anthropic.com/claude)
-[![Plugins](https://img.shields.io/badge/Plugins-5-green)](#what-you-get)
-[![Skills](https://img.shields.io/badge/Skills-20+-green)](#codified-skills)
+[![Plugins](https://img.shields.io/badge/Plugins-6-green)](#what-you-get)
+[![Skills](https://img.shields.io/badge/Skills-35+-green)](#codified-skills)
+[![Agent Teams](https://img.shields.io/badge/Agent_Teams-3_pipelines-blueviolet)](#deep-research-pipelines)
 [![CI](https://img.shields.io/badge/CI-10_checks-brightgreen)](.github/workflows/validate-plugins.yml)
 
 **A Claude Code plugin system that turns human-AI collaboration into a structured PM-EM partnership — with research pipelines, multi-session continuity, and quality gates that go beyond what's available out of the box.**
@@ -43,21 +44,38 @@ The individual techniques here — subagents, review pipelines, model tiering, p
 
 3. **PM/EM authority partitioning (First Officer Doctrine)** — Standing role-level domain authority between human and AI that persists across sessions. The [National Academies](https://nap.nationalacademies.org/read/26355/chapter/4) identified persistent human-AI relationships as an explicit research gap.
 
+4. **Fire-and-forget autonomous research teams** — Multi-model Agent Teams where the coordinator scopes work, spawns all teammates, and is *immediately freed*. The team self-coordinates via shared artifacts on disk and task-gated blocking — no orchestrator polling loop, no monitoring, no WRAP_UP broadcasts. Each model tier does fundamentally different cognitive work (Haiku scouts, Sonnet specialists, Opus synthesizer), and specialists self-govern their own convergence timing. This inverts the standard "orchestrator bottleneck" pattern found in frameworks like CrewAI, AutoGen, and LangGraph.
+
 The **tiered context injection** system ("warm RAM") was found to be compositionally novel across [87 surveyed sources](docs/research/2026-03-20-agent-orchestration-novelty-unified.md#appendix-warm-ram--tiered-context-injection-research).
 
 For context on the broader landscape: [Bassim Eledath's 8 Levels of Agentic Engineering](https://www.bassimeledath.com/blog/levels-of-agentic-engineering), [Addy Osmani on Agentic Engineering](https://addyosmani.com/blog/agentic-engineering/), and [Mike Mason on Coherence Through Orchestration](https://mikemason.ca/writing/ai-coding-agents-jan-2026/) are good reference points.
+
+For the full picture — the ecosystem survey, the novelty assessment, the productivity paradox, and the real constraints — see **[State of the Meta](docs/research/STATE-OF-THE-META.md)**.
 
 ## What You Get
 
 ### Deep Research Pipelines
 
-Three research modes that go well beyond a single search call:
+Three research modes that go well beyond a single search call — built on Claude Code's **Agent Teams** (experimental), where teammates collaborate autonomously via messaging and shared tasks:
 
-- **Pipeline A (Codebase Research):** Haiku scouts fan out across a repository, Sonnet analysts synthesize findings, Opus judges quality. Produces an evergreen assessment of a repo's architecture, patterns, and design decisions — with an optional comparison phase that diffs the assessment against your own project. You can re-run the comparison cheaply as your project evolves without re-researching the reference.
+- **Pipeline A (Internet Research):** 1 Haiku scout builds a shared source corpus from EM-crafted search queries → 3-5 Sonnet specialists deep-read, verify claims, and cross-pollinate findings via peer messaging → 1 Opus synthesizer resolves contradictions and writes the final document. Specialists self-govern their timing (floor/ceiling/diminishing-returns) with no EM monitoring.
 
-- **Pipeline B (Internet Research):** Multi-source web research with cross-verification and source grading. What standard Claude search gives you in one call, this gives you with multiple agents verifying against each other. The difference is the difference between "I found one page that says X" and "three independent sources agree on X, one disagrees, here's why."
+- **Pipeline B (Repo Research):** 2 Haiku scouts build structured file inventories (function signatures, constant values, cross-subsystem data flow) → 4 Sonnet specialists deep-read source files, analyze architecture and patterns, and cross-pollinate findings in real time via peer messaging → 1 Opus synthesizer cross-references all specialist assessments into a final document with file:line references and confidence levels. Optional `--compare` mode adds a gap analysis against your own project. The entire team runs as an Agent Teams swarm — the EM scopes the repo into 4 domain-aligned chunks, spawns 7 teammates, and is freed; the team handles everything autonomously including convergence timing and cross-chunk discovery.
 
-- **Pipeline C (Structured Batch Research):** Schema-driven research across N entities (companies, tools, teams) with a repeating structure. Input is a spec file declaring subjects, topics, acceptance criteria, and output schema. Output is structured data conforming to the schema — not prose. Supports incremental campaigns across sessions: research 5 subjects today, resume with the next 5 tomorrow, and the manifest tracks what's done and what's pending.
+- **Pipeline C (Structured Research):** Schema-driven research across N entities with repeating structure, now powered by Agent Teams. A Haiku scout maps web findings to schema fields from an EM-processed brief → 1-5 Sonnet verifiers compare against existing data and produce schema field tables with change types (CONFIRMED/UPDATED/NEW/REFUTED) → an Opus synthesizer reconciles cross-topic conflicts and writes YAML/JSON conforming to the spec's output schema. Quality gates from the spec are embedded in verifier prompts for self-validation. Supports incremental campaigns across sessions via manifest tracking.
+
+<details>
+<summary><strong>Agent Teams architecture details</strong></summary>
+
+All three research pipelines use Claude Code's experimental [Agent Teams](https://docs.anthropic.com/en/docs/claude-code) feature — a fire-and-forget pattern where the EM creates a team, spawns all teammates in parallel, and is immediately freed. The team self-coordinates:
+
+- **Three-tier team composition:** Haiku scouts (fast mechanical work — file inventories, web searches, accessibility vetting), Sonnet specialists (analytical work — deep reading, verification, cross-pollination), Opus synthesizer (judgment — contradiction resolution, prioritized recommendations). Each model does what it's best at.
+- **Shared artifacts over broadcast:** Scouts write to disk (file inventories, source corpora); specialists read from disk. This avoids the message explosion of N×N communication and lets specialists start from curated input rather than raw search results.
+- **Task-gated blocking:** Specialists are `blockedBy` the scout task — they auto-start when the scout completes. The synthesizer is `blockedBy` all specialist tasks, but since it's already running and idle, specialists send explicit `DONE` messages as wake-up signals (`blockedBy` is a [status gate, not an event trigger](plugins/deep-research/pipelines/team-protocol.md#how-agent-teams-blocking-actually-works-empirical--sourced)).
+- **Self-governing timing:** Specialists manage their own convergence using a floor (minimum research time + source count), ceiling (maximum time), and diminishing-returns detector (last 3 sources added nothing new). No EM monitoring or WRAP_UP broadcast needed.
+- **7-teammate ceiling:** Agent Teams supports up to 7 parallel teammates. Team compositions are designed around this constraint (e.g., Pipeline B: 2 scouts + 4 specialists + 1 synthesizer = 7 exactly).
+
+</details>
 
 ### NotebookLM Research Integration
 
@@ -102,7 +120,7 @@ Code reviews route through specialized reviewer personas — senior engineer, am
 
 ### Codified Skills
 
-20+ tested behavioral protocols — from brainstorming to debugging to code review to git workflow. Not suggestions; enforced workflows with checklists. The coordinator follows the protocol when a skill exists rather than improvising.
+35+ tested behavioral protocols — from brainstorming to debugging to code review to git workflow. Not suggestions; enforced workflows with checklists. The coordinator follows the protocol when a skill exists rather than improvising.
 
 ### Workday Commands
 
@@ -129,6 +147,8 @@ Slash commands that structure your workday:
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
 - A Claude API key or Claude Pro/Team subscription
+- [jq](https://jqlang.github.io/jq/) (`brew install jq` / `sudo apt install jq` / `winget install jqlang.jq`) — used by hook scripts for JSON parsing
+- **Agent Teams (experimental)** — Required for the deep research pipelines. Enable by adding `"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"` to your `env` in Claude Code's `settings.json`. Without this, `/deep-research` commands will fail.
 - **Opus as the coordinator model.** The orchestration layer — plan decomposition, review judgment, delegation decisions, quality gates — is designed for Opus-level reasoning. Sonnet and Haiku are used extensively *within* the pipeline (executors, verifiers), but the coordinator itself needs Opus. Set it with `/model opus` or in your Claude Code settings.
 
 ### Installation
@@ -156,7 +176,7 @@ See [docs/getting-started.md](docs/getting-started.md) for the full installation
 
 ## Customization
 
-- **Add domain plugins** — game-dev, data-science, and web-dev are included; create your own for your domain
+- **Add domain plugins** — game-dev, data-science, web-dev, and deep-research are included; create your own for your domain
 - **Rename or modify reviewer personas** — the behavioral descriptions are what matter, not the names
 - **Write new skills** — the `coordinator:writing-skills` skill guides you through TDD for skill authoring
 - **Configure per-project** — `.claude/coordinator.local.md` controls which domain plugins activate
@@ -167,11 +187,14 @@ See [docs/customization.md](docs/customization.md) for details.
 
 ```
 You (PM) <-> Coordinator (EM)
-                |- Enricher agents (Sonnet) -- research, fill specs
-                |- Executor agents (Sonnet) -- implement from specs
-                |- Reviewer personas (Opus) -- domain-specialized review
-                |- Verification agents (Haiku) -- mechanical checks
-                `- Research orchestrators (Opus) -- deep research pipelines
+                |- Enricher agents (Sonnet) ── research, fill specs
+                |- Executor agents (Sonnet) ── implement from specs
+                |- Reviewer personas (Opus) ── domain-specialized review
+                |- Verification agents (Haiku) ── mechanical checks
+                `- Deep Research (Agent Teams) ── fire-and-forget autonomous swarms
+                     |- Pipeline A: 1 Haiku scout → 3-5 Sonnet specialists → 1 Opus synthesizer
+                     |- Pipeline B: 2 Haiku scouts → 4 Sonnet specialists → 1 Opus synthesizer
+                     `- Pipeline C: 1 Haiku scout → 1-5 Sonnet verifiers → 1 Opus synthesizer
 ```
 
 See [docs/architecture.md](docs/architecture.md) for the full system design.

@@ -25,7 +25,7 @@ if [ "$PROJECT_TYPE" = "meta" ]; then
   cat <<'EOF'
 # Coordinator — Meta Project Mode
 You are the EM operating on your own orchestration infrastructure.
-- TodoWrite flight recorder: create IMMEDIATELY when a goal is set
+- Flight recorder (TaskCreate): create IMMEDIATELY when a goal is set
 - Research 2+ queries → delegate to Explore/Enricher agents
 - Code implementation → delegate to Executor agents
 - Reviews → /review-dispatch (Patrik + Zolí apply to infrastructure code too)

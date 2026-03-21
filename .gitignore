@@ -17,6 +17,9 @@ __pycache__/
 *.pyc
 .venv/
 
+# Experiment results (API outputs, reports)
+experiments/results/
+
 # Node
 node_modules/
 
