@@ -178,7 +178,7 @@ The methodology is validated. Detection rates provide meaningful dynamic range f
 | 2. Agent-spawning runner | ✅ Done | `agent_client.py` + standalone script |
 | 3. Expand corpus | ✅ Done | 32 defects, 15 distractors, 10 files |
 | 4. Determinism pilot | ✅ Done | 27/30 calls, methodology validated |
-| 5. Full experiment | 🔄 In progress | 0/600 calls. Run via `--max-calls` batches |
+| 5. Full experiment | 🔄 In progress | 4/600 calls completed. Resume via `--max-calls` batches |
 | 6. Analysis pipeline | Not started | descriptive + GLMM + report |
 
 ## Decision Table (for interpreting results)
