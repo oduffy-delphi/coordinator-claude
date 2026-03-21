@@ -30,7 +30,7 @@ class AgentResponse:
 
 # Agent spawning defaults
 DEFAULT_MODEL = "sonnet"
-DEFAULT_TIMEOUT = 300  # 5 minutes per review
+DEFAULT_TIMEOUT = 600  # 10 minutes per review (300s caused ~10% timeout rate in pilot)
 
 
 class ReviewClient:
