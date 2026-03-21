@@ -133,6 +133,12 @@ Create or edit `~/.claude/settings.json`:
 
 ```json
 {
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write"
+    ]
+  },
   "enabledPlugins": {
     "coordinator@coordinator-claude": true,
     "web-dev@coordinator-claude": true,
@@ -151,7 +157,9 @@ Create or edit `~/.claude/settings.json`:
 }
 ```
 
-> **Important:** `extraKnownMarketplaces` is an **object**, not an array. Each key is a marketplace name with a nested `source` object.
+> **Important:** The `permissions.allow` array is required for background subagents. Without it, executor and enricher agents cannot write files — `defaultMode: "dontAsk"` only applies to the interactive session, not background agents.
+>
+> `extraKnownMarketplaces` is an **object**, not an array. Each key is a marketplace name with a nested `source` object.
 
 #### Step 7: Restart Claude Code
 
