@@ -22,7 +22,6 @@ The coordinator plugin is the backbone of the system. It provides:
 | **review-integrator** | Opus | Applies reviewer findings to artifacts with annotations, escalates disagreements |
 | **patrik-code-review** | Opus | Senior engineer reviewer — exacting standards, documentation completeness, architecture |
 | **zoli-ambition-advocate** | Opus | Backstop reviewer — challenges conservative recommendations, never a primary reviewer |
-| **structured-research-orchestrator** | Opus | Pipeline C orchestrator — owns full research lifecycle per subject, dispatches Haiku/Sonnet sub-agents |
 
 ### Commands (18, all user-invocable via `/`)
 
