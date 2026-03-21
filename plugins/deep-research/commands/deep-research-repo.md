@@ -1,14 +1,17 @@
 ---
-description: "Pipeline A relay driver — deep research on a repository. Dispatches the orchestrator per-phase and workers per-manifest. Handles scoping, Haiku file mapping, Sonnet analysis, optional comparison, and Opus synthesis."
-allowed-tools: ["Agent", "Read", "Write", "Bash", "Glob", "Grep"]
+description: "Pipeline B (Repo Research) using Agent Teams — 2 Haiku scouts build file inventories, 4 Sonnet specialists analyze and optionally compare, 1 Opus synthesizer produces the final document. EM scopes, spawns the team, and is freed."
+allowed-tools: ["Agent", "Read", "Write", "Bash", "Glob", "Grep", "TeamCreate", "TeamDelete", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "SendMessage"]
 argument-hint: "<repo-path> [--compare <project-path>]"
 ---
 
-# Deep Research — Pipeline A (Repo Research) Relay Driver
+# Deep Research — Pipeline B (Repo Research) Agent Teams Driver
 
-This command drives the full Pipeline A relay: orchestrator dispatches for judgment, worker dispatches for mechanical/analytical work, verification between phases, and commits at each milestone.
+The EM scopes the repository, creates a team, spawns all teammates, and is **freed**. The team works autonomously:
+- **Haiku scouts** (2) — inventory all files in their assigned chunks, build structured file maps
+- **Sonnet specialists** (4) — blocked until both scouts complete, then deep-read files, analyze, optionally compare
+- **Opus synthesizer** (1) — blocked until all specialists complete, then reads findings and writes final document(s)
 
-**Read the relay protocol for format details:** `~/.claude/plugins/deep-research/pipelines/relay-protocol.md`
+Scouts produce the shared thoroughness artifact that Sonnets would naturally skim past. Specialists self-govern their timing (floor, diminishing returns, ceiling). The EM does not monitor or broadcast WRAP_UP. When the synthesizer marks its task complete, the EM receives a notification and does quick cleanup.
 
 ## Arguments
 
@@ -19,230 +22,209 @@ This command drives the full Pipeline A relay: orchestrator dispatches for judgm
 ## Step 1 — Setup
 
 1. Parse arguments: extract repo path and optional comparison path
-2. Generate run ID: `YYYY-MM-DD-HHhMM` (current timestamp)
-3. Generate topic slug from repo name (e.g., `onnxruntime`, `langchain`)
-4. Create scratch directory:
+2. Verify the repo path exists and contains files
+3. Generate run ID: `YYYY-MM-DD-HHhMM` (current timestamp)
+4. Generate topic slug from repo name (e.g., `onnxruntime`, `langchain`)
+5. Record spawn timestamp: `date +%s` (Unix epoch seconds — passed to teammates for timing)
+6. Create scratch directory:
    ```bash
-   mkdir -p tasks/scratch/deep-research/{run-id}/prompts
+   mkdir -p tasks/scratch/deep-research-teams/{run-id}
    ```
-5. Set output path: `docs/research/YYYY-MM-DD-{topic-slug}.md` (use project's docs/research/ if it exists, otherwise `~/.claude/docs/research/`)
-6. Create empty decisions log: write `# Decisions Log\n` to `{scratch-dir}/decisions.md`
+7. Set output path: `docs/research/YYYY-MM-DD-{topic-slug}.md`
+8. If `--compare`: set gap analysis path: `docs/research/YYYY-MM-DD-{topic-slug}-gap-analysis.md`
 
-Announce: "Running Pipeline A (repo research) on {repo-path}."
+Announce: "Running Pipeline B (repo research, Agent Teams) on {repo-path}."
 
-## Step 2 — Phase 0: Scope (Orchestrator Dispatch)
+## Step 2 — Scope Repository (EM Direct)
 
-Dispatch the `deep-research-orchestrator` agent (`subagent_type: "deep-research:deep-research-orchestrator"`):
+This is judgment work — the EM does it directly:
 
-```
-Phase: 0 — Scope Definition
+1. **Read the README** — understand the repo's purpose and architecture
+2. **Pin the version** — record the repo's current version (git tag, release, or commit hash)
+3. **Survey repo structure** — 2-3 `ls` commands on the target repo, plus `find {repo-path} -name '*.py' -o -name '*.ts' -o -name '*.go' | wc -l` (or similar) for file count estimates
+4. **Define exactly 4 chunks** — domain-aligned, based on the repo's own architecture. (4 chunks because: 7-teammate ceiling - 2 scouts - 1 synthesizer = 4 specialist slots.)
+5. **Assign chunks to scouts** — Scout 1 gets chunks A+B, Scout 2 gets chunks C+D
+6. **Estimate file counts per chunk** — rough counts from the survey (these become `[EXPECTED_FILE_COUNT]` in specialist prompts, used as a tripwire for detecting thin scout output)
+7. **Write focus questions** — what are the key design decisions? What patterns?
+8. **If `--compare`:** identify the project's domain keywords per chunk for comparison file identification
+9. **Ask the PM for timing preferences:**
+   > "Research timing: default is 5-15 min specialist window with 3-file minimum deep-read. For a small repo, I'd suggest 3-10 min / 3 files. For a large repo, 5-20 min / 5 files. What ceiling works for you?"
 
-Pipeline: A (Repo Research)
-Target: {repo-path}
-{If --compare: "Comparison target: {project-path}"}
-Scratch directory: {scratch-dir}
+Write scope to `{scratch-dir}/scope.md`:
 
-Survey the repository, define 4-6 domain-aligned chunks, pin the version,
-and write focus questions. Write Haiku file mapping worker prompts using
-templates from agent-prompts.md.
+```markdown
+# Repo Research Scope
 
-Write your outputs to:
-1. Dispatch manifest: {scratch-dir}/dispatch-manifest.md
-2. Worker prompts: {scratch-dir}/prompts/{worker-id}.md (one per chunk)
-3. Decisions log: {scratch-dir}/decisions.md (READ existing content first, then APPEND your Phase 0 section)
-```
+**Repository:** {repo-name}
+**Path:** {repo-path}
+**Version:** {version}
+**Date:** {date}
+**Comparison:** {project-path or "none"}
 
-**Verify:** Read `{scratch-dir}/dispatch-manifest.md`. Confirm status is `DISPATCH_WORKERS` and worker entries exist.
+## Chunks
 
-## Step 3 — Phase 1: File Mapping (Haiku Workers)
+| Chunk | Scout | Directories/Files | Est. Files | Focus Question |
+|-------|-------|-------------------|-----------|----------------|
+| A | 1 | {dirs} | ~{count} | {question} |
+| B | 1 | {dirs} | ~{count} | {question} |
+| C | 2 | {dirs} | ~{count} | {question} |
+| D | 2 | {dirs} | ~{count} | {question} |
 
-Read the dispatch manifest. For each worker entry:
-
-1. Read the prompt file from `{scratch-dir}/prompts/{worker-id}.md`
-2. Dispatch the worker as an Agent:
-   - `model: "haiku"` (or as specified in manifest)
-   - `run_in_background: true` (if manifest says `Parallel: true`)
-   - `prompt:` the content of the prompt file
-
-Wait for all workers to complete.
-
-**Verify:** Check that all expected output files exist in `{scratch-dir}/phase-1/`:
-```bash
-ls {scratch-dir}/phase-1/
-```
-
-For any missing or empty files: re-dispatch that worker once with the same prompt. Skip on second failure, noting the gap.
-
-**Commit:**
-```bash
-git add -A && git commit -m "deep-research: phase 1 (Haiku file mapping) complete"
+{If --compare:}
+## Comparison Targets
+| Chunk | Project Domain Keywords |
+|-------|----------------------|
+| A | {keywords for globbing} |
+| B | {keywords} |
+| C | {keywords} |
+| D | {keywords} |
 ```
 
-## Step 4 — Pre-Phase 2: Quality Gate + Analysis Scoping (Orchestrator Dispatch)
+## Step 3 — Create Team and All Tasks
 
-Dispatch the orchestrator for quality evaluation and Phase 2 prompt generation:
-
-```
-Phase: 1.5 — Pre-Phase 2 Quality Gate
-
-Pipeline: A (Repo Research)
-Target: {repo-path}
-Scratch directory: {scratch-dir}
-
-Phase 1 worker outputs are at:
-{list each file in {scratch-dir}/phase-1/}
-
-Read the Phase 1 outputs, evaluate quality (completeness, actual values,
-cross-subsystem connections). Write Sonnet standalone analysis worker prompts
-using templates from agent-prompts.md. Include the Phase 1 output content in
-each Sonnet prompt (paste it into the template's input section).
-
-Decisions log: {scratch-dir}/decisions.md
-Read decisions.md first — it contains your Phase 0 judgments.
-
-Write your outputs to:
-1. Dispatch manifest: {scratch-dir}/dispatch-manifest.md
-2. Worker prompts: {scratch-dir}/prompts/{worker-id}.md (one per chunk)
-3. Decisions log: {scratch-dir}/decisions.md (READ first, APPEND Phase 1.5 section)
-```
-
-**Verify:** Read manifest. Confirm status is `DISPATCH_WORKERS`.
-
-## Step 5 — Phase 2: Standalone Analysis (Sonnet Workers)
-
-Read the dispatch manifest. For each worker:
-
-1. Read the prompt file
-2. Dispatch the worker:
-   - `model: "sonnet"`
-   - `run_in_background: true`
-   - `prompt:` prompt file content
-
-Wait for all workers to complete.
-
-**Verify:** Check output files in `{scratch-dir}/phase-2/`. Re-dispatch once on failure; skip on second.
-
-**Commit:**
-```bash
-git add -A && git commit -m "deep-research: phase 2 (Sonnet analysis) complete"
-```
-
-## Step 6 — Phase 3: Comparison (CONDITIONAL)
-
-**Skip this step if `--compare` was NOT provided.** Jump to Step 7.
-
-If comparison is in scope, dispatch the orchestrator for comparison prompt generation:
+### Create Team
 
 ```
-Phase: 2.5 — Pre-Phase 3 Comparison Scoping
-
-Pipeline: A (Repo Research)
-Target: {repo-path}
-Comparison target: {project-path}
-Scratch directory: {scratch-dir}
-
-Phase 2 worker outputs are at:
-{list each file in {scratch-dir}/phase-2/}
-
-Read the Phase 2 analyses and write Sonnet comparison worker prompts
-using templates from agent-prompts.md. Include the Phase 2 output content
-in each comparison prompt. List the project files to compare against.
-
-Decisions log: {scratch-dir}/decisions.md
-Read decisions.md first — it contains Phase 0 and Phase 1.5 judgments.
-
-Write your outputs to:
-1. Dispatch manifest: {scratch-dir}/dispatch-manifest.md
-2. Worker prompts: {scratch-dir}/prompts/{worker-id}.md (one per chunk)
-3. Decisions log: {scratch-dir}/decisions.md (READ first, APPEND Phase 2.5 section)
+TeamCreate(team_name: "repo-research-{topic-slug}")
 ```
 
-**Verify:** Read manifest. Dispatch Sonnet comparison workers same as Step 5.
+### Create Tasks (explicit ordering — blocking chain depends on this)
 
-Wait, verify, commit:
-```bash
-git add -A && git commit -m "deep-research: phase 3 (Sonnet comparison) complete"
+**Order matters.** Task IDs from earlier steps are referenced in later steps.
+
+**1. Synthesizer task** (created first — will be blocked later):
+```
+TaskCreate(subject: "Synthesize all findings into final document(s)", description: "Read all specialist assessments from {scratch-dir}/, cross-reference, write synthesis to {output-path} and {scratch-dir}/synthesis.md. If comparison mode: also write gap analysis to {gap-analysis-path}.")
 ```
 
-## Step 7 — Phase 4: Synthesis (Orchestrator Dispatch)
-
-Dispatch the orchestrator for final synthesis (`subagent_type: "deep-research:deep-research-orchestrator"`):
-
+**2. Scout tasks** (no blockers):
 ```
-Phase: 4 — Synthesis
+TaskCreate(subject: "Scout 1: Inventory chunks A and B", description: "Read and inventory all files in chunks A and B. Write to {scratch-dir}/A-inventory.md and {scratch-dir}/B-inventory.md. {If compare: also identify comparison file candidates in project.}")
 
-Pipeline: A (Repo Research)
-Target: {repo-path}
-{If comparison ran: "Comparison target: {project-path}"}
-Scratch directory: {scratch-dir}
-
-Phase 2 worker outputs:
-{list each file in {scratch-dir}/phase-2/}
-
-{If Phase 3 ran:}
-Phase 3 comparison outputs:
-{list each file in {scratch-dir}/phase-3/}
-
-Cross-reference all analyses and produce the final synthesis document(s).
-{If comparison: "Produce BOTH an ASSESSMENT.md and GAP-ANALYSIS.md."}
-{If no comparison: "Produce an ASSESSMENT.md."}
-
-Use the Phase 4 synthesis template from agent-prompts.md.
-
-Decisions log: {scratch-dir}/decisions.md
-Read decisions.md first — it contains all prior phase judgments.
-
-Write your outputs to:
-1. Final document: {output-path}
-{If comparison: "2. Gap analysis: {output-path with -gap-analysis suffix}"}
-2. Dispatch manifest: {scratch-dir}/dispatch-manifest.md (set status to COMPLETE)
-3. Decisions log: {scratch-dir}/decisions.md (READ first, APPEND Phase 4 section)
+TaskCreate(subject: "Scout 2: Inventory chunks C and D", description: "Read and inventory all files in chunks C and D. Write to {scratch-dir}/C-inventory.md and {scratch-dir}/D-inventory.md. {If compare: also identify comparison file candidates in project.}")
 ```
 
-**Verify:** Read manifest. Confirm status is `COMPLETE`. Verify final document exists and has substantive content.
-
-**Commit:**
-```bash
-git add -A && git commit -m "deep-research: phase 4 (synthesis) complete"
+**3. Specialist tasks** (each blocked by BOTH scouts):
+For each chunk (A, B, C, D):
+```
+TaskCreate(subject: "Analyze chunk {letter}: {description}", description: "Deep-read files, write assessment to {scratch-dir}/{letter}-assessment.md. {If compare: also write comparison to {scratch-dir}/{letter}-comparison.md.}")
+TaskUpdate(taskId: "{specialist-id}", addBlockedBy: ["{scout-1-id}", "{scout-2-id}"])
 ```
 
-## Step 8 — Archive and Report
+**4. Block synthesizer on all specialists:**
+```
+TaskUpdate(taskId: "{synthesizer-id}", addBlockedBy: ["{specialist-A-id}", "{specialist-B-id}", "{specialist-C-id}", "{specialist-D-id}"])
+```
 
-1. Archive the paper trail:
+## Step 4 — Spawn All Teammates
+
+### Scouts (Haiku)
+
+Read the scout prompt template from this plugin's `pipelines/repo-scout-prompt-template.md`.
+
+Fill in template fields for each scout. Scout 1 gets chunks A+B, Scout 2 gets chunks C+D.
+
+```
+Agent(
+  team_name: "repo-research-{topic-slug}",
+  name: "scout-1",
+  model: "haiku",
+  subagent_type: "deep-research:repo-scout",
+  prompt: <filled scout prompt for chunks A+B>
+)
+TaskUpdate(taskId: "{scout-1-id}", owner: "scout-1")
+
+Agent(
+  team_name: "repo-research-{topic-slug}",
+  name: "scout-2",
+  model: "haiku",
+  subagent_type: "deep-research:repo-scout",
+  prompt: <filled scout prompt for chunks C+D>
+)
+TaskUpdate(taskId: "{scout-2-id}", owner: "scout-2")
+```
+
+### Specialists (Sonnet)
+
+For each chunk, read the specialist prompt template from this plugin's `pipelines/repo-specialist-prompt-template.md`.
+
+Fill in ALL template fields — including:
+- `[SYNTHESIZER_NAME]` → `"synthesizer"`
+- `[PEER_LIST]` → the other 3 specialists with their teammate names and chunk descriptions
+- `[EXPECTED_FILE_COUNT]` → from the scoping survey
+- `[MIN_MINUTES]`, `[MAX_MINUTES]`, `[MIN_SOURCES]` → from PM timing preferences (or defaults: 5 min, 15 min, 3 files)
+- If `--compare`: include `[COMPARE_PROJECT_PATH]` and `[COMPARE_PROJECT_NAME]`
+
+```
+Agent(
+  team_name: "repo-research-{topic-slug}",
+  name: "chunk-{letter}",
+  model: "sonnet",
+  subagent_type: "deep-research:repo-specialist",
+  prompt: <filled specialist prompt>
+)
+TaskUpdate(taskId: "{specialist-id}", owner: "chunk-{letter}")
+```
+
+### Synthesizer (Opus)
+
+Read the synthesizer prompt template from this plugin's `pipelines/repo-synthesizer-prompt-template.md`.
+
+Fill in ALL template fields:
+- `[REPO_NAME]`, `[SCRATCH_DIR]`, `[OUTPUT_PATH]`, `[TASK_ID]`
+- `[COMPARE_MODE]` → true/false
+- If compare: `[COMPARE_PROJECT_NAME]`, `[GAP_ANALYSIS_PATH]`
+
+```
+Agent(
+  team_name: "repo-research-{topic-slug}",
+  name: "synthesizer",
+  model: "opus",
+  subagent_type: "deep-research:research-synthesizer",
+  prompt: <filled synthesizer prompt>
+)
+TaskUpdate(taskId: "{synthesizer-id}", owner: "synthesizer")
+```
+
+Dispatch ALL teammates in a single message (parallel).
+
+## Step 5 — EM Is Freed
+
+After spawning all teammates, announce:
+
+> "Research team is running autonomously on '{repo-name}' with 2 scouts + 4 specialists + 1 synthesizer. Scouts inventory files (~5 min), then specialists analyze {MIN_MINUTES}-{MAX_MINUTES} min ({MIN_SOURCES}-file minimum). I'm available for other work — I'll be notified when the synthesizer completes."
+
+**You are now free to continue the conversation with the PM.** Do not poll, do not monitor, do not broadcast WRAP_UP. The team handles everything.
+
+## Step 6 — On Completion Notification
+
+When you receive a notification that the synthesis task is complete:
+
+1. Read the synthesis document at `{output-path}`
+2. Verify it has substantive content (not just headers)
+3. If comparison mode: read the gap analysis at `{gap-analysis-path}` and verify
+4. Commit:
+   ```bash
+   git add -A && git commit -m "deep-research: complete — {topic-slug}"
+   ```
+5. Archive paper trail:
    ```bash
    mkdir -p docs/research/archive/YYYY-MM-DD-{topic-slug}
-   cp {scratch-dir}/decisions.md docs/research/archive/YYYY-MM-DD-{topic-slug}/
-   cp -r {scratch-dir}/prompts docs/research/archive/YYYY-MM-DD-{topic-slug}/
-   cp -r {scratch-dir}/phase-1 docs/research/archive/YYYY-MM-DD-{topic-slug}/
-   cp -r {scratch-dir}/phase-2 docs/research/archive/YYYY-MM-DD-{topic-slug}/
-   cp {scratch-dir}/dispatch-manifest.md docs/research/archive/YYYY-MM-DD-{topic-slug}/
-   ```
-   If Phase 3 ran: also copy `phase-3/`.
-
-2. Delete scratch directory:
-   ```bash
+   cp -r {scratch-dir}/* docs/research/archive/YYYY-MM-DD-{topic-slug}/
    rm -rf {scratch-dir}
    ```
-
-3. Commit:
-   ```bash
-   git add -A && git commit -m "deep-research: archive paper trail, clean scratch"
-   ```
-
-4. Report to the PM:
-   ```
-   Research complete. Final document at {output-path}.
-   Paper trail at docs/research/archive/YYYY-MM-DD-{topic-slug}/ ({N} files).
-
-   If this research won't be revisited, you can delete the paper trail:
-   rm -rf docs/research/archive/YYYY-MM-DD-{topic-slug}/
-   ```
-
-5. Present the executive summary from the synthesis document to the PM for discussion.
+6. Shut down the team: `TeamDelete(team_name: "repo-research-{topic-slug}")`
+7. Commit: `git add -A && git commit -m "deep-research: archive + cleanup"`
+8. Present executive summary to PM for discussion.
 
 ## Error Handling
 
-- If any orchestrator dispatch returns `ERROR:` status — abort pipeline, report to PM with the error reason
-- If a worker fails twice — skip it, note the gap in the next orchestrator dispatch prompt
-- If decisions.md appears corrupted (missing expected phase headers) — re-dispatch the prior orchestrator phase
-- See `relay-protocol.md` for the full error handling table
+| Failure | Action |
+|---------|--------|
+| Scout fails (no inventory written) | Specialists fall back to self-directed file discovery (Glob + Read). Budget 3 extra minutes. |
+| Scout times out (partial inventory) | Specialists use what's there + supplement with own Glob/Read |
+| Specialist hits ceiling and self-converges | Normal — specialist writes what it has and marks task complete |
+| Specialist produces thin assessment | Synthesizer notes the gap; EM can supplement manually |
+| Synthesizer doesn't wake after all specialists complete | Verify specialists sent DONE messages; if not, send manual nudge via SendMessage. If still stalled after 5 min, EM reads raw specialist outputs for PM |
+| All specialists fail | TeamDelete, report to PM |
+| Team creation fails | Report to PM |

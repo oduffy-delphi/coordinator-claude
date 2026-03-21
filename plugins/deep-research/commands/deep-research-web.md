@@ -1,10 +1,10 @@
 ---
-description: "Pipeline B (Internet Research) using Agent Teams — collaborative research with a Haiku scout, Sonnet specialists, and an Opus synthesizer, all as teammates. EM scopes research, spawns the team, and is freed. The team handles everything autonomously."
+description: "Pipeline A (Internet Research) using Agent Teams — collaborative research with a Haiku scout, Sonnet specialists, and an Opus synthesizer, all as teammates. EM scopes research, spawns the team, and is freed. The team handles everything autonomously."
 allowed-tools: ["Agent", "Read", "Write", "Bash", "Glob", "Grep", "TeamCreate", "TeamDelete", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "SendMessage"]
 argument-hint: "<topic>"
 ---
 
-# Deep Research — Pipeline B (Internet Research) Agent Teams Driver
+# Deep Research — Pipeline A (Internet Research) Agent Teams Driver
 
 The EM scopes the research, creates a team, spawns all teammates, and is **freed**. The team works autonomously:
 - **Haiku scout** (1) — executes EM-crafted search queries, builds a shared source corpus

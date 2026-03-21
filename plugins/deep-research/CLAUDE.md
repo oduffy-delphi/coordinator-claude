@@ -1,39 +1,43 @@
 # Deep Research Plugin
 
-Multi-agent deep research pipelines for Claude Code. Two pipelines:
+Multi-agent deep research pipelines for Claude Code. Both pipelines use Agent Teams (fire-and-forget):
 
-- **Pipeline A (Repo Research)** — study a repository's architecture via Haiku file mapping → Sonnet analysis → Opus synthesis
-- **Pipeline B (Internet Research)** — investigate a topic across web sources via Agent Teams (Haiku scout + Sonnet specialists + Opus synthesizer)
+- **Pipeline A (Internet Research)** — investigate a topic across web sources via 1 Haiku scout (source corpus) + 3-5 Sonnet specialists (deep-read + verify) + 1 Opus synthesizer
+- **Pipeline B (Repo Research)** — study a repository's architecture via 2 Haiku scouts (file inventory) → 4 Sonnet specialists (analysis + optional comparison) → 1 Opus synthesizer
 
 ## Prerequisites
 
-### Agent Teams (required for Pipeline B)
+### Agent Teams (required for both pipelines)
 Set in your `settings.json` under `env`:
 ```json
 "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
 ```
-Without this, `/deep-research web` will fail.
-
-### Peer dependency: coordinator plugin (Pipeline A only)
-Pipeline A references `coordinator:stuck-detection` for self-monitoring. If using Pipeline A without the coordinator plugin, remove the stuck-detection reference from `deep-research-orchestrator.md`. Pipeline B (Agent Teams) has no coordinator dependency.
+Without this, `/deep-research` will fail.
 
 ## Commands
 
-- `/deep-research repo <path>` — Pipeline A: repo assessment (relay pattern)
-- `/deep-research web <topic>` — Pipeline B: internet research (Agent Teams, fire-and-forget)
+- `/deep-research web <topic>` — Pipeline A: internet research
+- `/deep-research repo <path> [--compare <project-path>]` — Pipeline B: repo assessment (+ optional comparison)
 
-## How It Works (Agent Teams)
+## How It Works
 
-1. EM scopes research, crafts search queries, asks PM for timing preferences (~2 min)
-2. EM creates team, spawns 1 Haiku scout + 3-5 Sonnet specialists + 1 Opus synthesizer (~1 min)
-3. EM is **free** — team works autonomously
-4. **Scout** reads EM's search queries from scope.md, executes web searches, mechanically vets accessibility, writes shared source corpus (~2-3 min)
-5. **Specialists** unblock when scout completes, read shared corpus, deep-read sources, cross-pollinate via messaging
-6. Specialists self-govern convergence (floor + diminishing returns + ceiling)
-7. Each specialist sends `DONE` message to synthesizer (wake-up signal — `blockedBy` is a status gate, not an event trigger)
-8. **Synthesizer** verifies all tasks complete, reads specialist outputs, writes final document
-9. EM receives notification → quick cleanup (archive, commit, present results)
+Both pipelines follow the same Agent Teams pattern:
 
-## Maintenance Notes
+1. **EM scopes** — defines chunks/topics, estimates sizes, asks PM for timing (~2 min)
+2. **EM creates team** and spawns all teammates in parallel (~1 min)
+3. **EM is freed** — team works autonomously
+4. **Haiku scouts** build shared artifacts (file inventories for repo, source corpus for web)
+5. **Sonnet specialists** unblock, deep-read, cross-pollinate via messaging, self-govern timing
+6. Each specialist sends `DONE` message to synthesizer (`blockedBy` is a status gate, not an event trigger)
+7. **Opus synthesizer** reads specialist outputs, cross-references, writes final document(s)
+8. EM receives notification → cleanup (archive, commit, present results)
 
-- `pipelines/relay-protocol.md` is a snapshot from the coordinator plugin. If the coordinator's relay protocol evolves, review this copy for necessary changes.
+### Pipeline A specifics
+- 1 Haiku scout — builds shared source corpus from web searches
+- Specialists verify claims, resolve contradictions, enforce source recency
+- Team protocol: `pipelines/team-protocol.md`
+
+### Pipeline B specifics
+- 2 Haiku scouts (2 chunks each) — produces structured file inventories with function signatures, constants, data flow
+- In `--compare` mode: scouts also identify equivalent project files; specialists produce both assessment and comparison artifacts; synthesizer produces ASSESSMENT.md + GAP-ANALYSIS.md
+- Team protocol: `pipelines/repo-team-protocol.md`
