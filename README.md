@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 [![Opus](https://img.shields.io/badge/Model-Opus_4.6-orange)](https://www.anthropic.com/claude)
-[![Plugins](https://img.shields.io/badge/Plugins-5-green)](#what-you-get)
+[![Plugins](https://img.shields.io/badge/Plugins-6-green)](#what-you-get)
 [![Skills](https://img.shields.io/badge/Skills-20+-green)](#codified-skills)
 [![CI](https://img.shields.io/badge/CI-10_checks-brightgreen)](.github/workflows/validate-plugins.yml)
 

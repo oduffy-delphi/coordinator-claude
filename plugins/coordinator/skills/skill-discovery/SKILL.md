@@ -191,7 +191,8 @@ These directories contain pipeline definitions (`PIPELINE.md`) that the correspo
 | `/architecture-audit` | `pipelines/deep-architecture-audit/PIPELINE.md` |
 | `/architecture-rotation` | `pipelines/weekly-architecture-audit/PIPELINE.md` |
 | `/code-health` | `pipelines/daily-code-health/PIPELINE.md` |
-| `/deep-research`, `/structured-research` | `pipelines/deep-research/PIPELINE.md` |
+| `/deep-research` | `plugins/deep-research/pipelines/PIPELINE.md` |
+| `/structured-research` | `plugins/coordinator/pipelines/structured-research/PIPELINE.md` |
 | `/distill` | `pipelines/artifact-distillation/PIPELINE.md` |
 
 ### Maintenance

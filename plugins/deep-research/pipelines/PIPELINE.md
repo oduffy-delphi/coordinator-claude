@@ -1,20 +1,23 @@
 # Deep Research
 
-> Referenced by `/deep-research` and `/structured-research`. This is a pipeline definition, not an invocable skill.
+> Referenced by `/deep-research`. This is a pipeline definition, not an invocable skill.
 
 ## Overview
 
-Three pipelines for deep investigation, all using escalating model capability:
+Two pipelines for deep investigation, both using escalating model capability:
 
-- **Repo Research** — study a repository, understand it on its own merits, optionally compare against your project. Single linear pipeline with an optional comparison phase.
-- **Internet Research** — investigate a topic across web sources with multi-agent verification.
-- **Structured Research** — fulfill a research spec with structured output. Input is a spec file declaring subjects, topics, acceptance criteria, output schema, and quality gates. Output is schema-conforming data, not prose.
+- **Repo Research (Pipeline A)** — study a repository, understand it on its own merits, optionally compare against your project. Single linear pipeline with an optional comparison phase.
+- **Internet Research (Pipeline B)** — investigate a topic across web sources with multi-agent verification. Default: Agent Teams (fire-and-forget). Fallback: relay pattern (serial orchestrator).
+
+**Pipeline B default: Agent Teams.** The EM scopes research, spawns a team of Sonnet specialists + Opus synthesizer, and is freed. The team handles everything autonomously. Use `--relay` flag for the legacy serial pattern.
+
+**Relay pattern (Pipeline A, Pipeline B `--relay`):** Worker dispatch is handled by the relay driver commands (`deep-research-repo.md`, `deep-research-web.md`), not by the orchestrator. The orchestrator writes dispatch manifests and worker prompts to disk; the command reads them and dispatches. See `relay-protocol.md` for the communication contract.
 
 **Core principle:** Each model tier does what it's best at. Haiku is fast and cheap for mechanical work (indexing files, filtering). Sonnet is analytical (reading deeply, evaluating architecture, comparing implementations). Opus has the highest judgment (cross-referencing, prioritizing, making architectural calls). Don't waste expensive models on cheap work; don't trust cheap models with judgment calls.
 
 **Key design principle:** Assessment and comparison are decoupled. The assessment (Phases 0-2) is evergreen — it describes what the repo does and how, independent of your project's state. The comparison (Phase 3) is point-in-time and optional — it diffs the assessment against your current implementation. You can re-run Phase 3 cheaply as your project evolves without re-researching the reference repo. You can also skip Phase 3 entirely if there's no target repo to compare against yet.
 
-**Announce at start:** "I'm running `/deep-research` to run [a repo assessment of X / a repo assessment + comparison of X / internet research on Y / structured research from spec Z]."
+**Announce at start:** "I'm running `/deep-research` to run [a repo assessment of X / a repo assessment + comparison of X / internet research on Y]."
 
 ## When to Use
 
@@ -33,13 +36,6 @@ Three pipelines for deep investigation, all using escalating model capability:
 - Building a knowledge base on a domain before implementation
 
 **Not for:** Quick lookups (use Context7), single-source documentation reads, or questions answerable from one search.
-
-**Structured Research:**
-- Batch research across multiple subjects with the same topic areas and output schema
-- Fulfilling a research spec with acceptance criteria and quality gates
-- Incremental campaigns — research N subjects per session, resume next session
-- Collecting structured data (not prose) from web sources against a known schema
-- Re-verifying existing data against fresh sources
 
 ## The One-Line Bug Principle (Phase 3 — Comparison)
 
@@ -83,7 +79,7 @@ Phase 0 → [wait] → Phase 1 → [wait for ALL] → Phase 2 → [wait for ALL]
 3. **Survey repo structure** — 2-3 `ls` commands on the target repo
 4. **Define chunk boundaries** — Split target repo into 4-6 domain-aligned chunks based on the repo's own architecture
 5. **Write focus questions** — What are the key design decisions? What patterns does this repo use? What are its architectural strengths?
-6. **Generate run ID** — format: `YYYY-MM-DD-HHhMM` (current timestamp). This identifies the scratch directory for all phases: `.claude/scratch/deep-research/{run-id}/`
+6. **Generate run ID** — format: `YYYY-MM-DD-HHhMM` (current timestamp). This identifies the scratch directory for all phases: `tasks/scratch/deep-research/{run-id}/`
 7. **If Phase 3 will run:** Also identify comparison targets — for each chunk, list project files implementing equivalent functionality
 
 **Output:** Chunk table with version header (see agent-prompts.md).
@@ -104,15 +100,15 @@ Each agent reads every file in its chunk and produces:
 
 **DISPATCH:** Open `agent-prompts.md` in this directory. Copy the **Phase 1: Haiku File Mapping Prompt** template verbatim. Fill in the bracketed fields: `[REPO NAME]`, `[CHUNK LETTER]`, `[CHUNK DESCRIPTION]`, `[LIST OF DIRECTORIES/FILES]`. Dispatch that. Do NOT write a custom prompt — the template's structure (especially "completeness matters more than analysis") prevents Haiku from confabulating analysis it isn't qualified to produce.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
-**Scratch verification:** Before proceeding to Phase 2, verify all expected scratch files exist (`ls .claude/scratch/deep-research/{run-id}/*-phase1-haiku.md`). If any are missing, re-dispatch the failed agent once. If it fails again, skip that chunk and note the gap in the Phase 4 synthesis.
+**Scratch verification:** Before proceeding to Phase 2, verify all expected scratch files exist (`ls tasks/scratch/deep-research/{run-id}/*-phase1-haiku.md`). If any are missing, re-dispatch the failed agent once. If it fails again, skip that chunk and note the gap in the Phase 4 synthesis.
 
 ---
 
 ### Phase 2: Standalone Analysis (Sonnet agents, parallel)
 
-**Model:** Sonnet. **Input:** Phase 1 inventory per chunk (read from `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`).
+**Model:** Sonnet. **Input:** Phase 1 inventory per chunk (read from `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase1-haiku.md`).
 
 Each agent reads the repo files deeply and produces per domain area:
 ```
@@ -129,7 +125,7 @@ Each agent reads the repo files deeply and produces per domain area:
 
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 2: Sonnet Standalone Analysis Prompt** template verbatim. Fill in `[REPO NAME]`, `[CHUNK DESCRIPTION]`, and read the Phase 1 output from the scratch file and paste it where indicated. Do NOT write a custom prompt — the template's "Rules" section encodes critical guardrails (no comparison, file:line references, actual values).
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Output:** Domain-specific analysis reports — the raw material for synthesis.
 
@@ -139,7 +135,7 @@ Each agent reads the repo files deeply and produces per domain area:
 
 ### Phase 3: Comparison (Sonnet agents, parallel) — OPTIONAL
 
-**Model:** Sonnet. **Input:** Phase 2 analysis per chunk (read from `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`) + project files to compare against.
+**Model:** Sonnet. **Input:** Phase 2 analysis per chunk (read from `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase2-sonnet.md`) + project files to compare against.
 
 **When to include:** When you have a target project to compare against AND comparison is in scope for this session.
 
@@ -158,7 +154,7 @@ Each agent reads the **project files** (not the reference — Phase 2 already an
 
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 3: Sonnet Comparison Prompt** template verbatim. Fill in `[REPO NAME]`, `[PROJECT NAME]`, `[CHUNK DESCRIPTION]`, read the Phase 2 output from the scratch file and paste it, and list the project files. Do NOT write a custom prompt — the template's "Look specifically for" checklist (disconnected code, wrong consumers, coincidental values) encodes the One-Line Bug Principle.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{chunk-letter}-phase3-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{chunk-letter}-phase3-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Scratch verification:** If Phase 3 ran, verify all expected Phase 3 scratch files exist before proceeding to Phase 4. Re-dispatch once on failure; skip chunk on second failure.
 
@@ -166,7 +162,7 @@ Each agent reads the **project files** (not the reference — Phase 2 already an
 
 ### Phase 4: Synthesis (Opus, single agent)
 
-**Model:** Opus. **Input:** ALL Phase 2 reports (read from `.claude/scratch/deep-research/{run-id}/*-phase2-sonnet.md`) and Phase 3 reports if they exist (read from `*-phase3-sonnet.md`).
+**Model:** Opus. **Input:** ALL Phase 2 reports (read from `tasks/scratch/deep-research/{run-id}/*-phase2-sonnet.md`) and Phase 3 reports if they exist (read from `*-phase3-sonnet.md`).
 
 **If assessment only (no Phase 3):**
 
@@ -213,9 +209,9 @@ After synthesis is complete and the PM discussion has concluded:
 
 1. **Default: DELETE all scratch files.** Phase 1 (Haiku) output was consumed by Phase 2. Phase 2 (Sonnet) was consumed by Phase 4. Phase 3 (Sonnet) was consumed by Phase 4. The durable artifacts are the assessment and gap analysis documents.
 
-2. **Exception — keep Phase 2 if assessment-only and comparison deferred:** If Phase 3 was skipped and comparison will happen in a future session, keep Phase 2 files (move to `.claude/scratch/deep-research/kept/` with a header noting the expiry: 30 days). The 30-day expiry is advisory — the next deep-research run for the same repo should check `kept/` and clean up expired files. No automated enforcement exists.
+2. **Exception — keep Phase 2 if assessment-only and comparison deferred:** If Phase 3 was skipped and comparison will happen in a future session, keep Phase 2 files (move to `tasks/scratch/deep-research/kept/` with a header noting the expiry: 30 days). The 30-day expiry is advisory — the next deep-research run for the same repo should check `kept/` and clean up expired files. No automated enforcement exists.
 
-3. **Clean up:** `rm -rf .claude/scratch/deep-research/{run-id}/` (or move kept files first).
+3. **Clean up:** `rm -rf tasks/scratch/deep-research/{run-id}/` (or move kept files first).
 
 ---
 
@@ -252,7 +248,7 @@ Each agent:
 
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 1: Haiku Broad Discovery Prompt** template verbatim. Fill in `[TOPIC AREA LETTER]`, `[TOPIC DESCRIPTION]`, `[ANY KNOWN URLS/DOCS]`, `[WHAT SPECIFICALLY DO WE NEED TO KNOW]`. The template's "You are FILTERING, not analyzing" instruction prevents Haiku from producing unverified analysis. Do NOT write a custom prompt.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Output per agent:**
 ```
@@ -282,10 +278,30 @@ After scratch verification passes, dispatch a **Haiku agent per topic** to verif
 
 **Why:** Phase 1 Haiku scouts can produce shallow or hallucinated output silently. Without this gate, Sonnet Phase 2 agents waste tokens reading bad input and producing unreliable analysis. The gate costs ~1 minute of Haiku time per topic and catches the ~1-in-4 failure rate observed in AI-generated content.
 
+#### Phase 1.5b: Cross-Pollination (Coordinator)
+
+After all Phase 1 topics pass the quality gate, the coordinator reads ALL Phase 1 outputs and performs cross-pollination before dispatching Phase 2:
+
+1. **Cross-topic findings:** Identify findings from Topic X that should change the focus for Topic Y's Phase 2 deep-read. Example: if Topic A's discovery reveals that a library was deprecated, Topic B's Phase 2 should know this before deep-reading sources that reference it.
+
+2. **Shared search terms:** Note search terms discovered in one topic that are relevant to another. Include these as "additional search terms to try" in the Phase 2 dispatch for the relevant topic.
+
+3. **Cross-topic contradictions:** Flag where different topics' Phase 1 outputs contradict each other. Add these as explicit contradiction-resolution tasks in the relevant Phase 2 dispatches.
+
+4. **Adjust Phase 2 prompts accordingly:** When dispatching Phase 2 agents, append a "Cross-Pollination Context" section to each agent's prompt with the relevant findings from other topics. Format:
+
+```
+## Cross-Pollination Context (from other topic areas)
+- [Topic X] found that [relevant finding] — consider this when evaluating [specific aspect]
+- [Topic Y] and [Topic Z] contradict on [specific claim] — try to resolve from your sources
+```
+
+**Cost:** Near-zero. The coordinator already reads all Phase 1 outputs for the quality gate. This extends that read to also inform Phase 2 dispatch. No additional agent dispatches needed.
+
 ### Phase 2: Analytical Deep-Read (Sonnet agents, parallel)
 
 **Model:** Sonnet. **Tools:** WebFetch, Context7, Read.
-**Input:** Phase 1 discovery report per topic (read from `.claude/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`).
+**Input:** Phase 1 discovery report per topic (read from `tasks/scratch/deep-research/{run-id}/{topic-letter}-phase1-haiku.md`).
 
 Each agent:
 - Reads the recommended sources in full (WebFetch for web pages, Context7 for library docs)
@@ -306,15 +322,19 @@ Each agent:
 
 **Critical instruction:** "Verify, don't trust. If Phase 1 flagged a claim, find the primary source. If sources disagree, say so explicitly with the evidence each side presents. Do not average contradictions into a vague 'it depends.'"
 
+For complex topics (5+ sources or contradictions present), Phase 2 agents also produce a
+structured claims table. This gives Phase 3 Opus structured data to work with rather than
+only prose paragraphs, improving synthesis rigor for topics where source quality varies.
+
 **DISPATCH:** Open `agent-prompts.md`. Copy the **Phase 2: Sonnet Analytical Deep-Read Prompt** template verbatim. Fill in `[TOPIC DESCRIPTION]`, read Phase 1 output from the scratch file and paste it, add project context. Do NOT write a custom prompt — the template's verification structure (verified/refuted/contradictions resolved) is the core value of Phase 2.
 
-**Scratch path:** `.claude/scratch/deep-research/{run-id}/{topic-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Include `Write` in the agent's tool list.
+**Scratch path:** `tasks/scratch/deep-research/{run-id}/{topic-letter}-phase2-sonnet.md`. Pass this as `[SCRATCH_PATH]` in the template. Instruct the agent in its prompt text to use the Write tool to save output here. (The Agent tool has no `tools` parameter — tool guidance goes in the prompt.)
 
 **Scratch verification:** Before proceeding to Phase 3, verify all expected Phase 2 scratch files exist. Re-dispatch once on failure; skip that topic on second failure.
 
 ### Phase 3: Research Synthesis (Opus, single agent)
 
-**Model:** Opus. **Input:** ALL Phase 2 reports (read all Phase 2 reports from scratch files: `.claude/scratch/deep-research/{run-id}/*-phase2-sonnet.md`).
+**Model:** Opus. **Input:** ALL Phase 2 reports (read all Phase 2 reports from scratch files: `tasks/scratch/deep-research/{run-id}/*-phase2-sonnet.md`).
 
 1. **Cross-references** findings across topic areas — identifies reinforcing or contradictory evidence
 2. **Evaluates source quality** — primary docs > peer-reviewed > well-maintained OSS > blog posts > forums
@@ -339,54 +359,73 @@ After synthesis is complete and the PM discussion has concluded:
 
 1. **Default: DELETE all scratch files.** Phase 1 (Haiku) output was consumed by Phase 2. Phase 2 (Sonnet) was consumed by Phase 3. The durable artifact is the research synthesis document.
 
-2. **Clean up:** `rm -rf .claude/scratch/deep-research/{run-id}/`
+2. **Clean up:** `rm -rf tasks/scratch/deep-research/{run-id}/`
 
 ---
 
-# Pipeline C: Structured Research
+# Pipeline B Variant: Agent Teams (Collaborative Research)
 
-> Pipeline C is documented in `PIPELINE-C.md` in this directory. Referenced by `/structured-research`.
+> Invoked via `/deep-research web <topic> --teams`. Driver: `deep-research-web-teams.md`.
+
+## Overview
+
+An alternative to the serial relay Pipeline B that uses Agent Teams for fully autonomous collaborative research. The EM scopes research and creates a team; the team handles everything — discovery, analysis, cross-pollination, and synthesis. No Haiku scouts, no manual EM orchestration during the run.
+
+**Why this exists:** The serial pipeline has three structural gaps that batch coordination can't solve: (1) semantic convergence uses fixed limits, not "have we learned enough?", (2) no cross-agent source quality evaluation, (3) contradictions are deferred to synthesis rather than debated. Continuous teammate messaging makes all three tractable.
+
+## Architecture
+
+```
+EM: Phase 0 (scope) → Create team + tasks → Spawn all teammates → FREED → [notification] → Cleanup
+                        │
+                        ├── 3-5 Sonnet specialists (one per topic)
+                        │   Discover sources, analyze, message peers, write to disk
+                        │
+                        └── 1 Opus synthesizer (blocked by all specialist tasks)
+                            Reads specialist outputs, cross-references, writes synthesis
+```
+
+**Key design decisions:**
+- **No Haiku scouts.** Sonnet specialists handle discovery themselves (WebSearch). The Haiku scout layer was a cost optimization irrelevant with the current subscription model. Removing it eliminates manual EM orchestration during discovery.
+- **Synthesizer is a teammate, not a manual EM dispatch.** Its task is blocked by all specialist tasks and unblocks automatically. The EM doesn't read outputs or construct synthesis prompts.
+- **Key constraint:** Teammates cannot dispatch subagents (Agent tool excluded from teammate contexts — confirmed 2026-03-21). The EM handles all team creation; teammates work autonomously within the team.
+
+## What's Different from Serial Pipeline B
+
+| Aspect | Serial (Relay) | Agent Teams |
+|---|---|---|
+| Cross-pollination | Batch coordinator step (Phase 1.5b) | Continuous — specialists message each other |
+| Contradiction resolution | Deferred to Opus synthesis | Specialists who found contradictions debate directly |
+| Quality gates | Separate Haiku verification | Peer challenges between specialists |
+| Convergence | Fixed numeric limits | Specialist judgment + peer signaling |
+| Discovery | Haiku scouts (dispatched by command) | Specialists discover their own sources (WebSearch) |
+| Analysis | Isolated Sonnet workers, no communication | Sonnet teammates with real-time messaging |
+| Synthesis | Opus subagent dispatched by command | Opus teammate (blocked until specialists complete) |
+| EM role during run | Drives each phase, dispatches workers | Freed after spawn — notification-driven cleanup |
+| Audit trail | decisions.md across phases | Investigation Log in each specialist output |
+
+## Protocol and Templates
+
+- **Team protocol:** `team-protocol.md` in this directory — messaging categories, convergence rules, failure handling
+- **Specialist prompt template:** `specialist-prompt-template.md` in this directory — topic assignment, methodology, output format
+- **Specialist agent definition:** `agents/research-specialist.md` — Sonnet specialist with SendMessage
+- **Synthesizer agent definition:** `agents/research-synthesizer.md` — Opus synthesizer with disk-based input
+
+## When to Use
+
+Use Agent Teams (`--teams`) when:
+- The research topic has cross-cutting themes that benefit from real-time debate
+- Source quality is uncertain and peer challenge adds value
+- You want richer contradiction resolution than the serial pipeline provides
+
+Use serial relay (default, or `--relay`) when:
+- The topic areas are independent with minimal cross-cutting connections
+- You want the established, proven pipeline
+- Agent Teams is experiencing issues (experimental feature)
+
+## Scratch Directory
+
+Uses `tasks/scratch/deep-research-teams/{run-id}/` (separate prefix from serial pipeline to avoid collision).
 
 ---
 
-# Common Failure Modes
-
-| Failure | Pipeline | Prevention |
-|---------|----------|------------|
-| Running phases in parallel | Both | Each phase shapes the next. Sequential = cheaper AND better. |
-| Mixing assessment and comparison in Phase 2 | Repo | Phase 2 is standalone analysis. No references to your project. Comparison is Phase 3. |
-| Skipping Phase 2 and going straight to comparison | Repo | Assessment is always the foundation. You cannot compare well without understanding first. |
-| Over-softening findings | Repo | Every real finding gets a tier + effort. Nothing deferred without a tier. |
-| Scope too narrow | Both | Best findings are often in unexpected domains. Survey broadly. |
-| Not reading project files in Phase 3 | Repo | "Read project files. Find actual constants. State explicitly when absent." |
-| Trusting Haiku's claims | Internet | Haiku filters — it does NOT verify. Sonnet verifies. |
-| Averaging contradictions | Internet | "Sources A and B disagree" is better than a false synthesis. |
-| Opus says "could defer" | Repo | Tier 2 (weeks) ≠ defer. Tiers are sequencing, not filtering. |
-| Re-reading reference repo in Phase 3 | Repo | Use the Phase 2 analysis as input. Don't re-read source files. |
-| Writing custom dispatch prompts | Both | Templates in `agent-prompts.md` are tested infrastructure. Copy verbatim, fill blanks. Custom prompts lose guardrails silently — Haiku confabulates, Sonnet scope-bleeds, Opus over-softens. |
-| Agreeing to use templates then not using them | Both | The EM has been observed agreeing 5 times then writing custom prompts anyway. The DISPATCH blocks at each phase are not suggestions. |
-
-**Pipeline C failure modes:** See `PIPELINE-C.md` — Common Failure Modes section.
-
-# Cost Profile
-
-| Pipeline | Phases | Agents | Wall-Clock |
-|----------|--------|--------|------------|
-| Repo (assessment only, Phases 0-2-4-5) | 4 | ~4-8 Haiku + 4-6 Sonnet + 1 Opus | ~20 min |
-| Repo (with comparison, Phases 0-3-4-5) | 5 | ~4-8 Haiku + 8-12 Sonnet + 1 Opus | ~30 min |
-| Repo (re-run comparison only, Phases 3-4-5) | 3 | ~4-6 Sonnet + 1 Opus | ~15 min |
-| Internet Research (Phases 0-3) | 4 | ~4-8 Haiku + 4-6 Sonnet + 1 Opus | ~20 min |
-
-**Pipeline C cost profile:** See `PIPELINE-C.md` — Cost Profile section.
-
-Phase 3 (comparison) is cheaper in practice because Sonnet agents have the Phase 2 analysis pre-digested — they don't need to understand the reference repo from scratch.
-
-# Integration
-
-- **REQUIRED BACKGROUND:** coordinator:dispatching-parallel-agents for Phase 1, 2, and 3 dispatch
-- Phase 4 output feeds directly into coordinator:writing-plans for implementation planning
-- `<REPO>-ASSESSMENT.md` is evergreen and can be shared across projects — version-pinned so revisits start from `git diff v1.2..v1.5` + release notes, not a full re-survey
-- `<REPO>-GAP-ANALYSIS.md` is point-in-time — re-run Phase 3+4 when your project evolves
-- Phase 3 can be run in a later session using an existing assessment as input
-- **All dispatch prompts use templates from `agent-prompts.md` — verbatim, with blanks filled in.** The templates are tested infrastructure, not suggestions. Writing custom prompts discards guardrails that prevent known failure modes (Haiku confabulation, missing file:line refs, scope bleed between phases). If a template genuinely doesn't fit, say so explicitly before deviating.
-- **Pipeline C integration:** See `PIPELINE-C.md` — Integration section.

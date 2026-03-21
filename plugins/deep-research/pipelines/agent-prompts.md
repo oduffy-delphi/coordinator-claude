@@ -257,6 +257,9 @@ You are the synthesis agent. You have received standalone analysis reports from
 - Be concrete — "uses a 4th-order Runge-Kutta integrator at physics/integrator.cpp:42"
   not "uses a sophisticated integration method"
 - Strengths and limitations are both stated factually, not as judgments
+- When citing findings from the Phase 2 analysis reports, preserve the original
+  file:line references. Every factual claim should trace back to a specific location
+  in the codebase via the Phase 2 agent's references.
 ```
 
 ---
@@ -337,6 +340,9 @@ reference the comparison project.]
 - Include specific file:line references throughout
 - The ASSESSMENT.md must stand alone — no references to the comparison project
 - The GAP-ANALYSIS.md references both repos freely
+- When citing findings from the Phase 2 analysis reports, preserve the original
+  file:line references. Every factual claim should trace back to a specific location
+  in the codebase via the Phase 2 agent's references.
 ```
 
 ---
@@ -386,13 +392,18 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
    to pull official documentation
 3. Skim all results — don't deep-read, just catalog
 4. Filter for relevance and quality
+5. For at least ONE of your searches, deliberately search for criticism, limitations,
+   problems, or opposing views on the topic. Use search terms like:
+   "[topic] problems", "[topic] limitations", "[topic] criticism",
+   "[topic] vs alternatives", "why not [topic]"
+   This is mandatory — research that only finds supporting evidence is incomplete.
 
 ## Output Format
 
 ### [Topic Area]
 
 **Sources found (ranked by quality):**
-1. [URL] — [type: official docs/blog/forum/paper] — [1-line description]
+1. [URL] — [type: official docs/blog/forum/paper] — [date: YYYY-MM or "unknown"] — [1-line description]
 2. ...
 
 **Key claims (UNVERIFIED — Sonnet will verify):**
@@ -409,12 +420,16 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 **Search terms used:**
 - [list for reproducibility]
 
+**Research intent per search:**
+- [search term] — Goal: [what we hoped to learn] — Outcome: [what we actually found — briefly]
+
 **Important:**
 - You are FILTERING, not analyzing. Cast a wide net.
 - Flag contradictions — don't resolve them. That's Sonnet's job.
 - Include source type (official docs > maintained OSS > blog > forum > AI-generated)
 - If a source looks AI-generated or low-quality, note that explicitly
 - Completeness of the catalog matters more than depth of any one source
+- At least one search MUST target criticism or limitations — not just supporting evidence
 ```
 
 ---
@@ -429,6 +444,9 @@ that Phase 1 identified for [TOPIC DESCRIPTION].
 
 ### Phase 1 Discovery Report (paste complete)
 [PASTE PHASE 1 OUTPUT HERE]
+
+### Cross-Pollination Context (if provided by coordinator)
+[OPTIONAL — PASTE CROSS-POLLINATION NOTES FROM OTHER TOPICS IF ANY]
 
 ### Project Context
 [BRIEF DESCRIPTION OF THE PROJECT AND ITS CONSTRAINTS]
@@ -455,13 +473,17 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 2. Verify or refute the "Key claims (UNVERIFIED)" from Phase 1
 3. Resolve contradictions Phase 1 flagged — determine which source is correct and why
 4. Extract specific, actionable information (API signatures, config values, code patterns)
+5. After reading each recommended source, pause and assess: What changed about your
+   understanding? Did this source confirm, contradict, or add nuance to prior sources?
+   Note these reflections in your output — they help the synthesis agent understand
+   which sources are reinforcing vs. challenging the emerging consensus.
 
 ## Output Format
 
 ### [Topic Area]
 
-**Verified findings:**
-- [finding] — [source, specific section] — CONFIDENCE: [HIGH/MEDIUM/LOW]
+**Verified findings (lead with source):**
+- According to [Source, specific section]: [finding] — CONFIDENCE: [HIGH/MEDIUM/LOW]
 - ...
 
 **Refuted claims:**
@@ -485,6 +507,16 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
 **Sources cited:**
 - [URL] — [specific sections referenced]
 
+**Structured Claims Table (for complex/multi-source topics):**
+
+| # | Claim | Source | Date | Confidence | Corroborated By | Type |
+|---|-------|--------|------|------------|-----------------|------|
+| 1 | [specific factual claim] | [primary source URL] | [pub date] | HIGH/MED/LOW | [other source #s or "—"] | fact/limitation/opinion |
+| 2 | ... | ... | ... | ... | ... | ... |
+
+Include this table when the topic has 5+ sources or when contradictions exist between sources.
+For simpler topics with fewer sources, the prose format above is sufficient.
+
 ## Rules
 
 - VERIFY, don't trust. If Phase 1 flagged a claim, find the PRIMARY source.
@@ -495,6 +527,18 @@ The coordinator reads your full output from disk. Do NOT return it in conversati
   shipped breaking changes in 2025.
 - If you can't verify a claim, say so explicitly rather than passing it through.
 - Include specific URLs and sections for every cited finding.
+- If no Phase 1 source presents criticism or limitations, note this explicitly as
+  a coverage gap. Absence of criticism in sources ≠ absence of real limitations.
+- For each source, note its publication date. Apply these freshness rules:
+  - Sources older than 12 months: flag whether the information is likely still current
+  - For fast-moving topics (LLM tools, frameworks, APIs): treat sources older than
+    6 months as potentially stale unless corroborated by a recent source
+  - If ALL sources for a finding are older than 12 months, flag this explicitly:
+    "[STALE SOURCES — all pre-{date minus 12 months}, verify currency]"
+  - Include the publication date in your source citations
+- If Cross-Pollination Context is provided, use it to inform your analysis —
+  especially when resolving contradictions or evaluating claims that other topics
+  have flagged as uncertain.
 ```
 
 ---
@@ -566,6 +610,11 @@ You are the research synthesis agent. You have received analytical reports from
 - Do not manufacture consensus — if sources genuinely disagree, present the trade-off
 - Open questions are as valuable as answers — knowing what we don't know prevents
   false confidence
+- Lead with source attribution when stating findings. Write "According to [Source],
+  [claim]" rather than "[Claim] ([Source])". This ensures every claim in the synthesis
+  is visibly traceable to a specific source and makes unsourced claims immediately
+  obvious. If a finding has no source, mark it explicitly as [UNSOURCED — from
+  training knowledge].
 ```
 
 ---
@@ -593,357 +642,3 @@ You are the research synthesis agent. You have received analytical reports from
 - What are the data formats and interchange points?
 
 ---
-
-# Pipeline C: Structured Research
-
-## Research Brief Template (Phase 0 Output)
-
-The coordinator produces this after reading the spec and existing data. It targets schema gaps, not the full schema.
-
-**Format:**
-
-```
-# Research Brief: {SUBJECT}
-
-> **Spec:** [spec file path] | **Run:** {RUN_ID} | **Date:** {DATE}
-
-## Existing Data Summary
-[Brief summary of what's already known — populated fields, source count, last updated]
-
-## Gaps Against Schema
-
-| Topic | Schema Fields Needing Research | Priority | Notes |
-|-------|-------------------------------|----------|-------|
-| {TOPIC_NAME} | [list of empty/stale fields] | HIGH/MEDIUM/LOW | [why — e.g., "no data", "sources older than 6 months"] |
-| ... | ... | ... | ... |
-
-## Acceptance Criteria Snapshot
-[Relevant acceptance criteria from spec, for agent reference]
-
-## Research Targets
-- [Specific things to look for, derived from gaps]
-- [Language requirements if applicable]
-- [Known sources to prioritize]
-```
-
----
-
-## Pipeline C Phase 1: Haiku Spec-Driven Discovery Prompt
-
-```
-You are a spec-driven discovery agent. Your task is to search for information about
-{SUBJECT} in the topic area described below, following the research spec exactly.
-
-**Your assigned topic:** [{TOPIC_ID}] — {TOPIC_NAME}
-**Subject:** {SUBJECT} ([SUBJECT_CONTEXT — e.g., country, entity type, key identifiers])
-
-## Search Domains (from spec — use these, do not improvise)
-[PASTE SEARCH_DOMAINS FROM SPEC FOR THIS TOPIC — VERBATIM]
-
-## Focus Questions (from spec — answer these specifically)
-[PASTE FOCUS_QUESTIONS FROM SPEC FOR THIS TOPIC — VERBATIM]
-
-## Research Brief Excerpt (what we're missing)
-[PASTE RELEVANT SECTION FROM PHASE 0 RESEARCH BRIEF — the gaps for this topic]
-
-## Acceptance Criteria (self-check before finishing)
-[PASTE ACCEPTANCE_CRITERIA FROM SPEC RELEVANT TO THIS TOPIC]
-
-[IF THIS IS A GATE RETRY, PREPEND THIS SECTION:]
-## Gate Feedback (retry — address this specific deficiency)
-[GATE_NAME]: [GATE_RULE]
-**Deficiency:** [WHAT WAS MISSING OR INSUFFICIENT]
-**Action:** Expand your search to address this specific gap. All other instructions still apply.
-
-## Output Location
-
-**IMPORTANT:** Write your complete output to: [SCRATCH_PATH]
-
-Use the Write tool to save your full findings to this file. Then return a brief summary
-(3-5 lines) to the coordinator confirming:
-1. File written at the path above
-2. Key metrics (sources found, claims cataloged, etc.)
-3. Any blockers or anomalies encountered
-
-The coordinator reads your full output from disk. Do NOT return it in conversation.
-
-## Your Task
-
-1. Run 3-5 web searches using the search domains above — use varied phrasings,
-   include subject-specific terms, try both English and native-language searches
-   if applicable
-2. For library/framework topics, use Context7 if relevant
-3. Catalog what you find — don't deep-read, just collect and organize
-4. Map each finding to the schema fields it could populate
-
-## Output Format
-
-### {TOPIC_NAME} — Discovery for {SUBJECT}
-
-**Sources found (ranked by quality):**
-1. [URL] — [type: official/news/blog/forum/stats-site] — [language] — [date] — [1-line description]
-2. ...
-
-**Claims mapped to schema fields (UNVERIFIED — Sonnet will verify):**
-
-| Schema Field | Claimed Value | Source | Date | Notes |
-|-------------|---------------|--------|------|-------|
-| [field path from schema] | [value found] | [source] | [pub date] | [any caveats] |
-| ... | ... | ... | ... | ... |
-
-**Contradictions found:**
-- [Source A says X, Source B says Y] — needs Sonnet resolution
-
-**Recommended for deep read (top 3-5):**
-1. [URL] — [why this needs deeper analysis]
-2. ...
-
-**Search terms used:**
-- [list for reproducibility]
-
-**Acceptance Criteria Status:**
-- [ ] [criterion 1] — MET / NOT MET / PARTIAL — [evidence]
-- [ ] [criterion 2] — ...
-
-**Important:**
-- You are FILTERING, not analyzing. Cast a wide net.
-- Use the search domains from the spec — do NOT improvise different search areas.
-- Map findings to schema fields — this is what distinguishes Pipeline C from Pipeline B.
-- Flag contradictions — don't resolve them. That's Sonnet's job.
-- Include source language and publication date on every source.
-- Completeness of the catalog matters more than depth of any one source.
-```
-
----
-
-## Pipeline C Phase 2: Sonnet Spec-Aware Verification Prompt
-
-```
-You are a spec-aware verification agent. Your task is to verify and structure the
-discovery findings for {SUBJECT} in the topic area described below.
-
-**Your assigned topic:** [{TOPIC_ID}] — {TOPIC_NAME}
-**Subject:** {SUBJECT}
-
-## Your Input
-
-### Phase 1 Discovery Output
-[PASTE PHASE 1 OUTPUT FOR THIS TOPIC — read from disk at the path in phase_outputs]
-
-### Schema Fields for This Topic
-[PASTE THE OUTPUT SCHEMA FIELDS RELEVANT TO THIS TOPIC — from the spec]
-
-### Existing Data for This Subject
-[PASTE RELEVANT EXISTING DATA — what's already known, so agent can compare]
-
-### Acceptance Criteria
-[PASTE ACCEPTANCE_CRITERIA FROM SPEC RELEVANT TO THIS TOPIC]
-
-## Output Location
-
-**IMPORTANT:** Write your complete output to: [SCRATCH_PATH]
-
-Use the Write tool to save your full findings to this file. Then return a brief summary
-(3-5 lines) to the coordinator confirming:
-1. File written at the path above
-2. Key metrics (fields verified, claims checked, change types, etc.)
-3. Any blockers or anomalies encountered
-
-The coordinator reads your full output from disk. Do NOT return it in conversation.
-
-## Your Task
-
-1. Deep-read each source from the "Recommended for deep read" list (use WebFetch
-   for web pages, Context7 for library docs)
-2. Verify or refute the claims Phase 1 mapped to schema fields
-3. Resolve contradictions Phase 1 flagged
-4. Compare verified values against existing data to assign change types
-5. Structure ALL findings as schema field values — not prose
-
-## Output Format
-
-### {TOPIC_NAME} — Verified Findings for {SUBJECT}
-
-**Schema Field Table:**
-
-| Field | Value | Source | Confidence | Existing Value | Change Type |
-|-------|-------|--------|------------|----------------|-------------|
-| [schema field path] | [verified value] | [primary source URL + date] | HIGH/MEDIUM/LOW | [current value or "—"] | CONFIRMED/UPDATED/NEW/REFUTED |
-| ... | ... | ... | ... | ... | ... |
-
-**Change Type Reference:**
-- CONFIRMED — existing value verified by current sources, keep as-is
-- UPDATED — existing value superseded by newer/better evidence, replace
-- NEW — no prior value existed, add
-- REFUTED — existing value contradicted by evidence, remove with annotation
-
-**Refuted Claims from Phase 1:**
-- Phase 1 claimed: [X] — Actually: [Y] — Because: [evidence]
-
-**Contradictions Resolved:**
-- [Source A vs Source B] — Verdict: [which is correct] — Because: [reasoning]
-
-**Fields Not Resolvable:**
-- [field path] — Reason: [no sources found / contradictory with no resolution / etc.]
-
-**Acceptance Criteria Status:**
-- [ ] [criterion 1] — MET / NOT MET / PARTIAL — [evidence]
-- [ ] [criterion 2] — ...
-
-**Sources Cited:**
-- [URL] — [specific sections referenced] — [language] — [date]
-
-## Rules
-
-- VERIFY, don't trust. If Phase 1 flagged a claim, find the PRIMARY source.
-- Structure ALL findings as schema field values. No prose paragraphs of findings.
-- Every field value needs a source and confidence level.
-- If you can't verify a field, list it in "Fields Not Resolvable" — silence is worse than an explicit gap.
-- Compare against existing data to determine change type for every field.
-- If sources disagree, present BOTH sides with evidence. Do not average into "it depends."
-- Check publication dates — stale sources need explicit freshness notes.
-```
-
----
-
-## Pipeline C Phase 3: Sonnet Schema-Conforming Synthesis Prompt
-
-```
-You are a schema-conforming synthesis agent. Your task is to combine all verified
-findings for {SUBJECT} into structured data matching the output schema exactly.
-
-**Subject:** {SUBJECT}
-
-## Your Input
-
-### Phase 2 Verification Outputs (all topics)
-[PASTE ALL PHASE 2 OUTPUTS FOR THIS SUBJECT — read from disk via phase_outputs]
-
-### Full Output Schema
-[PASTE THE COMPLETE OUTPUT SCHEMA FROM THE SPEC]
-
-### Existing Data
-[PASTE THE CURRENT DATA FILE CONTENT FOR THIS SUBJECT]
-
-## Output Location
-
-**IMPORTANT:** Write your complete output to: [SCRATCH_PATH]
-
-Use the Write tool to save your full findings to this file. Then return a brief summary
-(3-5 lines) to the coordinator confirming:
-1. File written at the path above
-2. Key metrics (fields populated, gaps remaining, conflicts resolved, etc.)
-3. Any blockers or anomalies encountered
-
-The coordinator reads your full output from disk. Do NOT return it in conversation.
-
-## Your Task
-
-1. Read ALL Phase 2 outputs for this subject
-2. For each schema field, determine the final value using merge rules
-3. Resolve cross-topic conflicts (where different topics produced different values for the same field)
-4. Produce YAML/JSON-ready structured data conforming exactly to the output schema
-5. Annotate every field with source and confidence
-
-## Merge Rules
-
-- **CONFIRMED** → keep existing value (already verified)
-- **UPDATED** → replace existing value with the Phase 2 verified value
-- **NEW** → add the Phase 2 verified value
-- **REFUTED** → remove existing value; add annotation explaining the contradiction
-
-When multiple Phase 2 agents provide values for the same field, prefer:
-1. Higher confidence value
-2. More recent source
-3. Native-language source over English-only
-
-## Output Format
-
-### Structured Data for {SUBJECT}
-
-```yaml
-# Schema-conforming output for {SUBJECT}
-# Generated: {DATE} | Run: {RUN_ID}
-
-[YAML/JSON STRUCTURED DATA MATCHING THE OUTPUT SCHEMA EXACTLY]
-[Every required field must be present]
-[Enum fields must use values from the schema's allowed set]
-[Array fields must meet minimum counts from acceptance criteria]
-```
-
-### Annotations
-
-| Field | Source | Confidence | Notes |
-|-------|--------|------------|-------|
-| [field path] | [primary source] | HIGH/MEDIUM/LOW | [any caveats, change type applied, etc.] |
-| ... | ... | ... | ... |
-
-### Cross-Topic Reconciliation
-
-[Where different topics (e.g., Topic A and Topic C) produced conflicting data for the same
-schema field, document the conflict and resolution:]
-
-| Field | Topic A Value | Topic C Value | Resolution | Reasoning |
-|-------|--------------|---------------|------------|-----------|
-| ... | ... | ... | [which value was chosen] | [why] |
-
-### Gaps Remaining
-
-| Field | Reason | Attempted Sources | Recommendation |
-|-------|--------|-------------------|----------------|
-| [field path] | [why unfilled] | [what was searched] | [how to fill — e.g., "requires manual lookup"] |
-
-## Rules
-
-- Output MUST be YAML/JSON-ready structured data. NOT prose synthesis.
-- Every required schema field must be present — use null with annotation if unfillable.
-- Enum values must match the schema exactly — no variations or approximations.
-- Array minimums from acceptance criteria must be met — if not, document in Gaps.
-- Prose is ONLY allowed in Annotations, Reconciliation, and Gaps sections.
-- Do not invent data. If a field can't be populated from Phase 2 findings, leave it null.
-- The structured data section must be copy-pasteable into the target data file.
-```
-
----
-
-## Quality Gate Evaluation Template (Coordinator Use)
-
-This is NOT an agent dispatch template. It formalizes the coordinator's gate evaluation process between phases.
-
-**For each gate in the spec's gate list:**
-
-```
-## Gate: [GATE_NAME]
-
-**Rule:** [gate rule text from spec]
-**Applies after:** Phase [N]
-**Skip for:** [list of subjects, or "none"]
-
-### Evaluation
-
-**Subject:** {SUBJECT}
-**Skip check:** [SKIP / EVALUATE] — [reason]
-
-**Per-topic results:**
-
-| Topic | Pass/Fail | Evidence | Action |
-|-------|-----------|----------|--------|
-| {TOPIC_NAME} | PASS/FAIL | [specific evidence from phase output] | proceed / re-dispatch / annotate |
-| ... | ... | ... | ... |
-
-**Result:**
-- All topics passed → proceed to Phase [N+1]
-- Topics [X, Y] failed → re-dispatch Phase [N] for those topics with Gate Feedback
-- Topics [Z] failed twice → annotate in manifest, proceed with gap flagged
-```
-
-**Gate Feedback format (prepended to re-dispatched agent prompt):**
-
-```
-## Gate Feedback (retry — address this specific deficiency)
-
-**Gate:** [GATE_NAME]
-**Rule:** [gate rule text]
-**Deficiency:** [what was missing or insufficient — be specific]
-**Action:** Expand your search to address this specific gap. All other instructions still apply.
-```

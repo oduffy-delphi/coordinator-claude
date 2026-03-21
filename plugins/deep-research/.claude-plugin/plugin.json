@@ -1,0 +1,7 @@
+{
+  "name": "deep-research",
+  "version": "1.0.0",
+  "description": "Multi-agent deep research pipelines — repo assessment (Pipeline A), internet research with Agent Teams (Pipeline B). Haiku scout builds shared source corpus, Sonnet specialists verify and cross-pollinate, Opus synthesizes findings.",
+  "author": { "name": "Dónal O'Duffy & Claude" },
+  "keywords": ["research", "deep-research", "claude-code", "agent-teams", "multi-agent", "orchestration"]
+}

@@ -25,6 +25,6 @@ When a reviewer returns findings, **accept their expertise** — implement ALL i
 **Palí** — front-end review (tokens, design system, CSS). **Fru** — UX flow review (trust, clarity). Use /review-dispatch.
 
 **Pipeline orchestrators** (dispatch via commands, not directly):
-- **deep-research-orchestrator** — /deep-research dispatches this. Reads PIPELINE.md, runs Haiku→Sonnet→Opus.
+- **deep-research-orchestrator** — /deep-research dispatches this (lives in the deep-research plugin). Reads PIPELINE.md, runs Haiku→Sonnet→Opus.
 - **bug-sweep-orchestrator** — /bug-sweep dispatches this. Scans→analyzes→triages→fixes.
 - **architecture-audit-orchestrator** — /architecture-audit dispatches this. Inventories→analyzes→synthesizes atlas.

@@ -24,7 +24,7 @@ The coordinator plugin is the backbone of the system. It provides:
 | **zoli-ambition-advocate** | Opus | Backstop reviewer — challenges conservative recommendations, never a primary reviewer |
 | **structured-research-orchestrator** | Opus | Pipeline C orchestrator — owns full research lifecycle per subject, dispatches Haiku/Sonnet sub-agents |
 
-### Commands (19, all user-invocable via `/`)
+### Commands (18, all user-invocable via `/`)
 
 | Command | Purpose |
 |---------|---------|
@@ -40,7 +40,6 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/review-dispatch` | Route artifacts to the right reviewer |
 | `/generate-repomap` | Generate a ranked repository map for LLM context injection |
 | `/mise-en-place` | Autonomous backlog execution — gather ready items, execute without stopping |
-| `/deep-research` | Deep research pipeline — codebase (Pipeline A) or internet sources (Pipeline B) |
 | `/structured-research` | Batch research across multiple subjects with repeating structure and output schema |
 | `/architecture-audit` | Bootstrap or refresh the architecture atlas via multi-phase agent pipeline |
 | `/architecture-rotation` | Run the weekly architecture audit rotation — score, audit, apply, update ledger |
@@ -49,14 +48,13 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/distill` | Distill accumulated artifacts into wiki guides + decision records, then delete source material |
 
 <!-- Review: patrik — corrected count: 20 SKILL.md-backed skills, 7 PIPELINE.md definitions listed separately under Commands -->
-### Skills (22)
+### Skills (21)
 
 **Workflow & Planning:**
 - `brainstorming` — Collaborative dialogue to refine ideas into designs. Scope assessment, design-for-isolation, existing-codebase awareness.
 - `writing-plans` — Decompose designs into executable tasks. Scope checking, file structure mapping, TDD-oriented granularity.
 - `executing-plans` — Execute plans task-by-task with review checkpoints. Prefers `/delegate-execution` in coordinator sessions.
 - `verification-before-completion` — Prove it works before claiming it's done.
-- `deep-research` — Multi-source investigation of repos or topics.
 
 **Development Process:**
 - `test-driven-development` — RED-GREEN-REFACTOR cycle, strictly enforced.
