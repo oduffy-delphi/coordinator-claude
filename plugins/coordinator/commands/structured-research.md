@@ -15,8 +15,8 @@ Create and execute structured research campaigns. Two modes: **create** a resear
 - The research has repeating structure across subjects — same topics, same acceptance criteria, same output shape
 
 **When NOT to use this:**
-- Exploring an unknown topic (use Pipeline B: `/deep-research`)
-- Studying a codebase (use Pipeline A: `/deep-research`)
+- Exploring an unknown topic (use Pipeline A: `/deep-research`)
+- Studying a codebase (use Pipeline B: `/deep-research`)
 - One-off research with no repeating structure
 - Quick lookups (use Context7)
 
