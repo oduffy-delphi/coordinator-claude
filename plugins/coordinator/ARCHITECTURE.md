@@ -117,6 +117,8 @@ The coordinator's context window is their most precious resource. Every file rea
 
 This is why the executor is Sonnet (fast, cheap, good at following specs) while reviewers are Opus (slower, more expensive, better at judgment). Match the model to the cognitive demands of the role.
 
+**Compaction awareness:** When the context window fills, Claude Code compacts (summarizes) the conversation — losing tool results entirely and compressing earlier context. Research established the compaction trigger at **~83.5% of the context window** (33K token buffer from 200K). The context pressure advisory hook monitors transcript file size and emits proportional warnings at 60% (advisory) and 78% (critical), giving the user time to handoff cleanly before compaction fires. Thresholds scale to each model's context window — Opus 1M and Sonnet 200K get different absolute thresholds but the same proportional warnings. See the coordinator plugin's README § "Context Pressure Advisory" for implementation details.
+
 ## How Routing Works
 
 The review dispatch system uses a **composable routing table**:

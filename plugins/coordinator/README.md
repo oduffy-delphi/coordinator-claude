@@ -94,7 +94,35 @@ The coordinator plugin is the backbone of the system. It provides:
 
 ### Hooks
 
-- **SessionStart** — Coordinator discipline reminder (sets EM role, loads pipeline awareness)
+| Event | Script | Purpose |
+|-------|--------|---------|
+| **SessionStart** | `coordinator-reminder.sh` | Sets EM role, loads pipeline awareness |
+| **SessionStart** | `project-orientation.sh` | Loads project-specific orientation cache |
+| **PreToolUse** (WebSearch/WebFetch) | `suggest-sonnet-research.sh` | Nudges delegation to Sonnet research agents |
+| **PreToolUse** (holodeck MCP) | `nudge-holodeck-delegation.sh` | Nudges delegation to UE domain agents |
+| **PostToolUse** (ExitPlanMode) | `plan-persistence-check.sh` | Verifies plan was written to disk |
+| **SubagentStop** | `executor-exit-watchdog.sh` | Validates executor output before accepting |
+| **UserPromptSubmit** | `context-pressure-advisory.sh` | Context pressure warnings (see below) |
+| **PreCompact** | `context-pressure-precompact.sh` | Writes compaction sentinel for post-compaction orientation |
+
+#### Context Pressure Advisory
+
+Proactive warnings when the context window is filling up, giving the user time to handoff before compaction fires and causes context loss.
+
+**How it works:** Two phases in a single `UserPromptSubmit` hook:
+
+1. **Post-compaction orientation** (Phase 1) — After compaction occurs, the `PreCompact` hook writes a sentinel file. On the next user message, Phase 1 detects it and emits orientation guidance (re-read plans, check tasks, verify state).
+
+2. **Threshold-based warnings** (Phase 2) — Measures transcript file size, detects the model from the transcript, and emits proportional warnings:
+   - **Advisory at 60%** of estimated context usage — "Context is getting heavy, consider wrapping up"
+   - **Critical at 78%** — "Compaction is imminent, handoff now"
+   - Both bark once per session (sentinel files prevent repeated nagging)
+
+**Why these thresholds:** Research (2026-03-21) established that Claude Code's compaction fires at **~83.5% of the context window** — a 33K token buffer reserved from a 200K window, not the widely-cited "95%". Advisory at 60% gives ~23.5% headroom for a clean handoff. Critical at 78% gives ~5.5% buffer before compaction.
+
+**How token usage is estimated:** We can't access Claude's tokenizer from a shell hook. Instead, transcript file size (bytes) is used as a proxy. JSONL transcripts run ~5-8 bytes per token (content + JSON overhead + tool I/O). We use **5 bytes/token** — the low end — so we deliberately overestimate token usage and warn earlier than strictly necessary. For an advisory system, early warnings (false positives) are cheap; missed warnings (false negatives) are expensive. The percentage shown in the message (e.g., "~62% est.") is explicitly an estimate.
+
+**Thresholds are proportional, not absolute.** The script detects the model ID from the transcript and looks up its context window size (Opus 4.6 = 1M, Sonnet 4.6 = 200K, etc.). Percentages are applied to that window. Adding a new model requires only a new `case` branch. Thresholds can be overridden via `CONTEXT_ADVISORY_THRESHOLD` and `CONTEXT_CRITICAL_THRESHOLD` env vars (absolute byte values).
 
 ## Routing Extension Protocol
 

@@ -1,0 +1,14 @@
+{
+  "experiment": "test",
+  "version": "0.1.0",
+  "distractors": [
+    {
+      "distractor_id": "file_002_x01",
+      "file": "file_002.py",
+      "line_start": 13,
+      "line_end": 13,
+      "description": "Integer division appears to truncate but is actually correct — value/100*100 with Python 3 float division preserves precision for the normalized range",
+      "explanation": "Python 3 uses true division for /, not floor division. The operation is mathematically correct for normalization."
+    }
+  ]
+}
