@@ -98,7 +98,7 @@ When `$ARGUMENTS` is a spec path:
 2. **Read or initialize the manifest** at the spec's `manifest_path`
    - If manifest exists: compare `spec_hash` against current spec file hash
      - If hash differs: **HALT** — report spec drift to PM. Options: `continue` (keep completed subjects) or `reset` (re-run all). Do not proceed without PM decision.
-   - If no manifest: initialize with all subjects as `pending`, set `spec_path` and `spec_hash`
+     - If no manifest: initialize with all subjects as `pending`, set `spec_path` and `spec_hash`
 3. **Determine subject set** based on the second argument:
    - Specific key → verify it exists, check manifest status
    - `next` → find the first `pending` or `in_progress` subject
@@ -106,34 +106,25 @@ When `$ARGUMENTS` is a spec path:
 
 Report: "Spec loaded. [N] subjects selected: [list]. Dispatching orchestrators."
 
-### Step 2: Dispatch Orchestrator Agents
+### Step 2: Dispatch via Deep Research Plugin
 
-For each subject in the set, dispatch a `structured-research-orchestrator` agent (Opus) **in the background** (`run_in_background: true`).
+Use the Skill tool to invoke Pipeline C in the deep-research plugin:
 
-Research orchestrators are long-running (15+ min per subject) and fully autonomous — the EM should not block on them. Dispatch, continue other work, and process results when notified of completion.
+```
+Skill(skill: "deep-research:deep-research-structured", args: "<spec-path> <subject-key>")
+```
 
-**Build the dispatch prompt with:**
-- Spec path
-- Subject key
-- Existing data path (from spec's `known_context.per_subject.source_file`, with `{SUBJECT}` substituted)
-- Research brief path (if a Phase 0 brief already exists from a prior partial run)
-- Scratch directory: the spec's phase output paths with variables substituted
-- Output path: the spec's `phase_3.output_path` with variables substituted
+For batch mode with multiple subjects, invoke the skill once per subject. The deep-research command handles team creation, spawn, and cleanup internally.
 
-**Parallelism:** Dispatch multiple orchestrators in parallel if the batch has multiple subjects. Each orchestrator is fully independent — it owns its subject end-to-end. The EM does not need to mediate between them.
-
-**Concurrency ceiling: maximum 4 orchestrators simultaneously.** Each Opus orchestrator spawns up to T parallel sub-agents per phase (where T = number of topics in the spec). A batch of N subjects × T topics can produce N×T simultaneous agents. At 4 orchestrators × 4 topics, that's 16 concurrent agents — already substantial. Beyond 4 orchestrators, the system hits rate limits, context thrashing, and cascading failures. If the batch has more than 4 subjects, dispatch in waves of 4, waiting for each wave to complete before the next.
-
-**Subject sequencing:** The spec's `batching` config may limit how many subjects run per batch. Respect this — if the config says "3 per run", dispatch 3 orchestrators, wait for all to complete, then offer to run the next batch. The concurrency ceiling of 4 applies even if the batching config allows more.
+**Sequential execution (Phase 1):** Run subjects one at a time. Wait for each to complete before starting the next. This is the validated-first approach until Agent Teams concurrency is empirically tested.
 
 ### Step 3: Receive Results
 
-When each orchestrator returns:
+When each Skill invocation returns:
 1. **Read the status** — complete or partial
-2. **Read the output file** at the path the orchestrator reports
+2. **Read the output file** at the path the skill reports (manifest updated internally by the deep-research pipeline)
 3. **Validate schema conformance** — spot-check that required fields are present and enums use allowed values
-4. **Update manifest:** set subject status to `complete`, record `phases_completed: [0, 1, 2, 3]`, record output path. Set `output_applied: false`.
-5. **Commit:** `git add` the manifest and all output files for this subject. Commit with message: `structured-research: {SUBJECT} complete`
+4. **Commit** any output files the skill did not commit itself. Commit with message: `structured-research: {SUBJECT} complete`
 
 ### Step 4: Report to PM
 
@@ -145,10 +136,9 @@ Spec: [path]
 Subjects processed: [list with status]
 Subjects remaining: [count pending in manifest]
 Output files: [list of synthesis paths]
-All output_applied: false — awaiting PM review.
 ```
 
-`output_applied` stays `false` until the PM explicitly approves and applies the output.
+Report any schema conformance issues or gaps flagged by the synthesizer. Present the output for PM review before applying it to the project data.
 
 ---
 
@@ -162,18 +152,3 @@ All output_applied: false — awaiting PM review.
 | Orchestrator returns empty output | Check output file exists and has content. Report failure to PM. |
 | Mid-run crash | Manifest tracks progress per subject. Next `/structured-research` invocation resumes from where it left off. |
 | Too many concurrent orchestrators | **Max 4 orchestrators at once.** Each orchestrator spawns N×topic parallel sub-agents. 68 Opus orchestrators each spawning Haiku/Sonnet agents caused catastrophic failure. Batch >4 subjects into waves of 4. |
-
----
-
-## Architecture
-
-The EM does NOT drive individual research phases. The pipeline per subject is:
-
-```
-EM dispatches → Opus Orchestrator → { Haiku scouts (parallel) → Sonnet verifiers (parallel) → Opus synthesizes } → returns deliverable
-```
-
-This design enables:
-- **Parallel subjects** — dispatch up to 4 orchestrators simultaneously, wave the rest
-- **EM freedom** — the EM can do other work while research runs
-- **Quality judgment at the right level** — Opus evaluates gates and does synthesis, not Sonnet

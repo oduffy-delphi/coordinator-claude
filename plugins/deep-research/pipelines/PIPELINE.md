@@ -4,12 +4,13 @@
 
 ## Overview
 
-Two pipelines for deep investigation, both using Agent Teams (fire-and-forget):
+Three pipelines for deep investigation, all using Agent Teams (fire-and-forget):
 
 - **Internet Research (Pipeline A)** — investigate a topic across web sources with multi-agent verification. 1 Haiku scout + 3-5 Sonnet specialists + 1 Opus synthesizer.
 - **Repo Research (Pipeline B)** — study a repository, understand it on its own merits, optionally compare against your project. 2 Haiku scouts + 4 Sonnet specialists + 1 Opus synthesizer.
+- **Structured Research (Pipeline C)** — schema-conforming batch research driven by a YAML spec. 1 Haiku scout + 1-5 Sonnet verifiers + 1 Opus synthesizer; outputs YAML/JSON matching the spec's output_schema.
 
-**Both pipelines use Agent Teams.** The EM scopes, spawns a team, and is freed. The team handles everything autonomously.
+**All three pipelines use Agent Teams.** The EM scopes, spawns a team, and is freed. The team handles everything autonomously.
 
 **Core principle:** Each model tier does what it's best at. Haiku is fast and cheap for mechanical work (indexing files, filtering URLs). Sonnet is analytical (reading deeply, evaluating architecture, comparing implementations). Opus has the highest judgment (cross-referencing, prioritizing, making architectural calls). Don't waste expensive models on cheap work; don't trust cheap models with judgment calls.
 
@@ -242,8 +243,89 @@ Cross-references all findings, resolves contradictions, produces final research 
 
 ---
 
+# Pipeline C: Structured Research (Agent Teams)
+
+## Architecture
+
+```
+EM: Read spec → Pre-process into scout-brief.md → Create team → Spawn teammates → FREED
+                  │
+                  ├── 1 Haiku scout (reads scout-brief.md, maps findings to schema fields)
+                  │   Writes per-topic: {scratch-dir}/{subject}-scout-{topic_id}.md
+                  │
+                  ├── 1-5 Sonnet verifiers (1 per topic, blocked by scout)
+                  │   Verify claims, compare against existing data, produce schema field tables
+                  │   Writes: {scratch-dir}/{topic_id}-findings.md
+                  │
+                  └── 1 Opus synthesizer (blocked by all verifiers)
+                      Cross-topic reconciliation, schema validation, YAML/JSON output
+```
+
+**Team size:** 1 + N + 1 where N = topic count. Maximum N = 5 (team ceiling of 7).
+
+**Topic ceiling enforcement:** If spec has > 5 topics, the EM merges the two most related topics before team creation.
+
+**Key difference from Pipeline A:** The EM pre-processes the spec YAML into a flat `scout-brief.md` because Haiku cannot reliably parse complex YAML. Quality gates from the spec are embedded directly in verifier prompts — self-validation replaces orchestrator re-dispatch.
+
+## Phase 0: Spec Pre-Processing (EM Direct, ~1 min)
+
+1. Read spec YAML and existing data for subject
+2. Compare existing data against output_schema — identify gaps
+3. Write `{scratch-dir}/scout-brief.md` with flattened topics, search domains, focus questions, schema field targets
+4. Extract gate rules for embedding in verifier prompts
+5. Ask PM for timing preferences
+
+## Phase 1: Discovery (Haiku scout)
+
+**Model:** Haiku. **Timing:** Ceiling 3 min.
+
+Scout reads scout-brief.md, executes searches per topic, maps findings to schema fields, writes per-topic discovery files. Same mechanical rules as Pipeline A scout.
+
+## Phase 2: Verification (Sonnet verifiers, parallel)
+
+**Model:** Sonnet. **Timing:** Floor 5 min + 5 sources; ceiling 15 min.
+
+Each verifier:
+1. Reads scout's per-topic discovery
+2. Deep-reads recommended sources via WebFetch
+3. Verifies or refutes claims
+4. Compares against existing subject data (CONFIRMED/UPDATED/NEW/REFUTED)
+5. Structures output as schema field table
+6. Self-checks acceptance criteria AND gate rules (embedded in prompt)
+7. Cross-pollinates with peer verifiers
+8. Converges, sends DONE to synthesizer
+
+## Phase 3: Synthesis (Opus synthesizer)
+
+**Model:** Opus. **Input:** All verifier schema field tables.
+
+Produces:
+- Schema-conforming YAML/JSON matching the spec's `output_schema`
+- Annotations table (field → source → confidence → notes)
+- Cross-topic reconciliation table (where verifiers conflicted)
+- Gaps remaining table (unfillable fields with reasons)
+
+## Phase 4: Validation + Cleanup (EM)
+
+1. Read synthesizer output
+2. Validate schema conformance BEFORE TeamDelete
+3. If validation fails: keep team alive, message synthesizer with corrections
+4. If passes: update manifest, commit, TeamDelete, archive, present to PM
+
+## Protocol and Templates
+
+- **Team protocol:** `structured-team-protocol.md`
+- **Scout prompt template:** `structured-scout-prompt-template.md`
+- **Verifier prompt template:** `structured-verifier-prompt-template.md`
+- **Synthesizer prompt template:** `structured-synthesizer-prompt-template.md`
+- **Scout agent:** `agents/research-scout.md` (reused from Pipeline A)
+- **Verifier agent:** `agents/research-specialist.md` (reused from Pipeline A)
+- **Synthesizer agent:** `agents/structured-synthesizer.md` (new — schema-conforming output)
+
+---
+
 ## Scratch Directory
 
-Both pipelines use `tasks/scratch/deep-research-teams/{run-id}/`. Run ID format: `YYYY-MM-DD-HHhMM`.
+All three pipelines use `tasks/scratch/deep-research-teams/{run-id}/`. Run ID format: `YYYY-MM-DD-HHhMM`.
 
 After completion, paper trail is archived to `docs/research/archive/YYYY-MM-DD-{topic-slug}/` and scratch is deleted.
