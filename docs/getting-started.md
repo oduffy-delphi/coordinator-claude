@@ -224,7 +224,20 @@ This is a known issue with directory-based local marketplaces. Use the manual JS
 
 ### Plugin cache out of sync
 
-If you edit plugin files and changes don't appear in sessions, the cache may be stale. Plugin cache lives at `~/.claude/plugins/cache/`. Deleting it forces a rebuild on next session start.
+Claude Code caches plugins by version at `~/.claude/plugins/cache/`. If you edit plugin source files, the cache won't update automatically.
+
+**Quick fix** — run the dev-sync script:
+```bash
+bash setup/dev-sync.sh              # sync all plugins
+bash setup/dev-sync.sh coordinator   # sync one plugin
+```
+
+**Alternative** — bump the `version` in the plugin's `.claude-plugin/plugin.json`. Claude Code creates a fresh cache on next session start when it sees a new version.
+
+**Nuclear option** — delete the cache directory to force a full rebuild:
+```bash
+rm -rf ~/.claude/plugins/cache/coordinator-claude
+```
 
 ## Next Steps
 
