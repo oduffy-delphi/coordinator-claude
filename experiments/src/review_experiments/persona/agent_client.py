@@ -56,11 +56,14 @@ class ReviewClient:
         """Dispatch a single review via Claude Code and return the response.
 
         Each call spawns a fresh `claude --print` process with:
-        - --bare: skip hooks, plugins, CLAUDE.md (clean experimental context)
         - --no-session-persistence: don't save to session history
         - --system-prompt: the arm-specific prompt + shared output format
         - --model: the model alias (same checkpoint within a calendar day)
-        - --dangerously-skip-permissions: no permission prompts (read-only review)
+
+        Note: --bare is NOT used because it skips OAuth auth (we use Claude
+        Code Max subscription). Claude Code system context (CLAUDE.md, hooks)
+        is loaded but affects both arms equally — a systematic bias, not a
+        differential one.
 
         The user message (code to review) is passed as the positional prompt arg.
         """
@@ -70,9 +73,7 @@ class ReviewClient:
         cmd = [
             "claude",
             "--print",
-            "--bare",
             "--no-session-persistence",
-            "--dangerously-skip-permissions",
             "--model", self.model,
             "--system-prompt", system_prompt,
             user_message,

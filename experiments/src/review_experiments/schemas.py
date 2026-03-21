@@ -113,6 +113,7 @@ class FindingClassification(str, Enum):
 class MatchMethod(str, Enum):
     EXACT = "exact"
     FUZZY = "fuzzy"
+    BIPARTITE = "bipartite"
     LLM_JUDGE = "llm_judge"
     NONE = "none"
 

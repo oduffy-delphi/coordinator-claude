@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-from ..schemas import ReviewFinding, ReviewOutput
+from .schemas import ReviewFinding, ReviewOutput
 
 
 @dataclass

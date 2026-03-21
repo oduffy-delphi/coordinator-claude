@@ -1,271 +1,313 @@
-"""Scoring engine — matches review findings against defect/distractor manifests.
+"""Scoring engine for matching review findings against defect/distractor manifests.
 
-This is the measurement instrument for both experiments. Its accuracy directly
-determines whether conclusions are valid.
+Uses deterministic keyword + line proximity matching with optimal bipartite
+assignment (no LLM-as-judge). This ensures reproducible, auditable scoring.
 
-Matching algorithm (5 steps):
-1. File match — finding must reference the correct file
-2. Line proximity — within 10 lines of a manifest defect
-3. Category match — exact or related category
-4. Tie-breaking — exact > fuzzy, closest line, manifest order
-5. LLM-judge fallback — optional Haiku call for ambiguous matches
+The bipartite matching (Hungarian algorithm via scipy) finds the globally
+optimal assignment of findings to defects, unlike greedy matching which is
+order-dependent and can miss better assignments.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, field
 from pathlib import Path
+
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 from .schemas import (
     DefectEntry,
     DefectManifest,
     DistractorEntry,
     DistractorManifest,
-    FileScore,
     FindingClassification,
     MatchMethod,
     ReviewFinding,
+    ReviewOutput,
     ScoredFinding,
 )
 
-# Categories considered related for fuzzy matching
-RELATED_CATEGORIES: dict[str, set[str]] = {
-    "security": {"error_handling"},
-    "error_handling": {"security", "logic"},
-    "logic": {"error_handling"},
-    "performance": {"architecture"},
-    "architecture": {"performance"},
-    "integration": {"logic", "architecture"},
-}
 
-LINE_PROXIMITY_THRESHOLD = 10
+# ---------------------------------------------------------------------------
+# Match scoring parameters
+# ---------------------------------------------------------------------------
+
+DEFAULT_THRESHOLD = 0.4
+DEFAULT_LINE_TOLERANCE = 10  # Per spec: "threshold of 10 (not 5) because
+# reviewers may point to the usage site rather than the definition site"
+LINE_WEIGHT = 0.6
+KEYWORD_WEIGHT = 0.4
+
+
+# ---------------------------------------------------------------------------
+# Match scoring functions
+# ---------------------------------------------------------------------------
+
+
+def _line_overlap(
+    finding_start: int,
+    finding_end: int,
+    target_start: int,
+    target_end: int,
+    tolerance: int = DEFAULT_LINE_TOLERANCE,
+) -> bool:
+    """Check if finding's line range overlaps target's range (with tolerance)."""
+    return (
+        finding_start <= target_end + tolerance
+        and finding_end >= target_start - tolerance
+    )
+
+
+def _keyword_score(finding_text: str, keywords: list[str]) -> float:
+    """Fraction of keywords that appear as case-insensitive substrings in finding text."""
+    if not keywords:
+        return 0.0
+    text_lower = finding_text.lower()
+    matches = sum(1 for kw in keywords if kw.lower() in text_lower)
+    return matches / len(keywords)
+
+
+def match_score(
+    finding: ReviewFinding,
+    defect: DefectEntry,
+    line_tolerance: int = DEFAULT_LINE_TOLERANCE,
+) -> float:
+    """Compute match score between a finding and a defect.
+
+    match_score = line_score * 0.6 + keyword_score * 0.4
+
+    A match is viable if score >= threshold (default 0.4).
+    """
+    line_score = 1.0 if _line_overlap(
+        finding.line_start, finding.line_end,
+        defect.line_start, defect.line_end,
+        line_tolerance,
+    ) else 0.0
+
+    kw_score = _keyword_score(
+        finding.finding + " " + (finding.suggested_fix or ""),
+        defect.keywords,
+    )
+
+    return line_score * LINE_WEIGHT + kw_score * KEYWORD_WEIGHT
+
+
+def match_score_distractor(
+    finding: ReviewFinding,
+    distractor: DistractorEntry,
+    line_tolerance: int = DEFAULT_LINE_TOLERANCE,
+) -> float:
+    """Compute match score between a finding and a distractor.
+
+    Uses line overlap only (distractors don't have keywords).
+    Returns 1.0 if lines overlap, 0.0 otherwise.
+    """
+    return 1.0 if _line_overlap(
+        finding.line_start, finding.line_end,
+        distractor.line_start, distractor.line_end,
+        line_tolerance,
+    ) else 0.0
+
+
+# ---------------------------------------------------------------------------
+# Bipartite matching
+# ---------------------------------------------------------------------------
+
+
+def _optimal_assignment(
+    findings: list[ReviewFinding],
+    defects: list[DefectEntry],
+    threshold: float = DEFAULT_THRESHOLD,
+    line_tolerance: int = DEFAULT_LINE_TOLERANCE,
+) -> dict[int, tuple[int, float]]:
+    """Optimal bipartite matching: findings -> defects.
+
+    Uses scipy.optimize.linear_sum_assignment on the negated cost matrix.
+    Returns dict mapping finding_index -> (defect_index, match_score) for matched pairs.
+    """
+    if not findings or not defects:
+        return {}
+
+    n_findings = len(findings)
+    n_defects = len(defects)
+
+    # Build cost matrix (findings x defects)
+    cost_matrix = np.zeros((n_findings, n_defects))
+    for i, finding in enumerate(findings):
+        for j, defect in enumerate(defects):
+            score = match_score(finding, defect, line_tolerance)
+            # Use large negative penalty (not zero) for below-threshold pairs so
+            # the Hungarian algorithm actively avoids them rather than wasting
+            # assignment slots on zero-weight matches.
+            cost_matrix[i, j] = score if score >= threshold else -1e6
+
+    # Negate for maximum-weight matching
+    # linear_sum_assignment minimizes, so we negate to maximize
+    row_indices, col_indices = linear_sum_assignment(-cost_matrix)
+
+    # Filter out penalized matches (below threshold)
+    matches = {}
+    for r, c in zip(row_indices, col_indices):
+        if cost_matrix[r, c] >= threshold:
+            matches[r] = (c, float(cost_matrix[r, c]))
+
+    return matches
+
+
+# ---------------------------------------------------------------------------
+# Full scoring pipeline
+# ---------------------------------------------------------------------------
 
 
 @dataclass
-class _CandidateMatch:
-    """Internal: a potential match between a finding and a manifest defect."""
+class ScoredReview:
+    """Complete scoring result for one review."""
 
-    defect: DefectEntry
-    line_distance: int
-    category_match: str  # "exact", "related", or "keyword"
-    keyword_matched: bool
+    file: str
+    arm: str
+    run_index: int
+    scored_findings: list[ScoredFinding]
+    undetected_defects: list[str]  # defect_ids not matched by any finding
+
+    @property
+    def true_positives(self) -> list[ScoredFinding]:
+        return [f for f in self.scored_findings
+                if f.classification == FindingClassification.TRUE_POSITIVE]
+
+    @property
+    def fp_distractor(self) -> list[ScoredFinding]:
+        return [f for f in self.scored_findings
+                if f.classification == FindingClassification.FALSE_POSITIVE_DISTRACTOR]
+
+    @property
+    def fp_novel(self) -> list[ScoredFinding]:
+        return [f for f in self.scored_findings
+                if f.classification == FindingClassification.FALSE_POSITIVE_NOVEL]
+
+    @property
+    def valid_unexpected(self) -> list[ScoredFinding]:
+        return [f for f in self.scored_findings
+                if f.classification == FindingClassification.VALID_UNEXPECTED]
+
+    @property
+    def recall(self) -> float:
+        total_defects = len(self.true_positives) + len(self.undetected_defects)
+        if total_defects == 0:
+            return math.nan  # No defects to find — undefined, exclude from aggregation
+        return len(self.true_positives) / total_defects
+
+    @property
+    def precision(self) -> float:
+        total_findings = len(self.scored_findings)
+        if total_findings == 0:
+            return math.nan  # No findings — undefined, exclude from aggregation
+        useful = len(self.true_positives) + len(self.valid_unexpected)
+        return useful / total_findings
 
 
-class Scorer:
-    """Matches review findings against manifests and classifies them."""
+def score_review(
+    review: ReviewOutput,
+    file_stem: str,
+    arm: str,
+    run_index: int,
+    defect_manifest: DefectManifest,
+    distractor_manifest: DistractorManifest,
+    threshold: float = DEFAULT_THRESHOLD,
+    line_tolerance: int = DEFAULT_LINE_TOLERANCE,
+) -> ScoredReview:
+    """Score a single review against the manifests.
 
-    def __init__(
-        self,
-        defect_manifest: DefectManifest,
-        distractor_manifest: DistractorManifest | None = None,
-        llm_judge: object | None = None,  # ExperimentClient, optional
-        use_llm_judge: bool = False,
-    ):
-        self.defects = defect_manifest
-        self.distractors = distractor_manifest
-        self.llm_judge = llm_judge
-        self.use_llm_judge = use_llm_judge and llm_judge is not None
+    Pipeline:
+    1. Compute optimal bipartite matching: findings -> defects
+    2. Classify matched findings as TP
+    3. Check unmatched findings against distractors
+    4. Remaining unmatched findings = novel FP
+    5. Unmatched defects = false negatives
+    """
+    # Get file-specific defects and distractors (exact match first, stem fallback)
+    file_defects = defect_manifest.defects_for_file(file_stem)
+    if not file_defects:
+        file_defects = [d for d in defect_manifest.defects if Path(d.file).stem == file_stem]
+    file_distractors = distractor_manifest.distractors_for_file(file_stem)
+    if not file_distractors:
+        file_distractors = [d for d in distractor_manifest.distractors if Path(d.file).stem == file_stem]
 
-    def score_findings(
-        self,
-        findings: list[ReviewFinding],
-        file_id: str,
-        arm: str,
-        run_id: str,
-    ) -> tuple[list[ScoredFinding], FileScore]:
-        """Score all findings for a single file against the manifests.
+    findings = review.findings
+    scored: list[ScoredFinding] = []
 
-        Returns scored findings and an aggregated FileScore.
-        """
-        file_name = file_id if "." in file_id else f"{file_id}.py"
-        file_defects = self.defects.defects_for_file(file_name)
-        file_distractors = (
-            self.distractors.distractors_for_file(file_name)
-            if self.distractors
-            else []
-        )
+    # Step 1-2: Optimal bipartite assignment (findings -> defects)
+    assignment = _optimal_assignment(findings, file_defects, threshold, line_tolerance)
 
-        # Track which defects have been claimed (each can match at most once)
-        claimed_defect_ids: set[str] = set()
-        scored: list[ScoredFinding] = []
+    matched_finding_indices = set(assignment.keys())
+    matched_defect_indices = {defect_idx for defect_idx, _ in assignment.values()}
 
-        # Score each finding
-        for finding in findings:
-            sf = self._score_single_finding(
-                finding, file_defects, file_distractors, claimed_defect_ids
-            )
-            if sf.matched_defect_id:
-                claimed_defect_ids.add(sf.matched_defect_id)
-            scored.append(sf)
+    # Classify matched findings as TP
+    for finding_idx, (defect_idx, score) in assignment.items():
+        scored.append(ScoredFinding(
+            finding=findings[finding_idx],
+            classification=FindingClassification.TRUE_POSITIVE,
+            matched_defect_id=file_defects[defect_idx].defect_id,
+            match_method=MatchMethod.BIPARTITE,
+            match_score=score,
+        ))
 
-        # Compute file-level aggregates
-        tp_ids = [sf.matched_defect_id for sf in scored if sf.classification == FindingClassification.TRUE_POSITIVE]
-        all_defect_ids = [d.defect_id for d in file_defects]
-        fn_ids = [d_id for d_id in all_defect_ids if d_id not in set(tp_ids)]
+    # Step 3: Check unmatched findings against distractors
+    # Distractors are not a limited resource — multiple findings can match the same one
+    for i, finding in enumerate(findings):
+        if i in matched_finding_indices:
+            continue
 
-        tp_count = len(tp_ids)
-        fn_count = len(fn_ids)
-        fp_dist = sum(1 for sf in scored if sf.classification == FindingClassification.FALSE_POSITIVE_DISTRACTOR)
-        fp_novel = sum(1 for sf in scored if sf.classification == FindingClassification.FALSE_POSITIVE_NOVEL)
-        valid_unexpected = sum(1 for sf in scored if sf.classification == FindingClassification.VALID_UNEXPECTED)
+        matched_distractor = None
+        for distractor in file_distractors:
+            if match_score_distractor(finding, distractor, line_tolerance) > 0:
+                matched_distractor = distractor
+                break
 
-        total_findings = tp_count + fp_dist + fp_novel + valid_unexpected
-        precision = tp_count / total_findings if total_findings > 0 else 0.0
-        recall = tp_count / len(all_defect_ids) if all_defect_ids else 0.0
-        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
-
-        file_score = FileScore(
-            file=file_name,
-            arm=arm,
-            run_id=run_id,
-            true_positives=tp_ids,
-            false_negatives=fn_ids,
-            fp_distractor=fp_dist,
-            fp_novel=fp_novel,
-            valid_unexpected=valid_unexpected,
-            recall=recall,
-            precision=precision,
-            f1=f1,
-        )
-
-        return scored, file_score
-
-    def _score_single_finding(
-        self,
-        finding: ReviewFinding,
-        file_defects: list[DefectEntry],
-        file_distractors: list[DistractorEntry],
-        claimed: set[str],
-    ) -> ScoredFinding:
-        """Classify a single finding using the 5-step algorithm.
-
-        Defect matching is attempted first (Steps 2-4). Only if no defect match
-        is found do we check distractors. This prevents a nearby distractor from
-        shadowing a legitimate defect match.
-        """
-
-        # Step 2 + 3: Find candidate defect matches (line proximity + category)
-        candidates: list[_CandidateMatch] = []
-        for defect in file_defects:
-            if defect.defect_id in claimed:
-                continue
-
-            line_dist = self._line_distance(
-                finding.line_start, finding.line_end,
-                defect.line_start, defect.line_end,
-            )
-            if line_dist > LINE_PROXIMITY_THRESHOLD:
-                continue
-
-            # Check category match
-            cat_match = self._category_match(finding.category, defect.category)
-
-            # Check keyword match
-            keyword_hit = self._keyword_match(finding.finding, defect.keywords)
-
-            # Accept if: exact category match, or keyword match, or both.
-            # Related category alone is not sufficient — too many false matches.
-            if cat_match == "exact" or keyword_hit:
-                candidates.append(_CandidateMatch(
-                    defect=defect,
-                    line_distance=line_dist,
-                    category_match=cat_match,
-                    keyword_matched=keyword_hit,
-                ))
-
-        # Step 4: Tie-breaking — pick best candidate
-        if candidates:
-            best = self._pick_best_candidate(candidates)
-
-            # Determine match method
-            if best.category_match == "exact":
-                method = MatchMethod.EXACT
-            else:
-                method = MatchMethod.FUZZY
-
-            return ScoredFinding(
+        if matched_distractor is not None:
+            scored.append(ScoredFinding(
                 finding=finding,
-                classification=FindingClassification.TRUE_POSITIVE,
-                matched_defect_id=best.defect.defect_id,
-                match_method=method,
-            )
+                classification=FindingClassification.FALSE_POSITIVE_DISTRACTOR,
+                matched_distractor_id=matched_distractor.distractor_id,
+                match_method=MatchMethod.BIPARTITE,
+            ))
+        else:
+            scored.append(ScoredFinding(
+                finding=finding,
+                classification=FindingClassification.FALSE_POSITIVE_NOVEL,
+                match_method=MatchMethod.NONE,
+            ))
 
-        # Step 5: LLM-judge fallback for line-proximate but category-mismatched
-        if self.use_llm_judge:
-            for defect in file_defects:
-                if defect.defect_id in claimed:
-                    continue
-                line_dist = self._line_distance(
-                    finding.line_start, finding.line_end,
-                    defect.line_start, defect.line_end,
-                )
-                if line_dist <= LINE_PROXIMITY_THRESHOLD:
-                    if self.llm_judge.judge_match(defect.description, finding.finding):
-                        return ScoredFinding(
-                            finding=finding,
-                            classification=FindingClassification.TRUE_POSITIVE,
-                            matched_defect_id=defect.defect_id,
-                            match_method=MatchMethod.LLM_JUDGE,
-                        )
+    # Step 5: Undetected defects
+    undetected = [
+        file_defects[j].defect_id
+        for j in range(len(file_defects))
+        if j not in matched_defect_indices
+    ]
 
-        # Check against distractors (only if no defect matched)
-        for dist in file_distractors:
-            if self._lines_overlap(finding.line_start, finding.line_end, dist.line_start, dist.line_end):
-                return ScoredFinding(
-                    finding=finding,
-                    classification=FindingClassification.FALSE_POSITIVE_DISTRACTOR,
-                    matched_distractor_id=dist.distractor_id,
-                    match_method=MatchMethod.EXACT,
-                )
+    return ScoredReview(
+        file=file_stem,
+        arm=arm,
+        run_index=run_index,
+        scored_findings=scored,
+        undetected_defects=undetected,
+    )
 
-        # No match — novel false positive (or valid unexpected)
-        return ScoredFinding(
-            finding=finding,
-            classification=FindingClassification.FALSE_POSITIVE_NOVEL,
-            match_method=MatchMethod.NONE,
-        )
 
-    @staticmethod
-    def _line_distance(f_start: int, f_end: int, d_start: int, d_end: int) -> int:
-        """Compute minimum distance between two line ranges."""
-        if f_start <= d_end and f_end >= d_start:
-            return 0  # overlap
-        return min(abs(f_start - d_end), abs(f_end - d_start))
+# ---------------------------------------------------------------------------
+# Batch scoring (score all results from an experiment)
+# ---------------------------------------------------------------------------
 
-    @staticmethod
-    def _lines_overlap(f_start: int, f_end: int, d_start: int, d_end: int) -> bool:
-        """Check if two line ranges overlap or are within 3 lines."""
-        return Scorer._line_distance(f_start, f_end, d_start, d_end) <= 3
 
-    @staticmethod
-    def _category_match(finding_cat: str, defect_cat: str) -> str:
-        """Return 'exact', 'related', or 'none'."""
-        finding_cat = finding_cat.lower().strip()
-        defect_cat = defect_cat.lower().strip()
-        if finding_cat == defect_cat:
-            return "exact"
-        related = RELATED_CATEGORIES.get(defect_cat, set())
-        if finding_cat in related:
-            return "related"
-        return "none"
+@dataclass
+class ExperimentScores:
+    """Aggregated scores across all results in an experiment."""
 
-    @staticmethod
-    def _keyword_match(finding_text: str, keywords: list[str]) -> bool:
-        """Check if any manifest keywords appear in the finding text."""
-        lower_text = finding_text.lower()
-        return any(kw.lower() in lower_text for kw in keywords)
-
-    @staticmethod
-    def _pick_best_candidate(candidates: list[_CandidateMatch]) -> _CandidateMatch:
-        """Pick the best candidate match using tie-breaking rules."""
-        def sort_key(c: _CandidateMatch) -> tuple:
-            # Lower is better for all:
-            # 1. Exact category > keyword-only > related > none
-            cat_rank = {"exact": 0, "related": 2, "none": 3}.get(c.category_match, 3)
-            if c.keyword_matched and cat_rank > 0:
-                cat_rank = 1
-            # 2. Closer line distance
-            return (cat_rank, c.line_distance)
-
-        candidates.sort(key=sort_key)
-        return candidates[0]
+    total_reviews: int
+    total_findings: int
+    true_positives: int
+    fp_distractor: int
+    fp_novel: int
+    valid_unexpected: int
+    reviews: list[ScoredReview] = field(default_factory=list)

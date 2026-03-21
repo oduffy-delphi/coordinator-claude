@@ -6,6 +6,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import yaml
+
 from .schemas import DefectManifest, DistractorManifest
 
 
@@ -32,9 +34,12 @@ class Corpus:
     @property
     def distractor_manifest(self) -> DistractorManifest | None:
         if self._distractor_manifest is None:
-            dist_path = self.manifests_dir / "distractors.json"
-            if dist_path.exists():
-                self._distractor_manifest = self._load_distractor_manifest()
+            # Support both YAML and JSON (YAML preferred)
+            for ext in (".yaml", ".yml", ".json"):
+                dist_path = self.manifests_dir / f"distractors{ext}"
+                if dist_path.exists():
+                    self._distractor_manifest = self._load_distractor_manifest()
+                    break
         return self._distractor_manifest
 
     def file_ids(self) -> list[str]:
@@ -57,7 +62,7 @@ class Corpus:
 
     def manifest_sha256(self) -> str:
         """Compute SHA256 of the defect manifest for corpus versioning."""
-        defect_path = self.manifests_dir / "defects.json"
+        defect_path = self._find_manifest("defects")
         content = defect_path.read_bytes()
         return hashlib.sha256(content).hexdigest()
 
@@ -72,9 +77,10 @@ class Corpus:
         if not self.files_dir.exists():
             errors.append(f"Files directory missing: {self.files_dir}")
 
-        defect_path = self.manifests_dir / "defects.json"
-        if not defect_path.exists():
-            errors.append(f"Defect manifest missing: {defect_path}")
+        try:
+            defect_path = self._find_manifest("defects")
+        except CorpusError:
+            errors.append(f"Defect manifest missing in {self.manifests_dir}")
             return errors
 
         # Load and validate manifest
@@ -106,12 +112,28 @@ class Corpus:
 
         return errors
 
+    def _find_manifest(self, name: str) -> Path:
+        """Find a manifest file by name, supporting YAML and JSON."""
+        for ext in (".yaml", ".yml", ".json"):
+            path = self.manifests_dir / f"{name}{ext}"
+            if path.exists():
+                return path
+        raise CorpusError(f"Manifest not found: {name} in {self.manifests_dir}")
+
+    @staticmethod
+    def _load_manifest_data(path: Path) -> dict:
+        """Load manifest data from YAML or JSON file."""
+        text = path.read_text(encoding="utf-8")
+        if path.suffix in (".yaml", ".yml"):
+            return yaml.safe_load(text)
+        return json.loads(text)
+
     def _load_defect_manifest(self) -> DefectManifest:
-        path = self.manifests_dir / "defects.json"
-        data = json.loads(path.read_text(encoding="utf-8"))
+        path = self._find_manifest("defects")
+        data = self._load_manifest_data(path)
         return DefectManifest(**data)
 
     def _load_distractor_manifest(self) -> DistractorManifest:
-        path = self.manifests_dir / "distractors.json"
-        data = json.loads(path.read_text(encoding="utf-8"))
+        path = self._find_manifest("distractors")
+        data = self._load_manifest_data(path)
         return DistractorManifest(**data)
