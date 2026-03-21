@@ -31,6 +31,17 @@ For **simple documentation lookups** that don't need Sid's judgment, use the `ue
 
 **Routing rule:** Architecture and design → Sid. Factual lookups and doc retrieval → ue-docs-researcher.
 
+## Design Rationale: Context-Efficient Delegation
+
+When holodeck-control MCP is connected, the full tool catalog is ~48K tokens of JSON schema. The EM sees only 8 visible tools (~8K tokens); domain agents get full schemas loaded fresh in their dedicated context. This is deliberate:
+
+1. **Token savings (~40K):** Tokens better spent on orchestration judgment than tool definitions.
+2. **Cognitive steering:** Thin tool visibility makes delegation the path of least resistance — the EM naturally routes to specialists rather than reaching for tools it can barely see.
+
+The `execute_domain_tool` proxy is the bridge: domain agents use it to call any hidden tool by name. The EM can use it too, but would need to ToolSearch for schemas and lacks the domain agent's pre-loaded verification protocols — making delegation the higher-quality path.
+
+This pattern is replicable: any MCP server with many tools can use the same thin-proxy + domain-agent architecture.
+
 ## UE Editor Authoring (holodeck-control)
 
 When holodeck-control MCP is connected, agents have access to UE editor authoring tools:

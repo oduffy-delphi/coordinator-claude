@@ -140,6 +140,27 @@ The SessionStart hook already injected orientation context at boot (cache if fre
 
 If the hook reported no fresh cache, note: _"No orientation cache — run `/workday-start` or `/update-docs` to generate one."_ Otherwise, move on silently.
 
+### Delegation context (game-dev projects)
+
+**Conditional on project type:** Only for projects with `project_type: unreal` or `game-docs` in `.claude/coordinator.local.md`. Skip silently for all other project types.
+
+The capability-catalog (injected at boot) carries the general delegation argument. This section loads the operational routing knowledge needed to delegate effectively in game-dev projects:
+
+**Three-tier dispatch model:**
+
+| Tier | When | How |
+|------|------|-----|
+| 1. Direct | Verification, quick fact-finding, simple one-off mutations | Use your 8 visible tools directly |
+| 2. Dispatch | Any real work in a single domain | Agent(subagent_type='game-dev:ue-{domain}') |
+| 3. Orchestrate | Multi-domain, underspecified, or large-scope | Agent(subagent_type='game-dev:ue-project-orchestrator') |
+
+**Key constraints:**
+- Blueprint graph operations (nodes, pins, functions) cannot be done via Python — only ue-asset-author can do them
+- Domain agents have 40+ hidden tools with full schemas; your 8 are for oversight
+- Python (`execute_python_code`) is the escape hatch for quick one-liners, not the primary work tool
+
+After loading, note briefly: _"Loaded holodeck delegation context — Tier 2 (domain agents) is the default for real work."_
+
 ---
 
 ## Engage
