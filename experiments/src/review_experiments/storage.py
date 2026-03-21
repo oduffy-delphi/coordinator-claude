@@ -208,6 +208,7 @@ class ExperimentDB:
         scored_findings: list[ScoredFinding],
         file_score: FileScore,
         checkpoint_status: WorkItemStatus = WorkItemStatus.COMPLETED,
+        raw_response: str | None = None,
     ) -> None:
         """Atomically record an API call, review, scores, file score, and checkpoint."""
         cursor = self._conn.cursor()
@@ -234,7 +235,7 @@ class ExperimentDB:
                     api_record.cost_usd,
                     api_record.duration_seconds,
                     api_record.system_prompt_hash,
-                    api_record.timestamp.isoformat(),
+                    raw_response,
                     api_record.timestamp.isoformat(),
                 ),
             )
@@ -310,6 +311,7 @@ class ExperimentDB:
         item: WorkItem,
         api_record: APICallRecord,
         checkpoint_status: WorkItemStatus = WorkItemStatus.COMPLETED,
+        raw_response: str | None = None,
     ) -> None:
         """Record an API call and checkpoint without review scoring (e.g., executor steps)."""
         cursor = self._conn.cursor()
@@ -335,7 +337,7 @@ class ExperimentDB:
                     api_record.cost_usd,
                     api_record.duration_seconds,
                     api_record.system_prompt_hash,
-                    api_record.timestamp.isoformat(),
+                    raw_response,
                     api_record.timestamp.isoformat(),
                 ),
             )
@@ -394,6 +396,17 @@ class ExperimentDB:
             "total_cost_usd": row[2] or 0.0,
             "api_calls": row[3] or 0,
         }
+
+    def get_step_output(
+        self, run_id: str, file_id: str, arm: str, step: str
+    ) -> str | None:
+        """Retrieve raw_response from a completed step (for pipeline resume)."""
+        row = self._conn.execute(
+            "SELECT raw_response FROM api_calls "
+            "WHERE run_id=? AND file_id=? AND arm=? AND step=?",
+            (run_id, file_id, arm, step),
+        ).fetchone()
+        return row[0] if row else None
 
     def get_file_scores(
         self, experiment: str, run_id: str | None = None

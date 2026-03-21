@@ -139,6 +139,94 @@ def persona_run(
 
 
 # ---------------------------------------------------------------------------
+# Sequential experiment commands
+# ---------------------------------------------------------------------------
+
+@main.group("sequential")
+def sequential_group():
+    """Sequential vs parallel review experiment commands."""
+    pass
+
+
+@sequential_group.command("run")
+@click.option("--n-runs", default=3, help="Number of complete runs")
+@click.option("--arms", default=None, help="Comma-separated arm names (default: all)")
+@click.option("--files", default=None, help="Comma-separated file IDs (default: all)")
+@click.option("--corpus-path", default=None, help="Path to corpus directory")
+@click.option("--db", default=DEFAULT_DB, help="Path to results database")
+@click.option("--model", default="claude-sonnet-4-20250514", help="Model ID")
+@click.option("--temperature", default=0.0, help="Temperature")
+@click.option("--dry-run", is_flag=True, help="Show work items without calling API")
+def sequential_run(
+    n_runs: int,
+    arms: str | None,
+    files: str | None,
+    corpus_path: str | None,
+    db: str,
+    model: str,
+    temperature: float,
+    dry_run: bool,
+):
+    """Run the sequential vs parallel review experiment."""
+    from .client import ExperimentClient
+    from .sequential.config import ARM_STEPS, CORPUS_DIR, Arm
+    from .sequential.pipeline import run_sequential_file
+
+    if corpus_path is None:
+        corpus_path = str(CORPUS_DIR)
+
+    corpus = Corpus(corpus_path)
+    errors = corpus.validate()
+    if errors:
+        console.print("[red]Corpus validation failed:[/red]")
+        for err in errors:
+            console.print(f"  - {err}")
+        raise SystemExit(1)
+
+    arm_list = [Arm(a) for a in arms.split(",")] if arms else list(Arm)
+    file_list = files.split(",") if files else corpus.file_ids()
+
+    if dry_run:
+        total_steps = sum(
+            len(ARM_STEPS[a]) * len(file_list) * n_runs for a in arm_list
+        )
+        total_items = len(arm_list) * len(file_list) * n_runs
+        console.print(f"[yellow]Dry run — {total_items} file×arm×run combos ({total_steps} API calls):[/yellow]")
+        console.print(f"  Arms: {[a.value for a in arm_list]}")
+        console.print(f"  Files: {len(file_list)}")
+        console.print(f"  Runs: {n_runs}")
+        for a in arm_list:
+            steps = [s[0] for s in ARM_STEPS[a]]
+            console.print(f"  {a.value}: {' → '.join(steps)}")
+        return
+
+    client = ExperimentClient(model=model, temperature=temperature)
+
+    with ExperimentDB(db) as database:
+        completed = 0
+        skipped = 0
+
+        for run_idx in range(n_runs):
+            run_id = f"run_{run_idx}"
+            for file_id in file_list:
+                for arm in arm_list:
+                    did_work = run_sequential_file(
+                        file_id=file_id,
+                        arm=arm,
+                        run_id=run_id,
+                        corpus=corpus,
+                        client=client,
+                        db=database,
+                    )
+                    if did_work:
+                        completed += 1
+                    else:
+                        skipped += 1
+
+        console.print(f"[green]Done. {completed} completed, {skipped} skipped (already done).[/green]")
+
+
+# ---------------------------------------------------------------------------
 # Status and export (shared across experiments)
 # ---------------------------------------------------------------------------
 
