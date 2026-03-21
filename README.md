@@ -4,7 +4,8 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 [![Opus](https://img.shields.io/badge/Model-Opus_4.6-orange)](https://www.anthropic.com/claude)
 [![Plugins](https://img.shields.io/badge/Plugins-6-green)](#what-you-get)
-[![Skills](https://img.shields.io/badge/Skills-20+-green)](#codified-skills)
+[![Skills](https://img.shields.io/badge/Skills-35+-green)](#codified-skills)
+[![Agent Teams](https://img.shields.io/badge/Agent_Teams-3_pipelines-blueviolet)](#deep-research-pipelines)
 [![CI](https://img.shields.io/badge/CI-10_checks-brightgreen)](.github/workflows/validate-plugins.yml)
 
 **A Claude Code plugin system that turns human-AI collaboration into a structured PM-EM partnership — with research pipelines, multi-session continuity, and quality gates that go beyond what's available out of the box.**
@@ -42,6 +43,8 @@ The individual techniques here — subagents, review pipelines, model tiering, p
 2. **Sequential multi-persona review with mandatory fix gates** — Domain expert reviews first, ALL findings applied, then generalist reviews the clean artifact. Every surveyed tool (Anthropic's own code review, CodeRabbit, GitHub Copilot) uses parallel+aggregate or single-pass instead.
 
 3. **PM/EM authority partitioning (First Officer Doctrine)** — Standing role-level domain authority between human and AI that persists across sessions. The [National Academies](https://nap.nationalacademies.org/read/26355/chapter/4) identified persistent human-AI relationships as an explicit research gap.
+
+4. **Fire-and-forget autonomous research teams** — Multi-model Agent Teams where the coordinator scopes work, spawns all teammates, and is *immediately freed*. The team self-coordinates via shared artifacts on disk and task-gated blocking — no orchestrator polling loop, no monitoring, no WRAP_UP broadcasts. Each model tier does fundamentally different cognitive work (Haiku scouts, Sonnet specialists, Opus synthesizer), and specialists self-govern their own convergence timing. This inverts the standard "orchestrator bottleneck" pattern found in frameworks like CrewAI, AutoGen, and LangGraph.
 
 The **tiered context injection** system ("warm RAM") was found to be compositionally novel across [87 surveyed sources](docs/research/2026-03-20-agent-orchestration-novelty-unified.md#appendix-warm-ram--tiered-context-injection-research).
 
@@ -117,7 +120,7 @@ Code reviews route through specialized reviewer personas — senior engineer, am
 
 ### Codified Skills
 
-20+ tested behavioral protocols — from brainstorming to debugging to code review to git workflow. Not suggestions; enforced workflows with checklists. The coordinator follows the protocol when a skill exists rather than improvising.
+35+ tested behavioral protocols — from brainstorming to debugging to code review to git workflow. Not suggestions; enforced workflows with checklists. The coordinator follows the protocol when a skill exists rather than improvising.
 
 ### Workday Commands
 
@@ -145,6 +148,7 @@ Slash commands that structure your workday:
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
 - A Claude API key or Claude Pro/Team subscription
 - [jq](https://jqlang.github.io/jq/) (`brew install jq` / `sudo apt install jq` / `winget install jqlang.jq`) — used by hook scripts for JSON parsing
+- **Agent Teams (experimental)** — Required for the deep research pipelines. Enable by adding `"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"` to your `env` in Claude Code's `settings.json`. Without this, `/deep-research` commands will fail.
 - **Opus as the coordinator model.** The orchestration layer — plan decomposition, review judgment, delegation decisions, quality gates — is designed for Opus-level reasoning. Sonnet and Haiku are used extensively *within* the pipeline (executors, verifiers), but the coordinator itself needs Opus. Set it with `/model opus` or in your Claude Code settings.
 
 ### Installation
@@ -172,7 +176,7 @@ See [docs/getting-started.md](docs/getting-started.md) for the full installation
 
 ## Customization
 
-- **Add domain plugins** — game-dev, data-science, and web-dev are included; create your own for your domain
+- **Add domain plugins** — game-dev, data-science, web-dev, and deep-research are included; create your own for your domain
 - **Rename or modify reviewer personas** — the behavioral descriptions are what matter, not the names
 - **Write new skills** — the `coordinator:writing-skills` skill guides you through TDD for skill authoring
 - **Configure per-project** — `.claude/coordinator.local.md` controls which domain plugins activate
@@ -183,14 +187,14 @@ See [docs/customization.md](docs/customization.md) for details.
 
 ```
 You (PM) <-> Coordinator (EM)
-                |- Enricher agents (Sonnet) -- research, fill specs
-                |- Executor agents (Sonnet) -- implement from specs
-                |- Reviewer personas (Opus) -- domain-specialized review
-                |- Verification agents (Haiku) -- mechanical checks
-                `- Research teams (Agent Teams) -- fire-and-forget swarms
-                     |- Haiku scouts -- file inventories, source corpora
-                     |- Sonnet specialists -- analysis, verification, cross-pollination
-                     `- Opus synthesizer -- contradiction resolution, final documents
+                |- Enricher agents (Sonnet) ── research, fill specs
+                |- Executor agents (Sonnet) ── implement from specs
+                |- Reviewer personas (Opus) ── domain-specialized review
+                |- Verification agents (Haiku) ── mechanical checks
+                `- Deep Research (Agent Teams) ── fire-and-forget autonomous swarms
+                     |- Pipeline A: 1 Haiku scout → 3-5 Sonnet specialists → 1 Opus synthesizer
+                     |- Pipeline B: 2 Haiku scouts → 4 Sonnet specialists → 1 Opus synthesizer
+                     `- Pipeline C: 1 Haiku scout → 1-5 Sonnet verifiers → 1 Opus synthesizer
 ```
 
 See [docs/architecture.md](docs/architecture.md) for the full system design.
