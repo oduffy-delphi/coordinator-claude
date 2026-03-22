@@ -92,6 +92,14 @@ This is deliberate, not automatic. Nothing persists "for free" — continuity is
 
 **When handoffs happen:** (1) The context pressure hook recommends it — the system is tracking its own cognitive runway. (2) Work is blocked on something external — a deploy, a review, a decision from someone else. (3) The PM's time is ending but the work isn't done. The PM decides when to trigger a handoff; the coordinator captures the state faithfully.
 
+**Evidence-based prompt engineering.** The pipeline templates were refined by [studying leading open-source deep research implementations](docs/research/2026-03-21-deep-research-prompt-improvements.md) — including [dzhng/deep-research](https://github.com/dzhng/deep-research) and LangChain's [open_deep_research](https://github.com/langchain-ai/open_deep_research) — and implementing five improvements that neither repo has:
+
+1. **Adversarial search** — Every research run must include at least one search targeting criticism, limitations, and opposing views. Prevents echo chambers and premature convergence.
+2. **Cross-pollination** — Findings from one topic area inform other topics' deep-read phases. Multi-hop reasoning without additional agent dispatches.
+3. **Citation-first synthesis** — "According to [Source], [claim]" rather than "[Claim] ([Source])." Every assertion is visibly traceable; unsourced claims are immediately obvious.
+4. **Source recency enforcement** — Sources older than 12 months are flagged; fast-moving topics use a 6-month threshold. Stale-only findings are explicitly marked.
+5. **Structured claim tables** — Complex topics produce intermediate claims tables (claim, source, date, confidence, corroboration) for more rigorous synthesis.
+
 ### Three-Tier Delegation
 
 The right model for the right task:
@@ -208,6 +216,8 @@ This project stands on the shoulders of others:
 - **[Superpowers](https://github.com/obra/superpowers)** — Early inspiration for the "behavioral protocols as plugins" paradigm. The idea that Claude Code extensions could be structured skills, not just prompts, owes a debt to this project
 - **[NotebookLM MCP CLI](https://github.com/jacob-bd/notebooklm-mcp-cli)** — Upstream provider for NotebookLM research integration (MIT license)
 - **[Anthropic](https://www.anthropic.com/)** — For Claude Code and the plugin architecture that makes all of this possible
+- **[dzhng/deep-research](https://github.com/dzhng/deep-research)** — Minimal recursive deep research implementation. Its `researchGoal` intent carrier pattern (each search query carries forward-looking reasoning about what to do with results) inspired our research intent tracking in Pipeline B. Zod-schema-at-every-step approach validated our commitment to structured output throughout
+- **[open_deep_research](https://github.com/langchain-ai/open_deep_research)** — LangChain's production deep research system. Its two-stage compression pipeline (raw notes → lossless citation-preserving compression → final synthesis) informed our citation preservation approach. The `think_tool` forced-reflection pattern inspired our Phase 2 reflection instructions
 - **Christopher Allen** — Parallel/related work on self-improving `~/.claude` systems. We discovered his work independently but share the conviction that the config directory is a legitimate engineering target
 
 ### A Note on Claude
