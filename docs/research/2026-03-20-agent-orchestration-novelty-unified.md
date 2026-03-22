@@ -4,13 +4,13 @@
 > **Method:** Deep Research Pipeline B (Internet Research) — Haiku discovery → Sonnet verification → Opus synthesis
 > **Scope:** 9 architectural patterns assessed against AI agent frameworks, coding tools, academic literature, and industry practice
 > **Sources verified:** 55+ (main run) + warm RAM research pending
-> **Purpose:** Inform open-source release positioning — distinguish genuine novelty from novel combination from well-established
+> **Purpose:** Inform open-source release positioning — assess patterns against established prior art and position the system's contributions accurately
 
 ---
 
 ## The System Under Assessment
 
-A Claude Code plugin system (coordinator-claude) with 5 public plugins, 26 agents, 19 commands, 22 skills, and 8 pipeline definitions. Built as a PM/EM collaborative development environment where the human (PM) sets direction and the AI (EM) orchestrates a team of specialist agents.
+A Claude Code plugin system (coordinator-claude) with 6 plugins, 23 agents, 18 commands, 22 skills, and 8 pipeline definitions. Built as a PM/EM collaborative development environment where the human (PM) sets direction and the AI (EM) orchestrates a team of specialist agents.
 
 The key architectural patterns assessed:
 
@@ -26,59 +26,75 @@ The key architectural patterns assessed:
 
 ---
 
-## Novelty Verdict
+## Positioning Verdict
 
-### Genuinely Novel — No Documented Prior Art
+This system should be positioned as an opinionated integration of existing patterns, not as proof of several first-of-their-kind orchestration inventions. The repo combines official Claude Code primitives, including hooks, subagents, and agent teams, with a strong workflow layer for delegation, review, and session continuity. That is a real contribution, but it is mostly a contribution in process design, prompt design, and packaging.
+
+Where the system appears strongest is in its operational coherence: the same repo ties together plugin packaging, workflow commands, specialized agents, and team-based research patterns. Anthropic's official plugin structure and Claude Code feature set support that framing directly.
+
+Where the prior memo overreached was in moving from "I did not find a public example" to "there is no documented prior art." That jump is too strong. Multi-agent specialization, staged review, human-AI role partitioning, and team coordination all have substantial precedent in public frameworks and literature. AutoGen documents role-specialized group-chat and coordination patterns, and the National Academies discuss role differentiation, function allocation, and non-equal authority in human-AI teams.
+
+### Pattern Assessments
 
 #### 1. Cognitive Tiering
-**What it is:** Assigning fundamentally different cognitive *work types* to different model tiers — Haiku grounds/verifies (template checks, compile checks), Sonnet executes (code writing, analysis), Opus judges (synthesis, planning, triage). This is NOT cost cascading (same task, cheaper model first) or capability routing (best model for domain). It's different models doing different cognitive jobs.
+**Classification:** Established pattern, customized implementation.
 
-**Prior art status:** Absent from all reviewed academic literature. The field has extensive work on model cascading (FrugalGPT 2023, ICLR 2025 unified routing, 2026 survey) but frames it as "use cheap model first, escalate if wrong." The 2026 survey (arxiv 2603.04445) explicitly identifies multi-stage agent-loop cascading as a **research gap** — our system operates in the space they identify as future work.
+Different workers can already have different roles, contexts, and tool access; this repo's contribution is the specific Anthropic model-to-role mapping and surrounding workflow discipline.
 
-**Critical distinction:** Standard cascades use the cheap model as a post-hoc quality estimator (did this output pass?). We use Haiku as a verifier performing *mechanically simpler work* — a categorically different cognitive task, not a weaker attempt at the same task. This distinction is not made anywhere in the literature.
+**What it is:** Assigning fundamentally different cognitive *work types* to different model tiers — Haiku grounds/verifies (template checks, compile checks), Sonnet executes (code writing, analysis), Opus judges (synthesis, planning, triage).
+
+**Prior art context:** The field has extensive work on model cascading (FrugalGPT 2023, ICLR 2025 unified routing, 2026 survey). The 2026 survey (arxiv 2603.04445) identifies multi-stage agent-loop cascading as an area for further research. Our system operates in this space with a specific model-to-role mapping.
 
 **Evidence strength:** HIGH — verified against 9 academic papers and 3 infrastructure implementations.
 
 #### 2. Sequential Multi-Persona Review with Mandatory Fix Gates
+**Classification:** Established pattern, uncommon workflow choice.
+
+The repo's review order may be more structured than mainstream product defaults, but staged review and iterative critique loops are already part of the broader agent-systems landscape.
+
 **What it is:** Domain expert reviews first (e.g., Sid for game code), ALL findings applied to the artifact, then generalist reviews (Patrik) the clean version. Each reviewer sees corrected work, not drafts with known issues stapled on.
 
-**Prior art status:** Every surveyed tool uses parallel+aggregate (Anthropic's own March 2026 code review, CodeRabbit, Qodo) or single-pass (GitHub Copilot). ChatDev's "communicative dehallucination" is the closest — intra-phase negotiation where one agent proposes and another critiques — but operates within a single phase between two agents, not across phases with mandatory fix gates.
-
-**Why it matters:** Parallel review optimizes for throughput. Sequential review with fix gates optimizes for compounding insight — each reviewer builds on a progressively cleaner artifact. The token/time cost is negligible; the quality improvement is not.
+**Prior art context:** Most surveyed tools use parallel+aggregate (Anthropic's own March 2026 code review, CodeRabbit, Qodo) or single-pass (GitHub Copilot). ChatDev's "communicative dehallucination" uses intra-phase negotiation. GitHub's own Copilot code review now describes an agentic review architecture.
 
 **Evidence strength:** HIGH — verified across all major code review tools and frameworks.
 
 #### 3. PM/EM Authority Partitioning (First Officer Doctrine)
-**What it is:** Standing role-level domain authority boundaries between human and AI that persist across sessions. The PM (human) holds product authority — what to build, priorities, scope. The EM (AI) holds engineering authority — how to build, delegation, implementation choices. Neither is subordinate to the other in their domain.
+**Classification:** Operational framing.
 
-**Prior art status:** Zero indexed matches for "First Officer Doctrine" in AI/agent literature. The National Academies identified persistent human-AI relationships as an explicit research gap. All existing multi-agent org simulations (MetaGPT, ChatDev) are fully-AI, stateless, per-run — no persistent relationship. The human-AI teaming literature conflates accountability and operational authority; PM/EM separates them.
+The PM/EM metaphor is useful, but the underlying idea of differentiated human-AI roles and function allocation is already well established in human-AI teaming literature.
+
+**What it is:** Standing role-level domain authority boundaries between human and AI that persist across sessions. The PM (human) holds product authority — what to build, priorities, scope. The EM (AI) holds engineering authority — how to build, delegation, implementation choices.
+
+**Prior art context:** The National Academies discuss role differentiation, function allocation, and non-equal authority in human-AI teams. MetaGPT and ChatDev use role-based org simulations. The human-AI teaming literature treats role allocation and differentiated authority as core issues.
 
 **Nearest analogs:**
-- PMC's Human-Machine Teaming model — requires persistence and shared mental models, but frames the human as team lead, not domain-authority peer
-- arXiv "Reversing the Paradigm" (2025) — proposes AI-first with human guidance, but organizationally underspecified
-- Azure Group Chat human participant — advisory, not authority-partitioned
+- PMC's Human-Machine Teaming model — requires persistence and shared mental models
+- arXiv "Reversing the Paradigm" (2025) — proposes AI-first with human guidance
+- Azure Group Chat human participant — advisory participation
 
-**Evidence strength:** HIGH — verified against academic HAT/HMT literature, all major frameworks, and the National Academies gap analysis.
+**Evidence strength:** HIGH — verified against academic HAT/HMT literature, all major frameworks, and the National Academies.
 
 ---
 
-### Novel Application of Known Principles
+### Established Patterns, Customized Implementations
 
 #### 4. Selective Tool Withholding
 **What it is:** MCP tools exist but are deliberately NOT given to the top-level orchestrator. WebSearch removed from Opus orchestrators — only available to Haiku/Sonnet workers. Forces delegation rather than self-execution.
 
 **Prior art:** Manager-worker hierarchies are well-established. Microsoft recommends "principle of least privilege" for agent design (Azure Architecture Center, Feb 2026). AutoGen's SelectorGroupChat is tool-free by architecture (structural necessity, not design principle). No framework enforces tool withholding as a deliberate design principle.
 
-**Our addition:** Explicit cost-tier rationale + deliberate capability allocation as a design principle, not just a structural artifact. Frame as "deliberate capability allocation" for positioning.
+**Our addition:** Explicit cost-tier rationale + deliberate capability allocation as a design principle, not just a structural artifact.
 
 **Evidence strength:** HIGH.
 
 #### 5. Character Personas in Engineering Review
-**What it is:** Named characters with backstory and expertise profiles (Patrik the exacting senior engineer, Camelia the data scientist), not functional role labels (Engineer, QA). The academic taxonomy (2404.18231) classifies these as "Character Personas" (tier 2) — all prior multi-agent review systems use "Demographic Personas" (tier 1, functional roles).
+**Classification:** Prompt-design choice. Persona-based specialization is established; the specific reviewer cast and prompt styles are local implementation choices.
 
-**PM note:** The *naming* of personas is primarily for the human's cognitive convenience — easier to say "dispatch Patrik" than "dispatch the code-quality-review-agent." The *persona depth* (specific expertise profile, review style, domain knowledge) is what produces better review output. Prior research confirmed Character Personas lead to better results. Two benefits, different audiences: naming serves the human, depth serves the output.
+**What it is:** Named characters with backstory and expertise profiles (Patrik the exacting senior engineer, Camelia the data scientist), not functional role labels (Engineer, QA). The academic taxonomy (2404.18231) classifies these as "Character Personas" (tier 2).
 
-**Prior art:** MetaGPT and ChatDev use functional roles (tier 1). DennisKennedy's Operational Protocol Method uses named character personas, but as single-user personal advisors, not multi-reviewer pipelines. paperreview.ai uses "epistemic reviewer personas" but for academic paper review. No prior art for Character Personas applied to engineering code review.
+**PM note:** The *naming* of personas is primarily for the human's cognitive convenience — easier to say "dispatch Patrik" than "dispatch the code-quality-review-agent." The *persona depth* (specific expertise profile, review style, domain knowledge) is what produces better review output. Prior research confirmed Character Personas lead to better results.
+
+**Prior art:** MetaGPT and ChatDev use functional roles (tier 1). DennisKennedy's Operational Protocol Method uses named character personas as single-user personal advisors. paperreview.ai uses "epistemic reviewer personas" for academic paper review. Persona-based specialization is well-established across the field.
 
 **Evidence strength:** HIGH.
 
@@ -91,9 +107,11 @@ The key architectural patterns assessed:
 
 ---
 
-### Incremental Innovation
+### Potentially Distinctive Integrations
 
 #### 7. Tiered Context Injection (Warm RAM)
+
+**Classification:** Potentially distinctive integration. This is the best candidate for saying "our exact packaging appears unusual," but it should still be framed as a custom context-management pattern built from Claude Code hooks and session artifacts, not as a proven invention.
 
 **What it is:** An ephemeral daily cache that provides session orientation without bulk-loading or cold-starting:
 - **L1 (always loaded, ~200 lines):** CLAUDE.md + MEMORY.md + orientation cache — what matters and where to look
@@ -102,7 +120,7 @@ The key architectural patterns assessed:
 
 The orientation cache is generated by `update-docs` and loaded at session start via a `SessionStart` hook. It contains repo structure summary, health grades, recent work, and self-invalidating metadata (`generated_at`, `git_head_at_generation`). Every L1 entry points to an L2 artifact — enough to route correctly without burning context on raw data.
 
-**Prior art status:** Compositionally novel — 87 sources surveyed, 15 deep-read. Each constituent idea exists (tiered memory, session summaries, pointer indirection, cache invalidation), but the five-property combination (proactive generation, non-destructive pointers, self-invalidating via VCS metadata, explicit L1-to-L2 pointer contract, ephemeral lifecycle) is undocumented. Closest parallels: Anthropic's context engineering blog (principle without implementation), Pichay "Missing Memory Hierarchy" (L1-L4 naming but reactive/destructive), MemGPT/Letta (structural analog but persistent/mutable). Claude Code community independently requesting this capability (issues #11455, #18417). See Appendix for full findings.
+**Prior art status:** Potentially distinctive integration — 87 sources surveyed, 15 deep-read. Each constituent idea exists (tiered memory, session summaries, pointer indirection, cache invalidation). The five-property combination (proactive generation, non-destructive pointers, self-invalidating via VCS metadata, explicit L1-to-L2 pointer contract, ephemeral lifecycle) appears uncommon but should be framed as a custom context-management pattern, not a proven invention. Closest parallels: Anthropic's context engineering blog (principle without implementation), Pichay "Missing Memory Hierarchy" (L1-L4 naming but reactive/destructive), MemGPT/Letta (structural analog but persistent/mutable). Claude Code community independently requesting this capability (issues #11455, #18417). See Appendix for full findings.
 
 #### 8. Dispatch-Not-Absorb
 **What it is:** Commands are thin dispatch stubs (~30 lines) that fire branded orchestrator agents. Pipeline intelligence lives in the agent definitions and pipeline docs on disk, not in the command content. The EM never sees phase-by-phase instructions — it dispatches and monitors.
@@ -120,37 +138,39 @@ The orientation cache is generated by `update-docs` and loaded at session start 
 
 ---
 
-## Novelty Matrix
+## Pattern Classification Matrix
 
-| # | Pattern | Classification | Prior Art | Evidence |
-|---|---------|---------------|-----------|----------|
-| 1 | Cognitive tiering | **Genuinely novel** | 2026 survey identifies it as a research gap | HIGH |
-| 2 | Sequential review with fix gates | **Genuinely novel** | Industry default is parallel+aggregate | HIGH |
-| 3 | PM/EM authority partitioning | **Genuinely novel** | National Academies identifies it as a research gap | HIGH |
-| 4 | Selective tool withholding | **Novel application** | Microsoft recommends; no framework enforces | HIGH |
-| 5 | Character Personas in review | **Novel application** | Taxonomically unprecedented in eng review | HIGH |
-| 6 | Plugin capability composition | **Novel integration** | Primitives are platform features; bundling is ours | HIGH |
-| 7 | Tiered context injection (warm RAM) | **Compositionally novel** | 5-property combination undocumented across 87 sources; Anthropic blog closest | HIGH |
-| 8 | Dispatch-not-absorb | **Novel application** | Control/data plane separation applied to agent commands | MEDIUM |
-| 9 | Session boot injection | **Incremental** | Hook-based init is known; content is implementation | MEDIUM |
+| # | Pattern | Classification | Notes | Evidence |
+|---|---------|---------------|-------|----------|
+| 1 | Cognitive tiering | **Established pattern, customized implementation** | Different workers can already have different roles, contexts, and tool access; contribution is the specific Anthropic model-to-role mapping and workflow discipline | HIGH |
+| 2 | Sequential review with fix gates | **Established pattern, uncommon workflow choice** | More structured than mainstream defaults, but staged review and iterative critique loops exist in broader agent-systems landscape | HIGH |
+| 3 | PM/EM authority partitioning | **Operational framing** | PM/EM metaphor is useful; differentiated human-AI roles and function allocation already well established in human-AI teaming literature | HIGH |
+| 4 | Selective tool withholding | **Established pattern, customized implementation** | Microsoft recommends least-privilege for agent design; contribution is deliberate capability allocation as a design principle | HIGH |
+| 5 | Character Personas in review | **Prompt-design choice** | Persona-based specialization is established; specific reviewer cast and prompt styles are local implementation choices | HIGH |
+| 6 | Plugin capability composition | **Established pattern, customized implementation** | Primitives are platform features; opinionated bundling and per-project scoping is our contribution | HIGH |
+| 7 | Tiered context injection (warm RAM) | **Potentially distinctive integration** | Best candidate for "our exact packaging appears unusual," but should be framed as custom context-management built from Claude Code hooks and session artifacts | HIGH |
+| 8 | Dispatch-not-absorb | **Operational framing** | Control/data plane separation applied to agent commands; principle well-established in systems design | MEDIUM |
+| 9 | Session boot injection | **Established pattern, customized implementation** | Hook-based init is known; specific content is implementation-level | MEDIUM |
 
 ---
 
 ## Positioning Recommendations
 
-### Lead With (genuinely novel, high confidence)
-1. **Cognitive tiering** — name it explicitly, position against the cascade literature, cite the 2026 survey's research gap
-2. **Sequential fix-gate review** — contrast with Anthropic's own parallel choice, explain the compounding insight rationale
-3. **First Officer Doctrine** — position relative to Human-Machine Teaming literature, cite National Academies gap
+This project should be presented as a sophisticated Claude Code workflow system built from current platform primitives and established multi-agent patterns, rather than as proof of several wholly new orchestration inventions. Claude Code already supports hooks, subagents, agent teams, and plugin packaging; the repo's contribution is to combine those capabilities into a disciplined model for delegation, staged review, session continuity, and research coordination. The strongest claims here are about operational design and integration quality, not about the absence of prior art.
 
-### Credit the Synthesis (novel application/combination)
+### Emphasize (operational design, high confidence)
+1. **Cognitive tiering** — name it explicitly, position as a customized implementation of established multi-agent specialization patterns with a specific Anthropic model-to-role mapping
+2. **Sequential fix-gate review** — describe as an uncommon workflow choice; contrast with the parallel+aggregate default, explain the compounding insight rationale
+3. **First Officer Doctrine** — position as an operational framing of ideas already established in Human-Machine Teaming literature
+
+### Credit the Integration
 4. **Deliberate capability allocation** (tool withholding) — cite Microsoft's least-privilege as institutional backing
-5. **Character Personas in engineering review** — use the 2404.18231 taxonomy precisely ("tier 2 applied to engineering review; all prior systems use tier 1")
-6. **Plugin architecture** — honest about platform primitives; claim the opinionated composition
+5. **Character Personas in engineering review** — prompt-design choices with measurable review quality impact
+6. **Plugin architecture** — honest about platform primitives; claim the opinionated composition and per-project scoping
 
 ### Be Honest About
 7. **"Orchestrator never writes code"** is prompt-enforced, not architecturally guaranteed. Document as a design convention. Technical audiences will respect the honesty.
-8. **Manager-worker hierarchies** are well-established. Don't overclaim the architecture; claim the philosophy.
+8. **Manager-worker hierarchies** are well-established. Don't overclaim the architecture; claim the process design.
 
 ---
 
@@ -217,9 +237,9 @@ The orientation cache is generated by `update-docs` and loaded at session start 
 
 > **Additional research run:** 6 agents (3 Haiku + 3 Sonnet), 87 sources surveyed, 15 deep-read
 
-### Verdict: Compositionally Novel
+### Verdict: Potentially Distinctive Integration
 
-Each constituent idea exists independently — tiered memory (MemGPT 2023, H-MEM 2025), session summaries (OpenAI, Factory.ai), pointer indirection (H-MEM positional indices), cache invalidation (standard practice). But the specific five-property combination is not documented in any of the 87 surveyed sources:
+Each constituent idea exists independently — tiered memory (MemGPT 2023, H-MEM 2025), session summaries (OpenAI, Factory.ai), pointer indirection (H-MEM positional indices), cache invalidation (standard practice). The specific five-property combination appears uncommon across the 87 surveyed sources, but this should be framed as a custom context-management pattern built from Claude Code hooks and session artifacts, not as a proven invention:
 
 1. **Proactive generation at rest** — every surveyed summary system is triggered by context overflow. Our cache is generated by the update-docs pipeline *between sessions*, when no context pressure exists. Inverts the trigger from "context is full, compress" to "session is starting, orient."
 
@@ -259,9 +279,9 @@ Claude Code issues #11455 and #18417 describe exactly what our system already im
 
 ### Recommended Positioning
 
-Frame as **compositional innovation** — a novel configuration of known techniques optimized for cross-session orientation of AI coding agents. Analogous to how React was compositionally novel in 2013 (virtual DOM + declarative UI + components all existed independently). Defensible as an innovation, not as an invention.
+Frame as a **custom context-management pattern** — a practical configuration of known techniques optimized for cross-session orientation of AI coding agents, built from Claude Code hooks and session artifacts. The contribution is in the integration and packaging, not in the individual components.
 
-Name the pattern explicitly: **"proactive orientation cache"** — no existing framework names it.
+The pattern can be named **"proactive orientation cache"** for convenience — but the framing should emphasize operational design, not invention.
 
 ### Additional Sources (Warm RAM Research)
 

@@ -23,7 +23,7 @@ The Claude Code ecosystem has exploded in the 6 months since extensibility primi
 - **everything-claude-code** (82k stars): Cross-platform agent harness with NanoClaw orchestration engine, 1,282 tests, 98% coverage. Most-adopted components: code-reviewer template and TDD skill. **Confidence: HIGH for adoption, MEDIUM for necessity** — most common complaint is over-engineering ("60-200 line CLAUDE.md covers 80% of needs").
 - **Anthropic internal benchmark**: 16 agents built a 100K-line C compiler in Rust over 2 weeks at ~$20K token cost. **Confidence: MEDIUM** — widely cited but primary source not confirmed.
 
-**Recommendation:** Our plugin architecture (7 plugins, 9+ agents, 22 skills) is in the top tier of sophistication. The gstack QA pattern (real browser automation with persistent state) is worth evaluating for web-dev projects — it's the highest-signal differentiator in the ecosystem. The "60-200 line CLAUDE.md" counterpoint is not relevant to us — we've already solved the complexity-management problem with skills and path-targeted rules.
+**Recommendation:** Our plugin architecture (6 plugins, 23 agents, 22 skills) is in the top tier of sophistication. The gstack QA pattern (real browser automation with persistent state) is worth evaluating for web-dev projects — it's the highest-signal differentiator in the ecosystem. The "60-200 line CLAUDE.md" counterpoint is not relevant to us — we've already solved the complexity-management problem with skills and path-targeted rules.
 
 ### Topic B: Meta-Strategies and Power-User Workflows
 
