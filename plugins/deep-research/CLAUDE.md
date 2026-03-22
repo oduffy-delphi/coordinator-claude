@@ -31,7 +31,7 @@ All three pipelines follow the same Agent Teams pattern:
 4. **Haiku scouts** build shared artifacts (file inventories for repo, source corpus for web)
 5. **Sonnet specialists** unblock, deep-read, cross-pollinate via messaging, self-govern timing
 6. Each specialist sends `DONE` message to synthesizer (`blockedBy` is a status gate, not an event trigger)
-7. **Opus synthesizer** reads specialist outputs, cross-references, writes final document(s)
+7. **Opus synthesizer** reads specialist outputs, cross-references, writes final document(s), and optionally writes a **Synthesizer Advisory** — a companion file with staff-engineer observations beyond the research scope (framing concerns, blind spots, surprising connections). Absent if there's nothing beyond scope.
 8. EM receives notification → cleanup (archive, commit, present results)
 
 ### Pipeline C specifics

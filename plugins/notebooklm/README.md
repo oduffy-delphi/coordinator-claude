@@ -27,7 +27,7 @@ The plugin lifecycle is managed by the `/notebooklm-research` command:
 3. Orchestrator designs research questions using query engineering best practices
 4. Orchestrator dispatches the Sonnet worker to handle MCP choreography
 5. Worker creates notebook, ingests sources or runs exploratory research, queries with each question
-6. Orchestrator reads raw findings and synthesizes a polished research document with citations, gaps, and source assessment
+6. Orchestrator reads raw findings and synthesizes a polished research document with citations, gaps, and source assessment; optionally writes a **Synthesizer Advisory** (`{output-path}-advisory.md`) with staff-engineer observations beyond the research scope — skipped if there's nothing beyond scope
 7. Command asks whether to retain or delete the NotebookLM notebook
 
 This two-tier design (Opus orchestrator + Sonnet worker) keeps expensive judgment work separate from mechanical MCP operations. The orchestrator's baked-in query engineering — citation requirements, specificity rules, structured synthesis templates — addresses NotebookLM's documented hallucination rate on broad queries.
