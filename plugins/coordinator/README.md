@@ -23,7 +23,7 @@ The coordinator plugin is the backbone of the system. It provides:
 | **patrik-code-review** | Opus | Senior engineer reviewer — exacting standards, documentation completeness, architecture |
 | **zoli-ambition-advocate** | Opus | Backstop reviewer — challenges conservative recommendations, never a primary reviewer |
 
-### Commands (18, all user-invocable via `/`)
+### Commands (19, all user-invocable via `/`)
 
 | Command | Purpose |
 |---------|---------|
@@ -44,10 +44,9 @@ The coordinator plugin is the backbone of the system. It provides:
 | `/architecture-rotation` | Run the weekly architecture audit rotation — score, audit, apply, update ledger |
 | `/code-health` | Night-shift code health review — scan commits, dispatch reviewer, apply findings |
 | `/bug-sweep` | Systematic codebase bug hunt — fix AI-fixable bugs, defer blocked ones to backlog |
+| `/staff-session` | Agent Teams collaborative planning or review — persona agents debate, synthesizer cross-references |
 | `/distill` | Distill accumulated artifacts into wiki guides + decision records, then delete source material |
-
-<!-- Review: patrik — corrected count: 20 SKILL.md-backed skills, 7 PIPELINE.md definitions listed separately under Commands -->
-### Skills (22)
+### Skills (23)
 
 **Workflow & Planning:**
 - `brainstorming` — Collaborative dialogue to refine ideas into designs. Scope assessment, design-for-isolation, existing-codebase awareness.
@@ -64,6 +63,7 @@ The coordinator plugin is the backbone of the system. It provides:
 **Code Review:**
 - `requesting-code-review` — Request review via `/review-dispatch`.
 - `receiving-code-review` — How to receive and act on review feedback.
+- `requesting-staff-session` — Agent Teams collaborative planning/review — guides tier selection, team composition, plan vs review mode.
 
 **Git & Branching:**
 - `using-git-worktrees` — Isolated workspaces per feature.

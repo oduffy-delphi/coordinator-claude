@@ -1,43 +1,20 @@
-# oduffy-custom — A Custom Agent Hierarchy for Claude Code
+# coordinator-claude — A Structured Workflow System for Claude Code
 
-A local plugin marketplace that extends [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with a structured agent hierarchy: named specialist reviewers, an orchestration pipeline, and codified workflow skills. Built by Dónal O'Duffy and Claude as a collaborative development environment.
+A plugin set that turns Claude Code into a small engineering team: a coordinator that delegates, named specialists that review, and codified skills that encode best practices. You play PM; Claude plays EM.
 
-## What This Is
+## What This Does
 
-Claude Code ships with a powerful but general-purpose agent. Out of the box, it reads files, writes code, and runs commands — but it doesn't have opinions about *how* to organize work, *when* to ask for review, or *who* should review what.
+Every pattern here — multi-agent orchestration, quality gates, model tiering, hooks-based context injection — exists elsewhere in the Claude Code ecosystem. The individual pieces aren't new. What's unusual is combining all of Claude Code's extension primitives (hooks, subagents, skills, commands, Agent Teams, MCP servers) into one coherent workflow stack, including early adoption of [Agent Teams](https://code.claude.com/docs/en/agent-teams) (still experimental and gated) as a first-class primitive for collaborative planning and research.
 
-This plugin set layers a structured workflow on top of Claude Code:
+Three things are particularly distinctive within the Claude Code plugin ecosystem:
 
-- **Named specialist agents** with distinct expertise and personalities (a senior engineer who reviews code quality, a UX specialist who evaluates user flows, a game dev expert who knows Unreal Engine)
-- **A coordinator role** that orchestrates multi-step work through an enrichment-review-execution pipeline
-- **Codified workflow skills** that encode best practices as repeatable processes (brainstorming, TDD, plan writing, systematic debugging)
-- **A review pipeline** that routes work to the right specialist based on what changed
+- **PM/EM authority partitioning.** Not "planner/coder/reviewer" — a persistent product-management authority split where the human owns product direction and the AI owns engineering execution, with explicit boundaries that carry across sessions.
 
-The result is something like a small engineering team, where Claude plays multiple roles with different perspectives, and the human (Dónal) serves as PM — setting direction, making judgment calls, and approving designs.
+- **Sequential review with mandatory fix gates.** Domain expert reviews first, all fixes applied, *then* the generalist reviews a clean artifact. Most tools use parallel-aggregate or single-pass review. This enforced sequencing is uncommon.
 
-## What's Novel
+- **Agent Teams for collaborative planning.** Staff sessions where persona agents debate plans in parallel via Agent Teams messaging, then a synthesizer cross-references positions. Distinct from using Agent Teams for simple task fan-out.
 
-A [deep research assessment](../../docs/research/2026-03-20-agent-orchestration-novelty-unified.md) (140+ sources, 70+ deep-read) evaluated this system against the AI agent framework ecosystem, coding tools, and academic literature. Individual patterns — manager-worker hierarchies, role-based agents, model routing — all have precedent. What's new is the specific combination and operational philosophy:
-
-**Genuinely novel (no documented prior art):**
-
-- **Cognitive tiering** — Different model tiers do different *cognitive work*, not the same work at different capability levels. Haiku verifies (template checks, compile checks), Sonnet executes (code writing, analysis), Opus judges (synthesis, planning). The academic literature covers cost cascading ("same task, cheaper model first") and capability routing ("best model for domain"), but a [2026 survey](https://arxiv.org/html/2603.04445) explicitly identifies our approach as a research gap.
-
-- **Sequential review with mandatory fix gates** — Domain expert reviews first, ALL fixes applied, then generalist reviews a clean artifact. Every surveyed tool (GitHub Copilot, CodeRabbit, Anthropic's own code review tool) uses parallel+aggregate or single-pass. The "apply all fixes before Reviewer 2 sees the work" pattern is absent everywhere. (For pre-implementation planning and plan review, the system also offers **parallel debate via staff sessions** — persona agents challenge each other's positions simultaneously. Both patterns coexist: sequential for post-execution code review, parallel debate for collaborative planning.)
-
-- **PM/EM authority partitioning** — Standing role-level domain authority boundaries between human (PM) and AI (EM) that persist across sessions. The [National Academies](https://nap.nationalacademies.org/read/26355/chapter/4) identified persistent human-AI relationships as an explicit research gap. This system operationally answers it.
-
-**Compositionally novel:**
-
-- **Proactive orientation cache ("warm RAM")** — An ephemeral daily cache generated between sessions and injected at start, with self-invalidating VCS metadata and explicit pointers to full artifacts. Not RAG, not full injection, not cold start. Five-property combination undocumented across 87 sources. Anthropic's [context engineering blog](https://anthropic.com/engineering/effective-context-engineering-for-ai-agents) describes the principle; this system implements it with proactive generation. The Claude Code community is independently requesting this capability ([#11455](https://github.com/anthropics/claude-code/issues/11455), [#18417](https://github.com/anthropics/claude-code/issues/18417)).
-
-**Novel applications of known principles:**
-
-- **Selective tool withholding** — MCP tools deliberately withheld from the orchestrator, forcing delegation. Microsoft [recommends](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) least-privilege for agents; no framework enforces it as a design principle.
-
-- **Character Personas in engineering review** — Named reviewers (Patrik, Sid, Camelia) are [tier 2 Character Personas](https://arxiv.org/html/2404.18231v2), not tier 1 functional role labels. All prior multi-agent review systems use tier 1. The naming serves human cognitive convenience; the persona depth produces better review output.
-
-- **Plugin-based capability composition** — Agents, skills, commands, hooks, and MCP config bundled into per-domain packages with per-project scoping via `coordinator.local.md`. Individual primitives are platform features; the opinionated composition is undocumented.
+For a deeper assessment, see the [novelty research doc](docs/research/2026-03-20-agent-orchestration-novelty-unified.md).
 
 ## The Organizational Metaphor
 
@@ -56,17 +33,16 @@ This is the "First Officer Doctrine" — Claude operates as EM to Dónal's PM. T
 
 | Plugin | Purpose | When to Enable |
 |--------|---------|----------------|
-| **[coordinator](coordinator/)** | Core orchestration pipeline, universal reviewers, all workflow skills | Always |
-| **[game-dev](game-dev/)** | Sid (Unreal Engine specialist) + UE MCP servers | Unreal Engine projects |
-| **[web-dev](web-dev/)** | Pali (front-end architecture) + Fru (UX flow review) | Web projects |
-| **[data-science](data-science/)** | Camelia (ML, statistics, data modeling) | ML/data work |
-| **[holodeck-control](holodeck-control/)** | UE editor control agents (world-builder, asset-author, gameplay-engineer, infra-engineer) | Unreal Engine editor projects |
-| **[holodeck-docs](holodeck-docs/)** | UE documentation lookup + Python execution | Unreal Engine projects |
-| **[notebooklm](notebooklm/)** | NotebookLM integration — YouTube, podcast, audio research via MCP | Media research (enable on demand) |
+| **[coordinator](plugins/coordinator/)** | Core orchestration pipeline, universal reviewers, all workflow skills | Always |
+| **[game-dev](plugins/game-dev/)** | Sid (Unreal Engine specialist) | Unreal Engine projects |
+| **[web-dev](plugins/web-dev/)** | Pali (front-end architecture) + Fru (UX flow review) | Web projects |
+| **[data-science](plugins/data-science/)** | Camelia (ML, statistics, data modeling) | ML/data work |
+| **[deep-research](plugins/deep-research/)** | Multi-agent research pipelines (internet, repo, structured) | Research tasks |
+| **[notebooklm](plugins/notebooklm/)** | NotebookLM integration — YouTube, podcast, audio research via MCP | Media research (enable on demand) |
 
 The coordinator plugin is always enabled. Domain plugins are toggled per-project via `.claude/coordinator.local.md`.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full conceptual model — how agents interact, how the pipeline flows, and the design philosophy behind it.
+See [architecture.md](docs/architecture.md) for the full conceptual model — how agents interact, how the pipeline flows, and the design philosophy behind it.
 
 ## The Pipeline
 
@@ -85,40 +61,23 @@ The **Plan** stage has two paths:
 
 Each stage is a codified skill or command. The coordinator orchestrates transitions between stages and verifies output at each checkpoint.
 
-## Context-for-Orientation: The "Warm RAM" Pattern
+## Context Injection: Tiered "Warm RAM"
 
-Most agent frameworks solve the context problem by either injecting everything (burning the context window) or injecting nothing (cold start every session). This system takes a third approach: **tiered context injection with an ephemeral orientation cache**.
+The coordinator uses three tiers of context, not bulk injection:
 
 ```
-L1 (always loaded)    CLAUDE.md + MEMORY.md + orientation cache
-                      ~200 lines — what matters, where to look
-                          │
+L1 (always loaded)    CLAUDE.md + MEMORY.md + orientation cache (~200 lines)
 L2 (on-demand)        DIRECTORY.md, health ledger, repomap, architecture atlas
-                      Full artifacts on disk — loaded when a task needs them
-                          │
-L3 (deep storage)     The codebase, git history, pipeline docs
-                      Read by subagents as needed — never bulk-loaded into the coordinator
+L3 (deep storage)     Codebase, git history — read by subagents, never bulk-loaded
 ```
 
-The key mechanism is the **orientation cache** — an ephemeral daily file generated by the `update-docs` pipeline and loaded at session start via a `SessionStart` hook. It contains:
-
-- Repo structure summary (not the full tree — a TL;DR with component counts)
-- Health snapshot (system grades and audit dates from the health ledger)
-- Recent work summary (what changed, what shipped, what's pending)
-- Metadata: `generated_at`, `git_head_at_generation` (self-invalidating — you know exactly how stale it is)
-
-This solves the **orientation problem** specifically: *what state is the world in right now, and where do I go to learn more?* The coordinator starts every session with enough context to route correctly, without burning context window on raw data. It's the difference between giving someone a filing cabinet and giving them a table of contents.
-
-The paper trail matters as much as the summary. Every L1 entry points to an L2 artifact. The orientation cache says "coordinator-core is A/HEALTHY, audited 2026-03-18" — the coordinator knows the grade without loading the 200-line audit report, but can find it instantly if needed.
+The **orientation cache** is an ephemeral daily file generated between sessions and injected at start via a `SessionStart` hook. It contains repo structure, health snapshot, recent work summary, and self-invalidating VCS metadata (`git_head_at_generation`). Every L1 entry points to an L2 artifact for drill-down.
 
 ## Version History
 
-- **v1.0.0** (March 2026) — Initial plugin architecture. Four plugins, 5 agents, 7 commands, 13 skills. Absorbed workflow skills from Superpowers framework, added named reviewer agents with distinct personalities, built enrichment-review-execution pipeline.
-- **v1.1.0** (March 2026) — Absorbed improvements from Superpowers v5.0.0: scope assessment in brainstorming, file structure planning, executor status protocol (DONE/DONE_WITH_CONCERNS/BLOCKED/NEEDS_CONTEXT), expanded self-review with judgment checks, spec compliance verification in delegation pipeline, instruction priority hierarchy, subagent gate for skill discovery.
-- **v1.2.0** (March 2026) — Write-ahead status protocol. All pipeline phases now mark plan/stub documents as "in progress" *before* starting work, not just on completion. Two-layer breadcrumbs (tracker README + stub header) eliminate ambiguous state after crashes. Enricher, executor, enrich-and-review, delegate-execution, review-dispatch, and executing-plans all updated. Plan document header now includes a `Status:` field.
-- **v1.3.0** (March 2026) — Boot-time capability catalog. `capability-catalog.md` injected at session start via coordinator hook — behavioral primer ("Route, Don't Execute") that lists all specialists with one-line routing guidance. Universal emission (no per-project filtering), meta-mode exclusion, graceful degradation. Fixed holodeck-control hooks.json format bug (silent failure since creation). See ARCHITECTURE.md § Boot-Time Behavioral Priming.
-- **v1.4.0** (March 2026) — Agent Teams adoption. All 4 research pipelines (A: Internet, B: Repo, C: Structured, D: NotebookLM) migrated to Agent Teams (fire-and-forget team pattern). Deep-research extracted to standalone plugin. NotebookLM ported to two-phase spawn with quota-aware sizing.
-- **v1.5.0** (March 2026) — Staff sessions (`/staff-session`). Agent Teams-based collaborative planning and review with configurable tiers (lightweight/standard/full). Two genres: plan mode (staff engineers craft plans from PM/EM objectives via parallel debate) and review mode (multi-perspective critique of existing artifacts). New debate messaging protocol (POSITION/CHALLENGE/CONCESSION/QUESTION). All 6 persona agents updated with Agent Teams tools. New `staff-synthesizer` agent for cross-referencing debate positions.
+- **v1.1.1** — Staff sessions (Agent Teams for collaborative planning/review), README positioning rewrite
+- **v1.1.0** — Agent Teams adoption for all research pipelines; deep-research extracted to standalone plugin; context pressure advisory hooks
+- **v1.0.0** — Initial public release: 6 plugins, 24 agents, 38 skills, enrichment-review-execution pipeline
 
 ---
 
@@ -208,54 +167,23 @@ Start a new session and verify with `/reload-plugins`. You should see all custom
 ## Directory Structure
 
 ```
-oduffy-custom/
-├── .claude-plugin/
-│   └── marketplace.json    # Marketplace manifest listing all plugins
-├── ARCHITECTURE.md         # Conceptual model and design philosophy
-├── coordinator/            # Core orchestration (always enabled)
-│   ├── .claude-plugin/plugin.json
-│   ├── capability-catalog.md # Boot-time behavioral primer (Route, Don't Execute)
-│   ├── routing.md          # Base routing table (universal reviewers)
-│   ├── agents/             # enricher, executor, patrik, zoli, review-integrator, staff-synthesizer
-│   ├── commands/           # handoff, session-start, session-end, staff-session, etc.
-│   ├── hooks/              # coordinator-reminder hook + capability catalog emission
-│   ├── pipelines/          # staff-session/ (team protocol + prompt templates)
-│   └── skills/             # brainstorming, executing-plans, requesting-staff-session, etc.
-├── game-dev/               # Game development domain
-│   ├── .claude-plugin/plugin.json
-│   ├── .mcp.json           # UE MCP server config
-│   ├── routing.md          # Routing fragment: Sid
-│   └── agents/             # sid
-├── web-dev/                # Web development domain
-│   ├── .claude-plugin/plugin.json
-│   ├── routing.md          # Routing fragment: Pali, Fru
-│   └── agents/             # pali, fru
-├── data-science/           # Data science domain
-│   ├── .claude-plugin/plugin.json
-│   ├── routing.md          # Routing fragment: Camelia
-│   └── agents/             # camelia
-├── holodeck-control/       # UE editor control domain
-│   ├── .claude-plugin/plugin.json
-│   ├── .mcp.json           # Holodeck control MCP server
-│   ├── routing.md          # Routing fragment: 4 domain agents
-│   └── agents/             # world-builder, asset-author, gameplay-engineer, infra-engineer
-├── holodeck-docs/          # UE documentation domain
-│   ├── .claude-plugin/plugin.json
-│   ├── .mcp.json           # Holodeck docs MCP server
-│   └── agents/             # ue-docs-researcher, ue-python-executor
-├── deep-research/          # Multi-agent research pipelines
-│   ├── .claude-plugin/plugin.json
-│   ├── CLAUDE.md            # Pipeline A/B/C documentation
-│   ├── agents/             # research-scout, research-specialist, research-synthesizer,
-│   │                       # repo-scout, repo-specialist, structured-synthesizer
-│   ├── commands/           # deep-research, deep-research-web, deep-research-repo, deep-research-structured
-│   └── pipelines/          # team protocols + prompt templates (A: web, B: repo, C: structured)
-└── notebooklm/             # NotebookLM media research (Agent Teams)
-    ├── .claude-plugin/plugin.json
-    ├── .mcp.json           # NotebookLM MCP server (plugin-scoped)
-    ├── CLAUDE.md            # Operating notes + auth guide
-    ├── agents/             # strategist, scout, worker, synthesizer
-    └── pipelines/          # team protocol + prompt templates
+coordinator-claude/
+├── plugins/
+│   ├── coordinator/            # Core orchestration (always enabled)
+│   │   ├── .claude-plugin/plugin.json
+│   │   ├── agents/             # enricher, executor, patrik, zoli, review-integrator, staff-synthesizer
+│   │   ├── commands/           # handoff, session-start, session-end, staff-session, etc.
+│   │   ├── hooks/              # coordinator-reminder hook + capability catalog emission
+│   │   ├── pipelines/          # staff-session/ (team protocol + prompt templates)
+│   │   └── skills/             # 38 workflow skills (brainstorming, TDD, debugging, etc.)
+│   ├── game-dev/               # Sid (Unreal Engine specialist)
+│   ├── web-dev/                # Pali (front-end) + Fru (UX flow)
+│   ├── data-science/           # Camelia (ML, statistics)
+│   ├── deep-research/          # Agent Teams research pipelines (A: web, B: repo, C: structured)
+│   └── notebooklm/             # NotebookLM media research via Agent Teams
+├── docs/                       # Architecture, customization, CI pipeline
+├── setup/                      # Installer
+└── assets/                     # Social preview card + generation template
 ```
 
 ## Key Files (Not in This Directory)

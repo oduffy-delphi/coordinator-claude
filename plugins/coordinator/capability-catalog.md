@@ -34,8 +34,17 @@ When a reviewer returns findings, **accept their expertise** — implement ALL i
 
 **Palí** — front-end review (tokens, design system, CSS). **Fru** — UX flow review (trust, clarity). Use /review-dispatch.
 
+**Agent Teams** — collaborative multi-agent work with messaging and shared task coordination:
+- `/staff-session --mode plan` — multi-perspective planning with persona debaters (Patrik, Zolí, Sid, etc.) + synthesizer. Use `coordinator:requesting-staff-session` to choose tier and composition.
+- `/staff-session --mode review` — same debate structure for critiquing existing artifacts. Lightweight tier falls through to `/review-dispatch`.
+- `/deep-research web` — Pipeline A: internet research (scout → specialists → synthesizer)
+- `/deep-research repo` — Pipeline B: repository analysis (scouts → specialists → synthesizer)
+- `/structured-research` — Pipeline C: schema-conforming batch research
+- `/notebooklm-research` — Pipeline D: media research via NotebookLM MCP
+
+When to use teams vs. subagents: teams when agents need to **communicate** (cross-pollinate, resolve contradictions, share discoveries); subagents when tasks are **independent** (no cross-agent value). Teams are fire-and-forget — the EM scopes, spawns, and is freed.
+
 **Pipeline orchestrators** (dispatch via commands, not directly):
 - **deep-research-orchestrator** — /deep-research dispatches this (lives in the deep-research plugin). Reads PIPELINE.md, runs Haiku→Sonnet→Opus.
 - **bug-sweep-orchestrator** — /bug-sweep dispatches this. Scans→analyzes→triages→fixes.
 - **architecture-audit-orchestrator** — /architecture-audit dispatches this. Inventories→analyzes→synthesizes atlas.
-- **structured-research-orchestrator** — /structured-research dispatches this. Spec-driven batch research across multiple subjects.

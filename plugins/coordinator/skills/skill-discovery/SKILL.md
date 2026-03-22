@@ -138,6 +138,13 @@ Commands are dispatch workflows — multi-phase agent pipelines invoked with one
 | `/structured-research <spec> [subject]` | **Batch research with schema-conforming output** — Pipeline C. Use for N entities with repeating structure (teams, companies, tools). Creates or runs a research spec. |
 | `/notebooklm-research <topic> [--sources ...] [--questions ...]` | **Media-rich research via NotebookLM** — Pipeline D. For YouTube videos, podcasts, audio, and other sources Claude can't access directly. Lives in the notebooklm plugin (enable plugin to access command). |
 
+### Collaborative Planning & Review (Agent Teams)
+| Command | When to Use |
+|---------|-------------|
+| `/staff-session --mode plan --tier standard\|full <objectives>` | **Multi-perspective planning** — persona agents (Patrik, Zolí, Sid, etc.) debate and produce a consensus plan. Standard = 2 debaters + synthesizer; Full = 3-5 debaters + synthesizer |
+| `/staff-session --mode review --tier standard\|full <artifact>` | **Multi-perspective review** — same debate structure but critiquing an existing plan, spec, or code artifact. Produces synthesized findings with persona attributions |
+| `/staff-session --mode review --tier lightweight <artifact>` | Falls through to `/review-dispatch` — single reviewer, no team created |
+
 ### Code Quality & Architecture
 | Command | When to Use |
 |---------|-------------|
@@ -169,10 +176,12 @@ Skills are behavioral protocols — they shape how you think about and approach 
 - **coordinator:test-driven-development** — RED-GREEN-REFACTOR cycle before writing implementation code
 - **coordinator:systematic-debugging** — Something's broken and you don't know why — root-cause investigation: reproduce, trace, identify, verify before proposing any fix
 - **coordinator:dispatching-parallel-agents** — Pattern for dispatching 2+ independent tasks in parallel
+- **coordinator:requesting-staff-session** — Agent Teams collaborative planning and review. Guides when to use `/staff-session` vs `/review-dispatch`, tier selection (lightweight/standard/full), team composition (auto or explicit persona selection), plan mode vs review mode
 
 ### Code Review
 - **coordinator:requesting-code-review** — Routes to `/review-dispatch` — how to prepare work for review
 - **coordinator:receiving-code-review** — How to receive and act on feedback with technical rigor, not performative agreement
+- **coordinator:requesting-staff-session** — For multi-perspective review with debate: `/staff-session --mode review`. Use when a single reviewer isn't enough — persona agents debate the artifact and produce synthesized findings. See the Collaborative Planning & Review command table above for invocation details.
 
 ### Git & Branching
 - **coordinator:using-git-worktrees** — Isolated workspaces per feature (for separate PRs, different base branches)
@@ -193,6 +202,7 @@ These directories contain pipeline definitions (`PIPELINE.md`) that the correspo
 | `/code-health` | `pipelines/daily-code-health/PIPELINE.md` |
 | `/deep-research` | `plugins/deep-research/pipelines/PIPELINE.md` |
 | `/structured-research` | `plugins/coordinator/pipelines/structured-research/PIPELINE.md` |
+| `/staff-session` | `plugins/coordinator/pipelines/staff-session/` (team-protocol, planner/reviewer/synthesizer prompt templates) |
 | `/distill` | `pipelines/artifact-distillation/PIPELINE.md` |
 
 ### Maintenance
