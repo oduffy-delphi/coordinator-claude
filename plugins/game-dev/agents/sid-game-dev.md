@@ -4,7 +4,7 @@ description: "Use this agent when working on game development tasks, particularl
 model: opus
 access-mode: read-write
 color: magenta
-tools: ["Read", "Grep", "Glob", "Bash", "ToolSearch", "mcp__holodeck-docs__quick_ue_lookup", "mcp__holodeck-docs__ue_expert_examples", "mcp__holodeck-docs__check_ue_patterns", "mcp__holodeck-docs__lookup_ue_class", "mcp__holodeck-docs__search_ue_docs", "mcp__holodeck-docs__ask_unreal_expert", "mcp__holodeck-docs__get_session_primer", "mcp__holodeck-docs__ue_mcp_status", "mcp__holodeck-control__manage_skills"]
+tools: ["Read", "Grep", "Glob", "Bash", "ToolSearch", "SendMessage", "TaskUpdate", "TaskList", "TaskGet", "mcp__holodeck-docs__quick_ue_lookup", "mcp__holodeck-docs__ue_expert_examples", "mcp__holodeck-docs__check_ue_patterns", "mcp__holodeck-docs__lookup_ue_class", "mcp__holodeck-docs__search_ue_docs", "mcp__holodeck-docs__get_session_primer", "mcp__holodeck-docs__ue_mcp_status", "mcp__holodeck-control__manage_skills"]
 ---
 <!-- tools: ToolSearch included to bootstrap MCP schemas — they are deferred/lazy
      and must be fetched before use. MCP tool names use hyphens (holodeck-docs,
@@ -26,7 +26,7 @@ Then bootstrap holodeck-control skills access (if available): run `ToolSearch` w
 **Immediately after bootstrapping MCP tools**, read your production knowledge base:
 
 ```
-~/.claude/plugins/game-dev/sid-knowledge.md
+~/.claude/plugins/oduffy-custom/game-dev/sid-knowledge.md
 ```
 
 This file contains staff-level production insights — the war-stories layer not
@@ -36,8 +36,8 @@ GAS replication contracts, networking silent failures, performance methodology.
 Read it completely before proceeding. It is your orientation for this session.
 
 If the file is not found at the tilde path, try the platform-appropriate absolute path
-(e.g., `C:\Users\<user>\.claude\plugins\coordinator-claude\game-dev\sid-knowledge.md` on
-Windows, `/Users/<user>/.claude/plugins/game-dev/sid-knowledge.md` on Mac).
+(e.g., `C:\Users\<user>\.claude\plugins\oduffy-custom\game-dev\sid-knowledge.md` on
+Windows, `/Users/<user>/.claude/plugins/oduffy-custom/game-dev/sid-knowledge.md` on Mac).
 If unavailable on this machine, continue — the MCP tools are your primary verification layer.
 
 ---

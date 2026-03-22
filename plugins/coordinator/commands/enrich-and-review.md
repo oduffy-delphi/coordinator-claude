@@ -23,7 +23,10 @@ If `$ARGUMENTS` is provided, use it to scope the work:
 Before enriching anything, verify the source plan has been reviewed:
 
 1. Check the plan document header for a `**Review:**` line
-2. If it says "Reviewed by [name] on [date]" or "Skipped per PM direction" → proceed
+2. If it matches any of these patterns → proceed:
+   - "Reviewed by [name] on [date]"
+   - "Skipped per PM direction"
+   - "Staff session ([participants]) — debated and synthesized" (from `/staff-session --mode plan`)
 3. If no review marker exists → **HALT** and report:
    - "This plan has not been through review. Route it through `/review-dispatch` first, or confirm PM override to skip."
 4. Do NOT proceed to Phase 1 until the gate is satisfied
