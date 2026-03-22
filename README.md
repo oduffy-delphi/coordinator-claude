@@ -4,7 +4,7 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 [![Opus](https://img.shields.io/badge/Model-Opus_4.6-orange)](https://www.anthropic.com/claude)
 [![Plugins](https://img.shields.io/badge/Plugins-6-green)](#what-you-get)
-[![Skills](https://img.shields.io/badge/Skills-35+-green)](#codified-skills)
+[![Skills](https://img.shields.io/badge/Skills-22-green)](#codified-skills)
 [![Agent Teams](https://img.shields.io/badge/Agent_Teams-3_pipelines-blueviolet)](#deep-research-pipelines)
 [![CI](https://img.shields.io/badge/CI-10_checks-brightgreen)](.github/workflows/validate-plugins.yml)
 
@@ -14,7 +14,7 @@
 
 ---
 
-**Contents:** [Why This Exists](#why-this-exists) · [What's Genuinely Different](#whats-genuinely-different) · [What You Get](#what-you-get) · [How a PM Uses This](#how-a-pm-uses-this) · [Quick Start](#quick-start) · [Customization](#customization) · [Architecture](#architecture) · [Credits](#credits--acknowledgments) · [License](#license)
+**Contents:** [Why This Exists](#why-this-exists) · [What's Distinctive Here](#whats-distinctive-here) · [What You Get](#what-you-get) · [How a PM Uses This](#how-a-pm-uses-this) · [Quick Start](#quick-start) · [Customization](#customization) · [Architecture](#architecture) · [Credits](#credits--acknowledgments) · [License](#license)
 
 **Quick install:**
 ```bash
@@ -34,23 +34,29 @@ This plugin system addresses those gaps:
 - **A division of labor.** A PM-EM model where Claude has standing authority over implementation and orchestration, but product decisions stay with you.
 - **Quality gates with teeth.** Sequential review pipelines where findings must be fixed before the next reviewer sees the artifact — not parallel reviews that get summarized into a suggestions list.
 
-## What's Genuinely Different
+## What's Distinctive Here
 
-The individual techniques here — subagents, review pipelines, model tiering, project instructions — are established patterns. What's less common is the combination. A [systematic novelty assessment](docs/research/2026-03-20-agent-orchestration-novelty-unified.md) (55+ sources, 9 patterns) found three patterns with no documented prior art:
+The building blocks in this repo are not inventions. Claude Code already supports plugins, hooks, subagents, and agent teams, and other agent frameworks already use role-specialized multi-agent workflows. What this repo adds is a more opinionated operating model on top of those primitives: structured delegation, explicit review stages, session continuity conventions, and a PM/EM collaboration frame for human-AI work.
 
-1. **Cognitive tiering** — Different model tiers doing fundamentally different *types* of cognitive work (Haiku verifies, Sonnet executes, Opus judges), not the same work at different capability levels. A [2026 academic survey](https://arxiv.org/html/2603.04445) explicitly identifies this as a research gap.
+The main differentiator is not a new category of agent architecture. It is the combination of existing patterns into a practical workflow for Claude Code: specialized workers, staged review, startup context injection, and research-oriented team coordination. Claude Code's own docs now describe agent teams as appropriate for parallel research, review, debugging, and cross-layer coordination, with teammates communicating directly through a shared task list.
 
-2. **Sequential multi-persona review with mandatory fix gates** — Domain expert reviews first, ALL findings applied, then generalist reviews the clean artifact. Every surveyed tool (Anthropic's own code review, CodeRabbit, GitHub Copilot) uses parallel+aggregate or single-pass instead.
+### Patterns We Emphasize
 
-3. **PM/EM authority partitioning (First Officer Doctrine)** — Standing role-level domain authority between human and AI that persists across sessions. The [National Academies](https://nap.nationalacademies.org/read/26355/chapter/4) identified persistent human-AI relationships as an explicit research gap.
+1. **Role-specialized model use.** We assign different Claude models to different workflow roles, such as orchestration, execution, and verification. This follows established multi-agent specialization patterns rather than claiming a new architectural category. Claude Code supports subagents with separate context windows, tool access, and permissions, which makes this style practical.
 
-4. **Fire-and-forget autonomous research teams** — Multi-model Agent Teams where the coordinator scopes work, spawns all teammates, and is *immediately freed*. The team self-coordinates via shared artifacts on disk and task-gated blocking — no orchestrator polling loop, no monitoring, no WRAP_UP broadcasts. Each model tier does fundamentally different cognitive work (Haiku scouts, Sonnet specialists, Opus synthesizer), and specialists self-govern their own convergence timing. This inverts the standard "orchestrator bottleneck" pattern found in frameworks like CrewAI, AutoGen, and LangGraph.
+2. **Staged review rather than one-pass review.** We prefer a workflow where specialist review happens before a generalist pass, instead of aggregating everything into a single review step. That is a process choice, not a claim of invention. GitHub's own Copilot code review now describes an agentic review architecture, which shows the broader direction of travel across coding tools.
 
-The **tiered context injection** system ("warm RAM") was found to be compositionally novel across [87 surveyed sources](docs/research/2026-03-20-agent-orchestration-novelty-unified.md#appendix-warm-ram--tiered-context-injection-research).
+3. **A PM/EM collaboration frame.** We use a simple rule of thumb: the human owns product direction and external decisions, while the agent owns implementation orchestration and technical delegation. The [human-AI teaming literature](https://nap.nationalacademies.org/read/26355/chapter/4) already treats role allocation, dynamic function allocation, and differentiated authority as core issues, so this should be read as an operational framing rather than a novel research concept.
+
+4. **Research-oriented team workflows.** Our research pipelines lean on Claude Code agent teams for parallel exploration, shared task coordination, and teammate-to-teammate communication. That capability is now documented by Anthropic, so the claim here is about our pipeline design, not about inventing autonomous research swarms.
+
+5. **Session-orientation conventions.** We use startup hooks, handoffs, and cached context artifacts to reduce cold starts and make long-running work easier to resume. Claude Code's hooks system supports SessionStart, UserPromptSubmit, SubagentStop, PreCompact, PostCompact, and SessionEnd, which makes this kind of workflow feasible.
+
+We do not claim that the core concepts here are unprecedented. The contribution is in the integration: packaging current Claude Code capabilities and established multi-agent patterns into a disciplined workflow system that is easier to run repeatedly across sessions and projects.
 
 For context on the broader landscape: [Bassim Eledath's 8 Levels of Agentic Engineering](https://www.bassimeledath.com/blog/levels-of-agentic-engineering), [Addy Osmani on Agentic Engineering](https://addyosmani.com/blog/agentic-engineering/), and [Mike Mason on Coherence Through Orchestration](https://mikemason.ca/writing/ai-coding-agents-jan-2026/) are good reference points.
 
-For the full picture — the ecosystem survey, the novelty assessment, the productivity paradox, and the real constraints — see **[State of the Meta](docs/research/STATE-OF-THE-META.md)**.
+For the full picture — the ecosystem survey, the [novelty assessment](docs/research/2026-03-20-agent-orchestration-novelty-unified.md), and the real constraints — see **[State of the Meta](docs/research/STATE-OF-THE-META.md)**.
 
 ## What You Get
 
@@ -129,7 +135,7 @@ Code reviews route through specialized reviewer personas — senior engineer, am
 
 ### Codified Skills
 
-35+ tested behavioral protocols — from brainstorming to debugging to code review to git workflow. Not suggestions; enforced workflows with checklists. The coordinator follows the protocol when a skill exists rather than improvising.
+22 tested behavioral protocols — from brainstorming to debugging to code review to git workflow. Not suggestions; enforced workflows with checklists. The coordinator follows the protocol when a skill exists rather than improvising.
 
 ### Workday Commands
 

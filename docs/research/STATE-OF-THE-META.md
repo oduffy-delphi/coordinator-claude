@@ -10,7 +10,7 @@
 
 This is a top-level orientation for anyone wondering: *what are people actually doing with Claude Code, and how does this project compare?* It synthesizes two complementary research efforts:
 
-1. **[Agent Orchestration Novelty Assessment](2026-03-20-agent-orchestration-novelty-unified.md)** (2026-03-20) — Inward-looking: assessed our 9 architectural patterns against 55+ sources from the multi-agent framework literature, coding tools, and academia. Found three patterns with no documented prior art.
+1. **[Agent Orchestration Novelty Assessment](2026-03-20-agent-orchestration-novelty-unified.md)** (2026-03-20) — Inward-looking: assessed our 9 architectural patterns against 55+ sources from the multi-agent framework literature, coding tools, and academia. Positions the system as an opinionated integration of existing patterns with a strong workflow layer.
 
 2. **[Novel Claude Code Implementations](2026-03-21-novel-claude-code-implementations.md)** (2026-03-21) — Outward-looking: surveyed the Claude Code ecosystem for ambitious implementations, meta-strategies, and honest criticism. 5 topic specialists collaborating via Agent Teams, 30+ sources. Found the productivity perception gap, the major community frameworks, and the real limitations.
 
@@ -53,14 +53,14 @@ This doesn't mean the tools don't help. Enterprise metrics (Spotify, TELUS, Palo
 - Skills for domain knowledge packaging (official best practice)
 - Context management strategies (universal concern)
 
-### What we do that's less common
-According to the [novelty assessment](2026-03-20-agent-orchestration-novelty-unified.md) (55+ sources, 87 in the warm RAM study), three patterns have **no documented prior art**:
+### What we emphasize
+According to the [novelty assessment](2026-03-20-agent-orchestration-novelty-unified.md) (55+ sources, 87 in the warm RAM study), the system's contribution is in the integration of established patterns into a disciplined workflow:
 
-1. **Cognitive tiering** — Haiku verifies/grounds, Sonnet executes, Opus judges. Not cost cascading (same task, cheaper model first) but different cognitive work per tier. The 2026 academic survey on model routing explicitly identifies this as a research gap.
+1. **Cognitive tiering** — Haiku verifies/grounds, Sonnet executes, Opus judges. An established multi-agent specialization pattern; our contribution is the specific Anthropic model-to-role mapping and surrounding workflow discipline.
 
-2. **Sequential multi-persona review with mandatory fix gates** — Domain expert reviews first, ALL findings applied, then generalist reviews clean artifacts. Every surveyed tool uses parallel+aggregate or single-pass. No prior art for the fix-between-reviewers pattern.
+2. **Sequential multi-persona review with mandatory fix gates** — Domain expert reviews first, ALL findings applied, then generalist reviews clean artifacts. An uncommon workflow choice compared to the industry default of parallel+aggregate or single-pass, but staged review and iterative critique loops exist in the broader agent-systems landscape.
 
-3. **PM/EM authority partitioning (First Officer Doctrine)** — Standing role-level domain boundaries between human and AI. The PM holds product authority, the EM holds engineering authority. Zero indexed matches in AI/agent literature. National Academies identified persistent human-AI relationships as an explicit research gap.
+3. **PM/EM authority partitioning (First Officer Doctrine)** — Standing role-level domain boundaries between human and AI. The PM holds product authority, the EM holds engineering authority. An operational framing of ideas already established in human-AI teaming literature, including the National Academies' work on role differentiation and function allocation.
 
 ### What others do that we should look at
 - **gstack's QA pattern**: Real Chromium browser automation with persistent cookies/localStorage — the highest-signal differentiator in the ecosystem for web projects
