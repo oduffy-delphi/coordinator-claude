@@ -44,7 +44,7 @@ All changes implemented as additive edits to `plugins/coordinator/pipelines/deep
 ### Priority 3: Citation-First Synthesis — REFINED, IMPLEMENTED
 
 **dzhng:** URLs appended as flat bibliography. Source provenance completely lost at the learning extraction step — by synthesis time, there's no mapping between learnings and source URLs.
-**open_deep_research:** Strongest area. Multi-stage citation pipeline: per-search formatting → lossless compression with mandatory inline citations → final report with `[Title](URL)` format. Citations are appended/inline, not lead-with.
+**open_deep_research:** Strongest area. Multi-stage citation pipeline: per-search formatting → lossless compression with mandatory inline citations → final report with Title+URL inline citation format. Citations are appended/inline, not lead-with.
 
 **What we implemented:** Two-part approach: (1) adopted open_deep_research's "preserve all citations through transformations" philosophy as a reinforcement to our Phase 2 template, (2) added lead-with-source format: "According to [Source], [claim]" rather than "[Claim] ([Source])". Neither repo leads with citations — this is a step beyond the state of the art in these implementations.
 
