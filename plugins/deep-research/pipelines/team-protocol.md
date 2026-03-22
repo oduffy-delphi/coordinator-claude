@@ -12,7 +12,7 @@ Agent Teams-based deep research: the EM scopes research and crafts search querie
 |------|-------|-------|----------------|
 | **Scout** | Haiku | 1 | Execute EM-crafted search queries, mechanically vet accessibility, build shared source corpus |
 | **Specialist** | Sonnet | 3-5 | Deep-read sources from corpus, verify claims, cross-pollinate with peers, write findings |
-| **Synthesizer** | Opus | 1 | Cross-reference all specialist findings, resolve contradictions, write final document |
+| **Synthesizer** | Opus | 1 | Cross-reference all specialist findings, resolve contradictions, write final document; optionally write Synthesizer Advisory |
 
 ## Team Lifecycle
 
@@ -20,7 +20,7 @@ Agent Teams-based deep research: the EM scopes research and crafts search querie
 EM: Scope + craft queries → write scope.md → Create team → Spawn all teammates → FREED
 Scout: Read scope.md → WebSearch → WebFetch (vet accessibility) → Write source-corpus.md → Mark complete → [idle]
 Specialists: [blocked by scout] → Read corpus → Deep-read → Cross-pollinate → Converge → Mark complete → DONE to synthesizer
-Synthesizer: [blocked by specialists, waiting for DONE msgs] → Verify all complete → Read findings → Synthesize → Mark complete
+Synthesizer: [blocked by specialists, waiting for DONE msgs] → Verify all complete → Read findings → Synthesize → Write advisory (if anything beyond scope) → Mark complete
 ```
 
 ## Blocking Chain
@@ -150,3 +150,4 @@ Begin convergence when ANY of these conditions are met (AND the floor is satisfi
 
 - Scout writes to: `{scratch-dir}/source-corpus.md`
 - Each specialist writes to: `{scratch-dir}/{topic-letter}-findings.md`
+- Synthesizer writes advisory to: `{output-path}-advisory.md` (+ backup at `{scratch-dir}/advisory.md`); omitted if nothing beyond scope

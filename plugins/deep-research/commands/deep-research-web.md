@@ -30,6 +30,7 @@ The scout handles mechanical source discovery so specialists can focus on analys
    mkdir -p tasks/scratch/deep-research-teams/{run-id}
    ```
 6. Set output path: `docs/research/YYYY-MM-DD-{topic-slug}.md`
+7. Set advisory path: `docs/research/YYYY-MM-DD-{topic-slug}-advisory.md` (replace `.md` with `-advisory.md`)
 
 Announce: "Running deep research (Agent Teams) on '{topic}'."
 
@@ -90,7 +91,7 @@ TaskUpdate(taskId: "{synthesizer-id}", addBlockedBy: ["{specialist-A-id}", "{spe
 ### Scout (Haiku)
 
 Read the scout prompt template from:
-`~/.claude/plugins/deep-research/pipelines/scout-prompt-template.md`
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/scout-prompt-template.md`
 
 Fill in template fields: `[RESEARCH_TOPIC]`, `[PROJECT_CONTEXT]`, `[SCRATCH_DIR]`, `[TASK_ID]`, `[SPAWN_TIMESTAMP]`.
 
@@ -108,7 +109,7 @@ TaskUpdate(taskId: "{scout-id}", owner: "scout")
 ### Specialists (Sonnet)
 
 For each topic area, read the specialist prompt template from:
-`~/.claude/plugins/deep-research/pipelines/specialist-prompt-template.md`
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/specialist-prompt-template.md`
 
 Fill in ALL template fields — including `[SYNTHESIZER_NAME]` (use `"synthesizer"` as the teammate name). This is how specialists know who to send the `DONE` wake-up message to.
 
@@ -142,8 +143,9 @@ TaskUpdate(taskId: "{synthesis-id}", owner: "synthesizer")
 - The research question and project context
 - The scratch directory path (where specialist outputs will be): `{scratch-dir}`
 - The output path for the final document: `{output-path}`
+- The advisory output path: `{advisory-path}` (pre-computed in Step 1 — do not ask the synthesizer to derive it)
 - The synthesis task ID to mark complete when done
-- Instruction: "Read all {scratch-dir}/*-findings.md files, cross-reference, resolve contradictions, and write the synthesis document. Follow your agent definition's output format and principles."
+- Instruction: "Read all {scratch-dir}/*-findings.md files, cross-reference, resolve contradictions, and write the synthesis document. Follow your agent definition's output format and principles. After synthesis, write an advisory if you have substantive observations beyond the scope (see advisory template in your agent definition). Write advisory to both {advisory-path} AND {scratch-dir}/advisory.md. If nothing beyond scope, skip and note 'No advisory' in your completion message."
 
 Dispatch ALL teammates in a single message (parallel).
 
@@ -161,7 +163,8 @@ When you receive a notification that the synthesis task is complete:
 
 1. Read the synthesis document at `{output-path}`
 2. Verify it has substantive content (not just headers)
-3. Commit:
+3. Check for advisory: `test -f {advisory-path}` — if the file exists, read it
+4. Commit:
    ```bash
    git add -A && git commit -m "deep-research: complete — {topic-slug}"
    ```
@@ -173,7 +176,7 @@ When you receive a notification that the synthesis task is complete:
    ```
 5. Shut down the team: `TeamDelete(team_name: "research-{topic-slug}")`
 6. Commit: `git add -A && git commit -m "deep-research: archive + cleanup"`
-7. Present executive summary to PM for discussion.
+7. Present executive summary to PM for discussion. If advisory exists, mention it: "The synthesizer flagged observations beyond scope — see the advisory at `{advisory-path}`."
 
 ## Error Handling
 

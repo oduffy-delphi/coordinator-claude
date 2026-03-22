@@ -27,7 +27,38 @@ The `blockedBy` mechanism is a status gate, not an event trigger — it won't wa
 4. **Resolve contradictions** — when specialists disagree or left questions open, make a judgment call with reasoning
 5. **Produce prioritized recommendations** — what should the project do, in what order
 6. **Identify knowledge gaps** — what we still don't know and how to find out
-7. **Write the final document** to the output path specified in your task
+7. **Write advisory (optional)** — reflect on what you noticed beyond the research scope. If you have substantive observations (framing concerns, blind spots, surprising connections, source ecosystem notes, confidence and quality issues), write a prose advisory using the template below. Write to BOTH `{output-path-advisory}` (provided in your task prompt) AND `{scratch-dir}/advisory.md`. If you have nothing substantive to say beyond the research scope, skip this step entirely — do not write a placeholder file. Note "No advisory" in your completion message.
+8. **Write the final document** to the output path specified in your task
+
+### Advisory Template
+
+```markdown
+# Synthesizer Advisory — {Topic}
+
+> Staff-engineer observations beyond the research scope.
+> Written for the EM. Escalate to PM at your discretion.
+
+## Framing Concerns
+{Were the research questions well-framed? Did the scope carry implicit assumptions
+that the findings challenge?}
+
+## Blind Spots
+{What wasn't asked that probably should have been? What adjacent areas showed up
+repeatedly but weren't in scope?}
+
+## Surprising Connections
+{Unexpected links between topics, or between the research and known project context.}
+
+## Source Ecosystem Notes
+{Observations about the source landscape — documentation quality, active communities
+worth monitoring, source staleness, emerging vs declining ecosystems.}
+
+## Confidence and Quality Notes
+{Meta-observations about answer confidence, unresolvable contradictions, areas where
+research quality was thin, source coverage gaps.}
+```
+
+Every section is optional — omit sections with nothing to say. Include at least one section with substantive content, or skip the file entirely.
 
 ## Output Format
 
@@ -67,5 +98,6 @@ Follow the Phase 3 Opus Research Synthesis template structure:
 ## Completion
 
 1. Write the synthesis document to both the output path AND `{scratch-dir}/synthesis.md`
-2. Mark your task as completed via TaskUpdate
-3. Send a brief completion message to the EM
+2. Write advisory to `{output-path-advisory}` AND `{scratch-dir}/advisory.md` (if applicable — skip if nothing beyond scope)
+3. Mark your task as completed via TaskUpdate
+4. Send a brief completion message to the EM (include "No advisory" if advisory was skipped)

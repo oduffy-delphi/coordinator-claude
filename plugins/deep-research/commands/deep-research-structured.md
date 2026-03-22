@@ -106,7 +106,7 @@ TaskUpdate(taskId: "{synthesizer-id}", addBlockedBy: ["{verifier-1-id}", "{verif
 ### Scout (Haiku)
 
 Read the scout prompt template from:
-`~/.claude/plugins/deep-research/pipelines/structured-scout-prompt-template.md`
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/structured-scout-prompt-template.md`
 
 Fill in template fields: `[SUBJECT]`, `[SPEC_PATH]`, `[SCRATCH_DIR]`, `[TASK_ID]`, `[SPAWN_TIMESTAMP]`.
 
@@ -124,7 +124,7 @@ TaskUpdate(taskId: "{scout-id}", owner: "scout")
 ### Verifiers (Sonnet)
 
 For each topic, read the verifier prompt template from:
-`~/.claude/plugins/deep-research/pipelines/structured-verifier-prompt-template.md`
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/structured-verifier-prompt-template.md`
 
 Fill in ALL template fields — including `[SYNTHESIZER_NAME]` (use `"synthesizer"` as the teammate name), `[GATE_RULES]` (extracted from spec in Step 2), and `[ACCEPTANCE_CRITERIA]` (from spec). This is how verifiers know who to send the `DONE` wake-up message to and how to self-check before converging.
 
@@ -143,7 +143,7 @@ TaskUpdate(taskId: "{id}", owner: "verifier-{topic_id}")
 ### Synthesizer (Opus)
 
 Read the synthesizer prompt template from:
-`~/.claude/plugins/deep-research/pipelines/structured-synthesizer-prompt-template.md`
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/structured-synthesizer-prompt-template.md`
 
 Fill in ALL template fields — including `[OUTPUT_SCHEMA]` (full schema from spec), `[PHASE_2_GATE_RULES]` (quality gate rules for final output from spec), `[SUBJECT]`, `[SCRATCH_DIR]`, `[SPEC_PATH]`, `[TASK_ID]`.
 
@@ -173,28 +173,29 @@ After spawning all teammates, announce:
 When you receive a notification that the synthesis task is complete:
 
 1. Read the synthesizer output from `{scratch-dir}/synthesis-output.yaml` (or `.json`)
-2. **Validate schema conformance BEFORE TeamDelete:**
+2. Check for advisory: `test -f {scratch-dir}/advisory.md` — if the file exists, read it (advisory is archived automatically with the scratch directory in step 6)
+3. **Validate schema conformance BEFORE TeamDelete:**
    - Check all required fields from `output_schema` are present
    - Check enum values match the spec's allowed values
    - Check array fields meet minimum length requirements from spec
    - If validation **fails**: keep team alive, send a correction message to the synthesizer via `SendMessage` listing the specific fields that failed, and wait for a revised output
-   - If validation **passes**: proceed to step 3
-3. Update the manifest:
+   - If validation **passes**: proceed to step 4
+4. Update the manifest:
    - Set subject status to `complete`
    - Record `manifest_version: 2`
-4. Commit:
+5. Commit:
    ```bash
    git add -A && git commit -m "deep-research: structured complete — {subject-slug}"
    ```
-5. Archive paper trail:
+6. Archive paper trail (advisory archived automatically here with the rest of scratch):
    ```bash
    mkdir -p docs/research/archive/YYYY-MM-DD-{subject-slug}
    cp -r {scratch-dir}/* docs/research/archive/YYYY-MM-DD-{subject-slug}/
    rm -rf {scratch-dir}
    ```
-6. Shut down the team: `TeamDelete(team_name: "structured-{subject-slug}")`
-7. Commit: `git add -A && git commit -m "deep-research: structured archive + cleanup"`
-8. Present summary of schema changes (CONFIRMED / UPDATED / NEW / REFUTED counts) to PM for review.
+7. Shut down the team: `TeamDelete(team_name: "structured-{subject-slug}")`
+8. Commit: `git add -A && git commit -m "deep-research: structured archive + cleanup"`
+9. Present summary of schema changes (CONFIRMED / UPDATED / NEW / REFUTED counts) to PM for review. If advisory exists, mention it: "The synthesizer flagged observations beyond scope — see the advisory (archived with paper trail at `docs/research/archive/YYYY-MM-DD-{subject-slug}/advisory.md`)."
 
 ## Error Handling
 

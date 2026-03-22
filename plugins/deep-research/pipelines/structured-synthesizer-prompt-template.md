@@ -62,8 +62,9 @@ as wake-up signals.
    - All array fields meet minimum counts from acceptance criteria
    - No prose in the structured data section
 7. **Write output** to both [OUTPUT_PATH] and [SCRATCH_DIR]/synthesis.md
-8. **Mark your task as completed** via TaskUpdate
-9. **Send a brief completion message** to the EM
+8. **Write advisory (optional)** — reflect on what you noticed beyond the research scope. If you have substantive observations (framing concerns, blind spots, surprising connections, source ecosystem notes, confidence and quality issues), write a prose advisory to [SCRATCH_DIR]/advisory.md ONLY (not alongside the data output file). If nothing substantive beyond scope, skip entirely — do not write a placeholder. Use the advisory template from your agent definition.
+9. **Mark your task as completed** via TaskUpdate
+10. **Send a brief completion message** to the EM (include "No advisory" if advisory was skipped)
 
 ## Merge Rules
 
@@ -125,4 +126,5 @@ document the conflict and resolution:]
 - The structured data section must be copy-pasteable into the target data file.
 - Validate against Phase 2 gate rules before writing — document any failures.
 - Do NOT message peers — the verifiers have already completed; you are the terminal step.
+- Advisory goes to [SCRATCH_DIR]/advisory.md ONLY — never alongside the schema-locked data output file.
 ```
