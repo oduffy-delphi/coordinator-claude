@@ -20,7 +20,7 @@ Session-based workflows generate artifacts: plan files, handoff archives, featur
 | `plans/` | Session plan files (`*.md`) | Delete plans older than 14 days with no open references |
 | `archive/handoffs/` | Consumed handoff files | Keep the most recent 10; delete the rest |
 | `tasks/*/` | Feature task directories | Delete dirs where all items are `[x]` completed and the feature branch is merged |
-| `.claude/handoffs/` | Active handoffs | Chain-aware archival (handled by `handoff-archival`); this skill does NOT touch active handoffs |
+| `tasks/handoffs/` | Active handoffs | Chain-aware archival (handled by `handoff-archival`); this skill does NOT touch active handoffs |
 
 ## Steps
 
@@ -39,7 +39,7 @@ Run this phase first, always. Present the results to the PM before proceeding.
    **Plans (`plans/*.md`):**
    - PRUNE if: file is older than 14 days AND not referenced by any active handoff, task file, or MEMORY.md entry
    - KEEP if: referenced by an active handoff or in-progress task dir, OR younger than 14 days
-   - To check references: grep the filename across `.claude/handoffs/`, `tasks/`, and `MEMORY.md`
+   - To check references: grep the filename across `tasks/handoffs/`, `tasks/`, and `MEMORY.md`
 
    **Archived handoffs (`archive/handoffs/*.md`):**
    - KEEP the 10 most recent by filename timestamp

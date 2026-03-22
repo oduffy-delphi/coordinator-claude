@@ -47,7 +47,7 @@ Phase 0 (Coordinator) → Phase 1 (Haiku ×N, parallel) → Phase 1.5 (Haiku ×N
 2. **Catalog artifact formats:** identify which directories contain frontmatter-bearing markdown, plain markdown, JSON, or mixed formats. Pass format hints per batch to Phase 1 agents so Haiku parses structured metadata separately from prose content.
 3. **Inventory existing wiki:** `docs/guides/`, `docs/decisions/` — needed for idempotent merging
 4. **Read distillation log** (`docs/guides/.distill-log.md`) if it exists — exclude already-distilled artifacts from batching
-5. **Read `.claude/handoffs/`** for active context (read-only, never deleted)
+5. **Read `tasks/handoffs/`** for active context (read-only, never deleted)
 6. **Generate run ID** (format: `YYYY-MM-DD-HHhMM`), create scratch dir at `.claude/scratch/artifact-distillation/{run-id}/`
 7. **Sort artifacts chronologically** within each source directory (temporal ordering preserved through pipeline — critical for detecting superseded decisions)
 8. **Group artifacts into 4-8 batches** of ~20-50 files each (by source dir + chronological window)
@@ -237,7 +237,7 @@ Plus PM review time at Phase 4 (variable). Interstitial overhead (coordinator re
 | Writing custom dispatch prompts | Templates in `agent-prompts.md` are tested infrastructure. Copy verbatim, fill blanks. |
 | Haiku synthesizing instead of cataloging | "Completeness matters more than analysis" instruction is in the Phase 1 template. Don't remove it. |
 | Delta operation references non-existent heading | Phase 3 Opus flags these as errors rather than guessing — surface for coordinator review |
-| Deleting active handoff references | Phase 0 reads `.claude/handoffs/` for active context — those files are read-only, never batched |
+| Deleting active handoff references | Phase 0 reads `tasks/handoffs/` for active context — those files are read-only, never batched |
 | Guide drift across runs | Delta format for existing guides — only changed sections included, not full rewrites |
 | Artifacts distilled twice | Distillation log (`docs/guides/.distill-log.md`) excludes already-processed artifacts at Phase 0 |
 | PM skips approval and deletion runs | "Wait for explicit approval" is unconditional — no timeout, no auto-proceed |

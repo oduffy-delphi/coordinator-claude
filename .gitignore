@@ -6,7 +6,6 @@ plans/
 tasks/
 archive/
 projects/
-.claude/handoffs/
 
 # OS
 .DS_Store
