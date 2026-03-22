@@ -31,7 +31,8 @@ Scouts produce the shared thoroughness artifact that Sonnets would naturally ski
    mkdir -p tasks/scratch/deep-research-teams/{run-id}
    ```
 7. Set output path: `docs/research/YYYY-MM-DD-{topic-slug}.md`
-8. If `--compare`: set gap analysis path: `docs/research/YYYY-MM-DD-{topic-slug}-gap-analysis.md`
+8. Set advisory path: `docs/research/YYYY-MM-DD-{topic-slug}-advisory.md` (replace `.md` with `-advisory.md` on the assessment output path)
+9. If `--compare`: set gap analysis path: `docs/research/YYYY-MM-DD-{topic-slug}-gap-analysis.md`
 
 Announce: "Running Pipeline B (repo research, Agent Teams) on {repo-path}."
 
@@ -120,7 +121,8 @@ TaskUpdate(taskId: "{synthesizer-id}", addBlockedBy: ["{specialist-A-id}", "{spe
 
 ### Scouts (Haiku)
 
-Read the scout prompt template from this plugin's `pipelines/repo-scout-prompt-template.md`.
+Read the scout prompt template from:
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/repo-scout-prompt-template.md`
 
 Fill in template fields for each scout. Scout 1 gets chunks A+B, Scout 2 gets chunks C+D.
 
@@ -146,7 +148,8 @@ TaskUpdate(taskId: "{scout-2-id}", owner: "scout-2")
 
 ### Specialists (Sonnet)
 
-For each chunk, read the specialist prompt template from this plugin's `pipelines/repo-specialist-prompt-template.md`.
+For each chunk, read the specialist prompt template from:
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/repo-specialist-prompt-template.md`
 
 Fill in ALL template fields — including:
 - `[SYNTHESIZER_NAME]` → `"synthesizer"`
@@ -168,10 +171,12 @@ TaskUpdate(taskId: "{specialist-id}", owner: "chunk-{letter}")
 
 ### Synthesizer (Opus)
 
-Read the synthesizer prompt template from this plugin's `pipelines/repo-synthesizer-prompt-template.md`.
+Read the synthesizer prompt template from:
+`~/.claude/plugins/oduffy-custom/deep-research/pipelines/repo-synthesizer-prompt-template.md`
 
 Fill in ALL template fields:
 - `[REPO_NAME]`, `[SCRATCH_DIR]`, `[OUTPUT_PATH]`, `[TASK_ID]`
+- `[ADVISORY_PATH]` → advisory path computed in Step 1
 - `[COMPARE_MODE]` → true/false
 - If compare: `[COMPARE_PROJECT_NAME]`, `[GAP_ANALYSIS_PATH]`
 
@@ -203,7 +208,8 @@ When you receive a notification that the synthesis task is complete:
 1. Read the synthesis document at `{output-path}`
 2. Verify it has substantive content (not just headers)
 3. If comparison mode: read the gap analysis at `{gap-analysis-path}` and verify
-4. Commit:
+4. Check for advisory: `test -f {advisory-path}` — if the file exists, read it
+5. Commit:
    ```bash
    git add -A && git commit -m "deep-research: complete — {topic-slug}"
    ```
@@ -215,7 +221,7 @@ When you receive a notification that the synthesis task is complete:
    ```
 6. Shut down the team: `TeamDelete(team_name: "repo-research-{topic-slug}")`
 7. Commit: `git add -A && git commit -m "deep-research: archive + cleanup"`
-8. Present executive summary to PM for discussion.
+8. Present executive summary to PM for discussion. If advisory exists, mention it: "The synthesizer flagged observations beyond scope — see the advisory at `{advisory-path}`."
 
 ## Error Handling
 

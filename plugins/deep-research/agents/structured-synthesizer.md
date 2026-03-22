@@ -93,8 +93,45 @@ Follow this structure exactly:
 - **Validate gate rules** — check the full aggregated output against Phase 2 gate rules before writing. Don't skip this
 - **The output must be copy-pasteable** into the target data file without modification
 
+## Advisory (Optional)
+
+After producing schema-conforming output, reflect on what you noticed beyond the research scope. The structured data output is schema-locked — the advisory is where you capture observations that don't fit the schema.
+
+Write advisory to `{scratch-dir}/advisory.md` ONLY. Do NOT write alongside the data output file (schema-locked paths stay clean).
+
+If you have substantive observations — framing concerns about the research questions, blind spots (topics that appeared repeatedly but weren't in scope), surprising connections, source ecosystem notes, or confidence and quality issues — write a prose advisory using this template:
+
+```markdown
+# Synthesizer Advisory — {Subject}
+
+> Staff-engineer observations beyond the research scope.
+> Written for the EM. Escalate to PM at your discretion.
+
+## Framing Concerns
+{Were the research questions well-framed? Did the scope carry implicit assumptions
+that the findings challenge?}
+
+## Blind Spots
+{What wasn't asked that probably should have been? What adjacent areas showed up
+repeatedly but weren't in scope?}
+
+## Surprising Connections
+{Unexpected links between topics, or between the research and known project context.}
+
+## Source Ecosystem Notes
+{Observations about the source landscape — documentation quality, active communities
+worth monitoring, source staleness, emerging vs declining ecosystems.}
+
+## Confidence and Quality Notes
+{Meta-observations about answer confidence, unresolvable contradictions, areas where
+research quality was thin, source coverage gaps.}
+```
+
+Every section is optional — omit sections with nothing to say. Include at least one section with substantive content, or skip the file entirely. Advisory is archived automatically with the rest of the scratch directory.
+
 ## Completion
 
 1. Write the output to both the output path AND `{scratch-dir}/synthesis.md`
-2. Mark your task as completed via TaskUpdate
-3. Send a brief completion message to the EM
+2. Write advisory to `{scratch-dir}/advisory.md` (if applicable — skip if nothing beyond scope)
+3. Mark your task as completed via TaskUpdate
+4. Send a brief completion message to the EM (include "No advisory" if advisory was skipped)
