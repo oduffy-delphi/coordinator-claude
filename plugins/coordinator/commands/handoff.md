@@ -10,10 +10,10 @@ Capture the current session state so future sessions (or other agents) can pick 
 
 ## Instructions
 
-When invoked, create a handoff document in `.claude/handoffs/` (git-tracked). Each session writes its own file (unique timestamp), so multiple concurrent sessions never overwrite each other.
+When invoked, create a handoff document in `tasks/handoffs/` (git-tracked). Each session writes its own file (unique timestamp), so multiple concurrent sessions never overwrite each other.
 
 **Path convention:**
-- **Active handoffs:** `.claude/handoffs/*.md` — current, available for `/session-start` pickup
+- **Active handoffs:** `tasks/handoffs/*.md` — current, available for `/session-start` pickup
 - **Archived handoffs:** `archive/handoffs/*.md` — consumed, kept as paper trail
 - Both are git-tracked. `.claude/` must NOT be in `.gitignore` — it contains project configuration that travels with the repo.
 
@@ -27,7 +27,7 @@ When invoked, create a handoff document in `.claude/handoffs/` (git-tracked). Ea
 
 **Do this first. Do not run git commands, read files, or do anything else before writing the handoff.** You already have everything you need in your conversation context.
 
-Generate a filename: `.claude/handoffs/{YYYY-MM-DD}_{HHMMSS}_{session-id}.md` where:
+Generate a filename: `tasks/handoffs/{YYYY-MM-DD}_{HHMMSS}_{session-id}.md` where:
 - `{YYYY-MM-DD}` is the current date
 - `{HHMMSS}` is the current time in 24-hour format (e.g., 143052 for 2:30:52 PM)
 - `{session-id}` is a short identifier (first 8 chars of session UUID if known, otherwise `manual`)
@@ -86,7 +86,7 @@ _Continuing from [previous handoff filename]: [what the prior session had comple
 - [file path] — [one-line description of change]
 ```
 
-**Anti-amnesia chain:** The `_Continuing from..._` preamble in `## What Was Accomplished` creates a chain — any single handoff is a self-contained orientation point, not just an incremental update. To populate it: read the most recent file in `.claude/handoffs/` by filename timestamp. If one exists, open with a 2-3 sentence synthesis of that prior state. If no prior handoff exists, omit the preamble. This takes seconds and prevents every future session from re-deriving context.
+**Anti-amnesia chain:** The `_Continuing from..._` preamble in `## What Was Accomplished` creates a chain — any single handoff is a self-contained orientation point, not just an incremental update. To populate it: read the most recent file in `tasks/handoffs/` by filename timestamp. If one exists, open with a 2-3 sentence synthesis of that prior state. If no prior handoff exists, omit the preamble. This takes seconds and prevents every future session from re-deriving context.
 
 **Cascading unresolved items:** When reading the predecessor, check its `## Recommended Next Steps` and `## Carried Forward` sections for items this session did NOT complete. Any unresolved items **must** be carried forward into the new handoff's `## Carried Forward` section — they don't disappear just because a session ended. Each carried item retains its origin annotation (e.g., `_(carried from 2026-03-20_100000_abc123.md)_`) so the full lineage is visible. Items leave the cascade only when: (1) completed by a session (moved to `## What Was Accomplished`), or (2) explicitly dismissed by the PM. A session cannot silently drop a carried item.
 
@@ -132,10 +132,10 @@ If the project uses a compiled language with a running IDE or editor (e.g., Unre
 #### Step 4: Confirm
 
 Remind the user:
-- "Handoff saved to `.claude/handoffs/`. Available for any future session to pick up via `/session-start`."
+- "Handoff saved to `tasks/handoffs/`. Available for any future session to pick up via `/session-start`."
 - "Run `/update-docs` if you want repo-wide documentation maintenance (directory sync, handoff archiving to `archive/handoffs/`)."
 
-**Verify `.gitignore`:** Quickly check that `.claude/` is NOT gitignored. If it is, warn the user — handoffs in a gitignored directory will be invisible to other sessions and lost on clone.
+**Verify `.gitignore`:** Quickly check that `tasks/` is NOT gitignored. If it is, warn the user — handoffs in a gitignored directory will be invisible to other sessions and lost on clone.
 
 ### Notes
 
@@ -144,5 +144,5 @@ Remind the user:
 - Focus on state that MEMORY.md doesn't capture: in-progress work, blockers, uncommitted changes
 - If the user provides arguments (e.g., `/handoff focus on auth refactor`), incorporate that context
 - **Cleanup:** During `/handoff`, archive the predecessor after carrying forward its unresolved items. General handoff archiving (48-hour sweep) is handled by `/update-docs` — no broader sweep here.
-- **Active vs archived:** Active handoffs live in `.claude/handoffs/` (available for pickup). Archived handoffs live in `archive/handoffs/` (paper trail). Both are git-tracked.
+- **Active vs archived:** Active handoffs live in `tasks/handoffs/` (available for pickup). Archived handoffs live in `archive/handoffs/` (paper trail). Both are git-tracked.
 - **User context:** If `$ARGUMENTS` is provided (e.g., `/handoff focus on auth refactor`), incorporate that context into the handoff's "In-Progress Work" and "Recommended Next Steps" sections.

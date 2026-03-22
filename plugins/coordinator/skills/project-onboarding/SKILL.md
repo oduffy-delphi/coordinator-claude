@@ -30,7 +30,7 @@ Check for each of these and record status (exists / missing / incomplete):
 ├── docs/project-tracker.md             — workstream tracking
 ├── tasks/lessons.md                    — engineering patterns
 ├── archive/completed/                  — completion archive
-├── .claude/handoffs/                   — session continuity
+├── tasks/handoffs/                     — session continuity
 ├── DIRECTORY.md                        — source index
 └── .gitignore                          — check for .claude/settings.local.json entry
 ```
@@ -39,11 +39,11 @@ Check for each of these and record status (exists / missing / incomplete):
 
 **Global detection:** Check if `~/.claude/CLAUDE.md` exists. If yes, the generated CLAUDE.md will include an "extends global" reference. If not, the template is fully self-contained — no dependency on global config.
 
-**Distribution repo detection:** Check if `.gitignore` excludes session infrastructure directories (`tasks/`, `archive/`, `.claude/handoffs/`). If 2+ of these are gitignored, this is likely a **distribution repo** — a public/shared repo where session artifacts are intentionally excluded from version control (e.g., an open-source release, a template repo, a package).
+**Distribution repo detection:** Check if `.gitignore` excludes session infrastructure directories (`tasks/`, `archive/`). If both are gitignored, this is likely a **distribution repo** — a public/shared repo where session artifacts are intentionally excluded from version control (e.g., an open-source release, a template repo, a package).
 
 **If distribution repo detected: STOP.** Do not proceed to Phase 2. Report:
 
-> _"This looks like a distribution repo — `.gitignore` excludes session directories (`tasks/`, `archive/`, `.claude/handoffs/`). Onboarding infrastructure doesn't belong here — it's a product, not a workspace. Track work on this repo from your parent project's tracker instead."_
+> _"This looks like a distribution repo — `.gitignore` excludes session directories (`tasks/`, `archive/`). Onboarding infrastructure doesn't belong here — it's a product, not a workspace. Track work on this repo from your parent project's tracker instead."_
 
 This is the correct exit — a distribution repo's CLAUDE.md is a template for downstream users, its .gitignore intentionally excludes session artifacts, and its workstreams belong in the tracker of whoever maintains it.
 
@@ -126,7 +126,7 @@ Use `templates/lessons.md.template`. Replace `[PROJECT_NAME]` with PM's project 
 Create with .gitkeep files so they survive git clone:
 
 ```bash
-mkdir -p .claude/handoffs && touch .claude/handoffs/.gitkeep
+mkdir -p tasks/handoffs && touch tasks/handoffs/.gitkeep
 mkdir -p archive/completed && touch archive/completed/.gitkeep
 mkdir -p docs  # for tracker
 mkdir -p tasks  # for lessons
@@ -150,7 +150,7 @@ Check if `.gitignore` exists and contains an entry for `.claude/settings.local.j
 
 3. **If the entry already exists:** Skip silently.
 
-**Warning check:** If `.gitignore` contains a line that would ignore all of `.claude/` (like `.claude/` or `.claude/*`), warn: "Your .gitignore ignores the entire .claude/ directory. This breaks handoff discovery. Only .claude/settings.local.json should be ignored — .claude/handoffs/ must be tracked."
+**Warning check:** If `.gitignore` contains a line that would ignore `tasks/` or `tasks/*`, warn: "Your .gitignore ignores the tasks/ directory. This breaks handoff discovery and lessons tracking. Remove the entry."
 
 #### 3f. DIRECTORY.md
 

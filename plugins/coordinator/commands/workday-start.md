@@ -12,7 +12,7 @@ Prepare the day's session-start calls to be maximally efficient. Ensure context 
 
 ## Step 1: Handoff Triage
 
-Read all files in `.claude/handoffs/`. For each:
+Read all files in `tasks/handoffs/`. For each:
 
 1. **Check age** — filename includes timestamp (`YYYY-MM-DD_HHMMSS_sessionid.md`)
 2. **Check branch activity** — is the handoff's referenced branch still active? Any commits since the handoff was written?

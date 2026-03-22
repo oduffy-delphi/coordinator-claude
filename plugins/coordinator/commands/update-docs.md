@@ -235,7 +235,7 @@ Present a concise summary:
 - [Updated/No changes needed]
 
 ### Handoffs Archived
-- [N moved from .claude/handoffs/ → archive/handoffs/ / No handoffs to clean up]
+- [N moved from tasks/handoffs/ → archive/handoffs/ / No handoffs to clean up]
 
 ### Completion Archive
 - [N items archived from tracker to archive/completed/YYYY-MM.md / No completed items to archive]

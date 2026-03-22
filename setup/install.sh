@@ -395,6 +395,16 @@ data["extraKnownMarketplaces"]["coordinator-claude"] = {
     }
 }
 
+# Ensure background subagents can use Edit/Write tools
+# (defaultMode: "dontAsk" doesn't propagate to background agents)
+if "permissions" not in data:
+    data["permissions"] = {}
+if "allow" not in data["permissions"]:
+    data["permissions"]["allow"] = []
+for tool in ["Edit", "Write"]:
+    if tool not in data["permissions"]["allow"]:
+        data["permissions"]["allow"].append(tool)
+
 with open(settings_file, 'w') as f:
     json.dump(data, f, indent=2)
 
