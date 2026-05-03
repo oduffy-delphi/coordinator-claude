@@ -73,7 +73,7 @@ Run this before every WebFetch call to an external URL. Do not batch external ch
 ## Workflow
 
 1. **Discover markdown files** in the scope path using `Bash find <path> -name "*.md" -type f | sort`
-2. **Extract links** from each file — both `[text](url)` and `[text][ref]` / `[ref]: url` reference-style links
+2. **Extract links** from each file — both inline links (`[label]` followed by `(url)`) and reference-style (`[label][ref]` / `[ref]: url`)
 3. **Validate internal links** (file + anchor existence) — no sleep needed, no cap
 4. **Validate external links** — 1s sleep between each, stop at 100 URLs
 5. **Write the structured output file** to the path specified in the dispatch prompt (default: `tasks/doc-link-check-<timestamp>.md`)
